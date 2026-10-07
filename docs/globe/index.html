@@ -898,7 +898,7 @@ function replayDraw(){
   for(let k=n;k<rCount;k++)rSize[k]=0;rCount=n;rGeo.setDrawRange(0,n);
   for(const a of ['position','dir','color','size'])rGeo.attributes[a].needsUpdate=true;
   const planesNow=Math.round(lerp(A.n,B.n,f));
-  $('rpTime').textContent=rWhen(RP.t);$('rpCount').textContent=fmt(planesNow)+' planes';
+  $('rpTime').textContent=rWhen(RP.t);$('rpCount').textContent=F.length<2?'First hour recorded · more each hour':fmt(planesNow)+' planes';
   if(+$('rpRange').value!==Math.round(RP.t))$('rpRange').value=String(Math.round(RP.t));
 }
 function replayTicks(){const F=RP.frames,t0=F[0].t,t1=F[F.length-1].t,el=$('rpTicks');el.textContent='';if(t1-t0<3*3600)return;
@@ -909,7 +909,7 @@ function setPlaying(on){RP.playing=on&&RP.frames&&RP.frames.length>1;$('rpPlay')
   $('rpIcon').setAttribute('d',RP.playing?'M7 5h4v14H7zM13 5h4v14h-4z':'M7 5l12 7-12 7z');RP.last=performance.now();}
 async function openReplay(){
   RP.on=true;document.body.classList.add('replaying');$('replay').hidden=false;placeReplay();$('replayBtn').setAttribute('aria-pressed','true');
-  select(null);renderCard();ptsObj.visible=false;trails.visible=false;rObj.visible=true;
+  select(null);renderCard();setHash('replay');ptsObj.visible=false;trails.visible=false;rObj.visible=true;
   if(!RP.frames&&!RP.loading){RP.loading=true;
     try{const d=await (await fetch(REPLAY_URL)).json();RP.frames=(d.frames||[]).sort((a,b)=>a.t-b.t);RP.frames.forEach(rPrep);}catch(e){RP.frames=[];}
     RP.loading=false;
@@ -920,7 +920,7 @@ async function openReplay(){
     else if(!reduce)setPlaying(true);}
   if(!RP.on)return;replayDraw();summary();
 }
-function closeReplay(){RP.on=false;setPlaying(false);document.body.classList.remove('replaying');$('replay').hidden=true;$('replayBtn').setAttribute('aria-pressed','false');
+function closeReplay(){RP.on=false;setPlaying(false);if(location.hash==='#replay')setHash(area.on&&area.id?'area/'+area.id:'');document.body.classList.remove('replaying');$('replay').hidden=true;$('replayBtn').setAttribute('aria-pressed','false');
   rObj.visible=false;ptsObj.visible=true;applyTrails();summary();renderCard();}
 // keep the timeline just above the bottom bar, whose height changes as it wraps on narrow screens
 const barEl=document.querySelector('.bar');
