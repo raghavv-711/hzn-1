@@ -148,7 +148,7 @@ footer{display:flex;flex-direction:column;gap:8px;padding-top:22px;border-top:1p
     <div class="scen">
       <div class="panel sc">
         <h3>Sustainable aviation fuel</h3>
-        <div class="big"><b id="safOut">–</b><span>less lifecycle CO₂ across every flight</span></div>
+        <div class="big"><b id="safOut">…</b><span>less lifecycle CO₂ across every flight</span></div>
         <label class="ctl"><span class="row"><span>Share of fuel that's SAF</span><output id="safBlendOut"></output></span>
           <input type="range" id="safBlend" min="0" max="50" step="1" value="6"></label>
         <label class="ctl">Made from
@@ -164,20 +164,20 @@ footer{display:flex;flex-direction:column;gap:8px;padding-top:22px;border-top:1p
       </div>
       <div class="panel sc">
         <h3>Battery-electric</h3>
-        <div class="big"><b id="batOut">–</b><span id="batSub">of flights could fly on batteries</span></div>
+        <div class="big"><b id="batOut">…</b><span id="batSub">of flights could fly on batteries</span></div>
         <label class="ctl"><span class="row"><span>Battery pack energy</span><output id="batDensOut"></output></span>
           <input type="range" id="batDens" min="200" max="1500" step="50" value="250"></label>
-        <p class="note">Each battery weighs as much as a full fuel tank. Certified aviation packs are near 200 Wh/kg today; lithium-based packs probably top out around 400–500. Lifecycle savings are 49–88% depending on how clean the grid is.</p>
+        <p class="note">Each battery weighs as much as a full fuel tank. Certified aviation packs are near 200 Wh/kg today; lithium-based packs probably top out around 400 to 500. Lifecycle savings are 49 to 88% depending on how clean the grid is.</p>
       </div>
       <div class="panel sc">
         <h3>Hybrid-electric regional aircraft</h3>
-        <div class="big"><b id="hybOut">–</b><span>less fuel CO₂ across every flight</span></div>
+        <div class="big"><b id="hybOut">…</b><span>less fuel CO₂ across every flight</span></div>
         <dl class="facts" id="hybFacts"></dl>
         <p class="note">Assumes every regional jet and turboprop flight up to 1,200 km (the Heart Aerospace ES-36's hybrid range) uses about 30% less fuel, the RTX demonstrator's target.</p>
       </div>
       <div class="panel sc">
         <h3>Hydrogen aircraft</h3>
-        <div class="big"><b id="h2Out">–</b><span>less lifecycle CO₂ across every flight</span></div>
+        <div class="big"><b id="h2Out">…</b><span>less lifecycle CO₂ across every flight</span></div>
         <label class="ctl">Hydrogen made from
           <select id="h2Src"><option value="86">Renewable electricity (green) · about −86%</option><option value="-3">Natural gas (grey) · about +3%</option></select></label>
         <dl class="facts" id="h2Facts"></dl>
@@ -250,7 +250,7 @@ function scenarios(){
   const dens=+$('batDens').value;let bN=0,bF=0;for(let i=0;i<n;i++)if(F[i*5+2]<=dens){bN++;bF+=F[i*5+1];}
   $('batDensOut').textContent=fmt(dens)+' Wh/kg';$('batOut').textContent=fmt(bN/n*100,1)+'%';
   $('batSub').textContent='of flights could fly on batteries · '+fmt(bF/fuelAll*100,2)+'% of the fuel';
-  const bat=bF/fuelAll*.685; // midpoint of the 49–88% lifecycle saving
+  const bat=bF/fuelAll*.685; // midpoint of the 49 to 88% lifecycle saving
   // hybrid regional: regional jets (3) and turboprops (4) up to 1,200 km, 30% less fuel
   let hN=0,hF=0;for(let i=0;i<n;i++){const c=F[i*5+3];if((c===3||c===4)&&F[i*5]<=1200){hN++;hF+=F[i*5+1];}}
   const hyb=hF/fuelAll*.30;$('hybOut').textContent=fmt(hyb*100,1)+'%';

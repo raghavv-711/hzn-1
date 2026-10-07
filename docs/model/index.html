@@ -288,7 +288,7 @@ footer p{max-width:80ch}
     <div class="controls">
       <input type="search" id="q" placeholder="Filter by aircraft or type code" aria-label="Filter by aircraft or type code">
       <label><input type="checkbox" id="heldOnly">Held-out figures only</label>
-      <label class="sort-m">Sort <select id="sortSel"><option value="calE">Calibrated error</option><option value="rawE">OpenAP error</option><option value="model">Aircraft A–Z</option><option value="nmi">Sector length</option><option value="pub">Published kg/km</option></select></label>
+      <label class="sort-m">Sort <select id="sortSel"><option value="calE">Calibrated error</option><option value="rawE">OpenAP error</option><option value="model">Aircraft A to Z</option><option value="nmi">Sector length</option><option value="pub">Published kg/km</option></select></label>
       <span class="count" id="count"></span>
     </div>
     <div class="table-wrap"><table id="tbl"><thead><tr>
@@ -512,7 +512,7 @@ $('pairs').innerHTML='<div class="eyebrow">Sources that disagree</div>'+topPairs
     const q=$('q').value.trim().toLowerCase(),only=$('heldOnly').checked;
     const rows=figs.filter(f=>(!only||f.cal!=null)&&(!q||f.model.toLowerCase().includes(q)||f.type.toLowerCase().includes(q)))
       .sort((a,b)=>{const x=val(a,key),y=val(b,key);return (typeof x==='string'?x.localeCompare(y):x-y)*dir;});
-    tb.innerHTML=rows.map(f=>'<tr><td>'+f.model+'</td><td>'+f.type+'</td><td>'+f.nmi.toLocaleString()+'</td><td>'+f.seats+'</td><td data-l="Published">'+f2(f.pub)+'</td><td data-l="OpenAP">'+f2(f.raw)+'</td><td>'+chip(f.rawE)+'</td><td data-l="Calibrated">'+(f.cal==null?'<span class="na">—</span>':f2(f.cal))+'</td><td>'+chip(f.calE)+'</td></tr>').join('');
+    tb.innerHTML=rows.map(f=>'<tr><td>'+f.model+'</td><td>'+f.type+'</td><td>'+f.nmi.toLocaleString()+'</td><td>'+f.seats+'</td><td data-l="Published">'+f2(f.pub)+'</td><td data-l="OpenAP">'+f2(f.raw)+'</td><td>'+chip(f.rawE)+'</td><td data-l="Calibrated">'+(f.cal==null?'<span class="na">n/a</span>':f2(f.cal))+'</td><td>'+chip(f.calE)+'</td></tr>').join('');
     $('count').textContent=rows.length+' of '+figs.length+' figures';
     $('sortSel').value=[...$('sortSel').options].some(o=>o.value===key)?key:'calE';
     document.querySelectorAll('#tbl th').forEach(th=>th.setAttribute('aria-sort',th.dataset.k===key?(dir>0?'ascending':'descending'):'none'));

@@ -150,7 +150,8 @@ def write_stats(rows, ap, airlines, t):
     }
     p = ROOT / "docs" / "stats" / "stats.json"
     p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text(json.dumps(out, separators=(",", ":"), ensure_ascii=False))
+    p.write_text(re.sub(r"\s*[–—]\s*", lambda m: " - " if m.group(0).strip() != m.group(0) else "-",
+                        json.dumps(out, separators=(",", ":"), ensure_ascii=False)))
     print(f"stats: {len(flights) // 5:,} routed modelled flights, {len(eff)} airlines rated for efficiency", flush=True)
 
 
@@ -200,6 +201,7 @@ def main():
     # country/state/city shapes and place names don't change, so they stay in docs/globe/static.js
     data = {"t": t, "ap": payload["ap"], "p": rows, "trails": trails, "info": info, "airlines": als}
     js = json.dumps(data, separators=(",", ":"), ensure_ascii=False).replace("</", "<\\/")
+    js = re.sub(r"\s*[–—]\s*", lambda m: " - " if m.group(0).strip() != m.group(0) else "-", js)  # no en/em dashes in names on the site
     with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8") as f:
         f.write(js)
     save_frame(rows, payload["ap"], t)

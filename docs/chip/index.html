@@ -432,7 +432,7 @@ function floorPanel(){
 const ICON={prev:'<path d="M15 18l-6-6 6-6"/>',next:'<path d="M9 6l6 6-6 6"/>',play:'<path d="M7 5l12 7-12 7z" fill="currentColor"/>',pause:'<path d="M8 5v14M16 5v14"/>'};
 const icon=n=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+ICON[n]+'</svg>';
 function waveSVG(showPre){
-  // 0–16 µs: the start pattern (bursts at 0, 1, 3.5, 4.5) then the first 8 digits, each a burst early (1) or late (0) in its slot
+  // 0 to 16 µs: the start pattern (bursts at 0, 1, 3.5, 4.5) then the first 8 digits, each a burst early (1) or late (0) in its slot
   const W=320,H=96,x=t=>14+t/16*(W-28),base=70,top=24;let d='';const pulses=[0,1,3.5,4.5];
   for(let i=0;i<8;i++)pulses.push(8+i+(BITS[i]?0:.5));
   pulses.forEach(t=>{d+='<rect x="'+x(t)+'" y="'+top+'" width="'+(x(t+.5)-x(t))+'" height="'+(base-top)+'" rx="1" fill="'+(t<8?(showPre?'#7cc4ff':'#8b97a5'):'#f5b041')+'"/>';});
@@ -455,9 +455,9 @@ function vizHTML(kind){
     return '<div class="chars">'+cells+'</div><dl class="dl"><dt>Flight number</dt><dd class="num">'+cs.trim()+'</dd><dt>Plane ID</dt><dd class="num">4840D6</dd><dt>Message type</dt><dd>Introduction</dd></dl>'+
       '<p>The same plane also sends messages with its location and speed. The chip reads those the same way.</p>';}
   if(kind==='track')return '<table class="tt"><thead><tr><th>Plane ID</th><th>Flight</th><th>Height</th><th>Updated</th></tr></thead><tbody>'+
-    '<tr class="new"><td>4840D6</td><td>KLM1023</td><td>—</td><td>now</td></tr>'+
-    '<tr><td class="ex">40621D</td><td class="ex">—</td><td class="ex">38,000 ft</td><td class="ex">0.4 s ago</td></tr>'+
-    '<tr><td class="ex">485020</td><td class="ex">—</td><td class="ex">—</td><td class="ex">1.1 s ago</td></tr></tbody></table><p>The gray rows are made-up examples of other planes. KLM1023\'s height arrives with its next location message.</p>';
+    '<tr class="new"><td>4840D6</td><td>KLM1023</td><td>…</td><td>now</td></tr>'+
+    '<tr><td class="ex">40621D</td><td class="ex">…</td><td class="ex">38,000 ft</td><td class="ex">0.4 s ago</td></tr>'+
+    '<tr><td class="ex">485020</td><td class="ex">…</td><td class="ex">…</td><td class="ex">1.1 s ago</td></tr></tbody></table><p>The gray rows are made-up examples of other planes. KLM1023\'s height arrives with its next location message.</p>';
   if(kind==='fuel'){const burn=2450,perS=burn/3600,tank=21000,dens=300,usefulPerKg=4190,eb=tank*dens*.9,mins=eb/(perS*usefulPerKg)/60;
     return '<div class="mono">Every second: fuel burned so far + '+fmt(perS,2)+' kg</div>'+
       '<dl class="dl"><dt>Typical cruise burn for an A320</dt><dd class="num">'+fmt(burn)+' kg an hour</dd><dt>Battery weighing the same as a full tank</dt><dd class="num">'+fmt(eb/1e6,1)+' MWh</dd><dt>A battery version would run out after</dt><dd class="num">about '+fmt(mins)+' minutes</dd></dl>'+
