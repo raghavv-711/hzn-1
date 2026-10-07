@@ -111,7 +111,7 @@ def load_static():
             if len(row) >= 7 and len(row[4]) == 3 and row[4] != "\\N":
                 name = row[1] if row[1] != "\\N" else ""
                 if row[4] not in airlines or row[7:8] == ["Y"]:  # prefer active airlines on duplicate codes
-                    airlines[row[4]] = (name, row[6] if row[6] != "\\N" else "")
+                    airlines[row[4]] = (name, row[6] if row[6] != "\\N" else "", row[3] if len(row[3]) == 2 else "")
     return routes, airports, types, aircraft, airlines
 
 # ---------------------------------------------------------------- classification

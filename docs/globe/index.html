@@ -99,6 +99,11 @@ button{font:inherit;color:inherit}
 
 .card{position:fixed;left:16px;bottom:calc(86px + env(safe-area-inset-bottom,0px));width:340px;max-height:calc(100vh - 170px);overflow-y:auto;overscroll-behavior:contain;padding:16px 18px;display:flex;flex-direction:column;gap:14px}
 .card-head{display:flex;align-items:flex-start;gap:10px}
+.link-btn{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:var(--accent);padding:6px 0}
+.link-btn svg{width:14px;height:14px}
+.link-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+.toast{position:fixed;left:50%;top:calc(70px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:30;padding:10px 14px;border-radius:12px;font-size:13px;max-width:calc(100vw - 32px)}
+.results small{color:var(--muted);font-weight:400;margin-left:4px}
 .card-head .cs{font-size:20px;font-weight:600;letter-spacing:-.01em;line-height:1.1}
 .card .airline{font-size:13px;margin-top:4px}
 .card-head .sub{color:var(--muted);font-size:12.5px;margin-top:3px}
@@ -241,7 +246,7 @@ body.replaying #card,body.replaying #tip{display:none!important}
   <div class="spacer"></div>
   <div class="search">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-    <input id="q" placeholder="Search flights or places" autocomplete="off" spellcheck="false" aria-label="Search for a flight, country, state, city or airport">
+    <input id="q" placeholder="Search flights, registrations or places" autocomplete="off" spellcheck="false" aria-label="Search for a flight, country, state, city or airport">
     <div class="results glass" id="results" hidden></div>
   </div>
   <button class="about-btn glass" id="infoBtn" aria-expanded="false" aria-controls="info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/></svg>About</button>
@@ -298,6 +303,7 @@ body.replaying #card,body.replaying #tip{display:none!important}
 </div>
 <div id="attrib">Earth imagery: NASA Visible Earth<br>Made by Raghav Vijayapal</div>
 <div id="tip" class="glass" hidden></div>
+<div id="toast" class="toast glass" role="status" hidden></div>
 
 <style>
 #loading{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:radial-gradient(120% 90% at 50% 45%,#0c1420 0%,#060a10 62%);transition:opacity .45s,background .45s}
@@ -315,7 +321,7 @@ function hideLoading(){const e=document.getElementById('loading');if(e&&!e.class
 setTimeout(hideLoading,20000);
 </script>
 <script src="static.js?v=9cdf53407c"></script>
-<script src="data.js?v=6c0207f523"></script>
+<script src="data.js?v=02d2bb9f86"></script>
 <script>const EARTH_WEST="earth-west-small.webp",EARTH_EAST="earth-east-small.webp";const EARTH_HI=Math.min(screen.width,screen.height)<820||(navigator.connection&&navigator.connection.saveData)?null:["earth-west.webp","earth-east.webp"];</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -545,7 +551,7 @@ function drawArea(){
 function setArea(id){
   const sh=DATA.areas.shapes[id],ci=DATA.areas.circles[id],meta=DATA.areas.index.find(x=>x[0]===id);if(!meta)return;
   const [,kind,name,detail]=meta;
-  area.on=true;area.name=kind==='Airport'?name.split(' · ')[0]:name;
+  area.on=true;area.id=id;area.kind=kind;area.name=kind==='Airport'?name.split(' · ')[0]:name;
   area.circle=ci?{v:vec(ci[0],ci[1]),km:ci[2]}:null;area.rings=[];
   if(sh)for(const poly of sh.p)for(const r of poly){let a=1e9,b=-1e9,c=1e9,d=-1e9;for(const [x,y] of r){if(x<a)a=x;if(x>b)b=x;if(y<c)c=y;if(y>d)d=y;}area.rings.push({pts:r,minX:a,maxX:b,minY:c,maxY:d});}
   $('areaName').textContent=name;$('areaKind').textContent=ci?'':'· '+(detail?detail.split(',')[0]:kind);
@@ -553,8 +559,9 @@ function setArea(id){
   $('areaChip').hidden=false;refreshArea();drawArea();
   if(state.sel&&!state.sel.inA)select(null);else{recolor();summary();}
   const center=ci?[ci[0],ci[1]]:sh.c,ext=ci?ci[2]:sh.e;flyTo(vec(center[0],center[1]),1+clamp(ext*2.6*fitScale()/R_E,.05,2.5));
+  setHash('area/'+id);
 }
-function clearArea(){area.on=false;area.circle=null;area.rings=[];$('areaChip').hidden=true;drawArea();refreshArea();recolor();summary();}
+function clearArea(){area.on=false;area.id=null;area.circle=null;area.rings=[];if(/^#area\//.test(location.hash))setHash('');$('areaChip').hidden=true;drawArea();refreshArea();recolor();summary();}
 $('areaClear').addEventListener('click',clearArea);
 $('areaRadius').addEventListener('change',()=>{if(!area.circle)return;area.circle.km=+$('areaRadius').value;refreshArea();drawArea();recolor();summary();
   flyTo(area.circle.v.clone(),1+clamp(area.circle.km*2.6*fitScale()/R_E,.05,2.5));});
@@ -689,6 +696,7 @@ function cardHTML(){
     row('Built',esc(ac.year||''))+row('Registered in',esc(p.country||''))+row('Plane ID',p.hex.toUpperCase())+(al&&al[1]?row('Airline country',esc(al[1])):'')+'</dl></div>';
   h+='<div class="links"><a href="https://adsb.lol/?icao='+p.hex+'" target="_blank" rel="noopener">Where is it now? (adsb.lol) ↗</a>'+
     (/^[A-Z]{3}\d/.test(p.cs)?'<a href="https://www.flightaware.com/live/flight/'+encodeURIComponent(p.cs)+'" target="_blank" rel="noopener">FlightAware ↗</a>':'')+'</div>'+
+    '<button class="link-btn" id="copyLink" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10 14a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1 1"/><path d="M14 10a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1-1"/></svg><span>Copy link to this flight</span></button>'+
     '<div class="foot">'+(p.hist?'The bright line behind it is where it actually flew.':p.B?'The line behind it is estimated from its route.':'No route on file.')+'</div>';
   return h;
 }
@@ -697,6 +705,9 @@ function renderCard(){
   if(!state.sel){card.hidden=true;return;}
   const st=card.scrollTop;card.hidden=false;card.innerHTML=cardHTML();card.scrollTop=st;
   $('closeCard').addEventListener('click',()=>select(null));
+  $('copyLink').addEventListener('click',async e=>{const url=location.origin+location.pathname+'#flight/'+encodeURIComponent(p.cs||p.hex),btn=e.currentTarget;
+    try{await navigator.clipboard.writeText(url);btn.querySelector('span').textContent='Link copied';}catch(err){prompt('Copy this link',url);}
+    setTimeout(()=>{if(btn.isConnected)btn.querySelector('span').textContent='Copy link to this flight';},2000);});
 }
 
 // ---------- key ----------
@@ -718,7 +729,19 @@ if(innerWidth<=760){$('key').dataset.collapsed='true';$('keyToggle').setAttribut
 // ---------- interaction ----------
 const fitScale=()=>{const a=innerWidth/innerHeight;return a<1.1?Math.min(2.3,1.05/a):1;};
 function flyTo(dirV,dist){const from=camera.position.clone();fly={from:from.clone().normalize(),to:dirV.clone().normalize(),d0:from.length(),d1:dist,t0:performance.now()};}
-function select(p,doFly){state.sel=p||null;buildRoute();recolor();renderCard();if(p&&doFly)flyTo(p.pos,Math.min(camera.position.length(),2.6));}
+function select(p,doFly){state.sel=p||null;buildRoute();recolor();renderCard();if(p&&doFly)flyTo(p.pos,Math.min(camera.position.length(),2.6));
+  if(p)setHash('flight/'+(p.cs||p.hex));else if(/^#flight\//.test(location.hash))setHash(area.on&&area.id?'area/'+area.id:'');}
+// links to a flight, place or the replay: the address bar always points at what you're looking at
+function setHash(h){if(booting)return;const want=h?'#'+h:'';if(location.hash!==want)history.replaceState(null,'',want||location.pathname+location.search);}
+function toast(msg){const t=$('toast');t.textContent=msg;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>{t.hidden=true;},5000);}
+function applyHash(){
+  const h=decodeURIComponent(location.hash.slice(1));
+  if(h.startsWith('flight/')){const id=h.slice(7),p=findFlights(id,1)[0];
+    if(p){if(typeof RP!=='undefined'&&RP.on)closeReplay();select(p,true);}else toast(id.toUpperCase()+' isn\'t in the air in the latest snapshot. It refreshes every hour.');}
+  else if(h.startsWith('area/')){const id=h.slice(5);if(DATA.areas.index.some(x=>x[0]===id))setArea(id);else toast('That place isn\'t on the map.');}
+  else if(h==='replay')openReplay();
+}
+addEventListener('hashchange',applyHash);
 function pick(x,y){
   const cam=camera.position,cl=cam.length();let best=null,bd=16*16;
   for(const p of planes){if(aSize[p.idx]===0)continue;const i=p.idx*3;pv.set(aPos[i],aPos[i+1],aPos[i+2]);
@@ -756,6 +779,15 @@ info.addEventListener('click',e=>{if(e.target===info)setAbout(false);});
 {let seen=false;try{seen=localStorage.getItem('fh-about-seen')==='1';localStorage.setItem('fh-about-seen','1');}catch(e){}if(!seen)setAbout(true);}
 
 // search: flights in this snapshot, plus countries, states, cities and airports
+const IATA2ICAO={};for(const [icao,a] of Object.entries(DATA.airlines))if(a[2])IATA2ICAO[a[2]]=icao;
+const norm=x=>String(x||'').toUpperCase().replace(/[\s-]/g,'');
+function findFlights(raw,max){ // callsign (UAL123), airline flight number (UA123), registration (N12345 / G-EUPT) or hex code
+  const s=norm(raw);if(s.length<2)return [];const out=[],seen=new Set();
+  const m=/^([A-Z0-9]{2})(\d{1,4}[A-Z]?)$/.exec(s),alt=m&&IATA2ICAO[m[1]]?IATA2ICAO[m[1]]+m[2]:null;
+  const add=p=>{if(!seen.has(p)&&!p.landed){seen.add(p);out.push(p);}};
+  for(const p of planes)if(p.cs===s||(alt&&p.cs===alt)||p.hex===s.toLowerCase()||norm(p.info&&p.info[0])===s)add(p);
+  for(const p of planes){if(out.length>=max)break;if(p.cs.startsWith(s)||(alt&&p.cs.startsWith(alt))||(s.length>=3&&norm(p.info&&p.info[0]).startsWith(s)))add(p);}
+  return out.slice(0,max);}
 const PLACE_RANK={Country:0,State:1,City:2,Airport:3};
 function searchPlaces(q){q=q.trim().toLowerCase();if(q.length<2)return [];const hits=[];
   for(const [id,kind,name,detail,pop,alt] of DATA.areas.index){const low=name.toLowerCase();let score;
@@ -769,8 +801,9 @@ q.addEventListener('input',()=>{const raw=q.value.trim(),s=raw.toUpperCase();res
   if(places.length){sec('Places');places.forEach(h=>{const b=document.createElement('button');
     b.innerHTML='<span class="pl"><b>'+esc(h[6])+'</b>'+(h[7]?'<small>'+esc(h[7])+'</small>':'')+'</span><span class="kind">'+esc(h[5])+'</span>';
     b.addEventListener('click',()=>{setArea(h[4]);res.hidden=true;q.value='';q.blur();});res.appendChild(b);});}
-  const flights=[];for(const p of planes){if(!p.landed&&p.cs.startsWith(s)){flights.push(p);if(flights.length>=5)break;}}
-  if(flights.length){sec('Flights');flights.forEach(p=>{const b=document.createElement('button');b.innerHTML=esc(p.cs)+'<span>'+esc(p.B?AP[p.o][0]+' → '+AP[p.d][0]:(p.type||CLS[p.cls]))+'</span>';
+  const flights=findFlights(raw,6);
+  if(flights.length){sec('Flights');flights.forEach(p=>{const b=document.createElement('button');const reg=p.info&&p.info[0];
+    b.innerHTML=esc(p.cs||p.hex.toUpperCase())+(reg?' <small>'+esc(reg)+'</small>':'')+'<span>'+esc(p.B?AP[p.o][0]+' → '+AP[p.d][0]:(p.type||CLS[p.cls]))+'</span>';
     b.addEventListener('click',()=>{select(p,true);res.hidden=true;q.value='';q.blur();});res.appendChild(b);});}
   res.hidden=!res.children.length;});
 q.addEventListener('keydown',e=>{if(e.key==='Enter'){const b=res.querySelector('button');if(b)b.click();}});
@@ -890,12 +923,14 @@ function frame(t){
 }
 
 // ---------- boot ----------
+var booting=true;
 resize();buildEarth();applyTrails();renderKey();
 dens.value=String(Math.round(1000*(Math.log10(300)-2)/1.5));
 step();refreshArea();onDens();
 const cand=planes.filter(p=>p.B&&p.cls<=1&&p.Dk>5000&&p.hist).map(p=>({p,f:1-p.rem0/p.Dk})).filter(x=>x.f>.3&&x.f<.7).sort((a,b)=>b.p.Dk-a.p.Dk);
 const start=(cand[0]&&cand[0].p)||planes.find(p=>p.B);
 if(start){camera.position.copy(start.pos.clone().normalize().multiplyScalar(1+2*Math.min(fitScale(),1.6)));select(start,false);}
+booting=false;if(location.hash)applyHash();
 requestAnimationFrame(frame);
 })();
 </script>
