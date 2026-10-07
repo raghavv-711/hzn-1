@@ -12,8 +12,9 @@ The public website lives in [`docs/`](docs/) and is plain static files, so GitHu
 | [`docs/model/`](docs/model/) | Fuel model check against 126 published figures |
 | [`docs/stats/`](docs/stats/) | Hourly fuel & CO₂ dashboard with what-if scenarios (sources in [`site-src/scenario-sources.md`](site-src/scenario-sources.md)) |
 
-The globe also has a 24-hour replay, search by flight number or registration, airport boards, and shareable links
-(`#flight/UAL123`, `#area/airport:ORD`, `#replay`).
+The globe also has a 24-hour replay, search by flight number or registration, airport boards, "Ask the globe"
+(plain-English questions like "longest flight" or "United 787s to London", answered in the browser from the flight
+data with no AI service), and shareable links (`#flight/UAL123`, `#area/airport:ORD`, `#ask/longest%20flight`, `#replay`).
 
 ## Visitor counts
 

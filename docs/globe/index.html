@@ -116,6 +116,13 @@ button{font:inherit;color:inherit}
 .link-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
 .toast{position:fixed;left:50%;top:calc(70px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:30;padding:10px 14px;border-radius:12px;font-size:13px;max-width:calc(100vw - 32px)}
 .results small{color:var(--muted);font-weight:400;margin-left:4px}
+.area.ask{border-color:rgba(245,176,65,.5)}
+.area.ask>svg{color:var(--warn)}
+.results button.askq{font-family:var(--f-sans);align-items:flex-start}
+.results button.askq .pl b{white-space:normal}
+.results button.askq i{flex-shrink:0;width:18px;height:18px;color:var(--warn);margin-top:1px}
+.results button.ex{font-family:var(--f-sans);color:var(--text);justify-content:flex-start;gap:8px}
+.results button.ex::before{content:"✦";color:var(--warn);font-size:11px}
 .card-head .cs{font-size:20px;font-weight:600;letter-spacing:-.01em;line-height:1.1}
 .card .airline{font-size:13px;margin-top:4px}
 .board{gap:10px}
@@ -262,6 +269,11 @@ body.replaying #card,body.replaying #tip{display:none!important}
   <a class="brand" href="../" style="pointer-events:auto;color:inherit;text-decoration:none" aria-label="HZN-1 home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.8 3 2.8 15 0 18M12 3c-2.8 3-2.8 15 0 18"/></svg><span>Fuel Horizon</span></a>
   <div data-sitenav data-page="globe" data-collapse="auto" data-icons="false" data-align="left"></div>
   <div class="pill glass" id="snap" title="Real air traffic, recorded every hour."><i></i><span id="snapTxt">Snapshot</span></div>
+  <div class="area ask glass" id="askChip" hidden>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15.5l-1.9-4.6L5.5 9l4.6-1.4z"/><path d="M19 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg>
+    <span class="area-text"><b id="askText"></b> <span id="askCount"></span></span>
+    <button class="icon-btn" id="askClear" aria-label="Show all planes again"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </div>
   <div class="area glass" id="areaChip" hidden>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
     <span class="area-text"><b id="areaName"></b> <span id="areaKind"></span></span>
@@ -272,7 +284,7 @@ body.replaying #card,body.replaying #tip{display:none!important}
   <div class="spacer"></div>
   <div class="search">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-    <input id="q" placeholder="Search flights, registrations or places" autocomplete="off" spellcheck="false" aria-label="Search for a flight, country, state, city or airport">
+    <input id="q" placeholder="Search, or ask: “longest flight”" autocomplete="off" spellcheck="false" aria-label="Search for a flight or place, or ask a question like longest flight or A380s over Europe">
     <div class="results glass" id="results" hidden></div>
   </div>
   <button class="about-btn glass" id="infoBtn" aria-expanded="false" aria-controls="info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/></svg>About</button>
@@ -284,7 +296,7 @@ body.replaying #card,body.replaying #tip{display:none!important}
   <div><span class="kicker">About</span><h2 id="aboutTitle">Fuel Horizon</h2></div>
   <p class="lede">Thousands of real flights, recorded at <b id="snapWhen" style="color:var(--text);font-weight:500"></b>, with an estimate of how much fuel each one has left and how far it could get on batteries instead.</p>
   <div><h3>What you're seeing</h3><ul><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 17-7-4-7 4z"/></svg></i><span><b>Each arrow is a real plane</b>, pointing the way it's flying. Up close, they turn into airplane shapes.</span></li><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="12" r="3"/><circle cx="17" cy="12" r="3"/></svg></i><span><b>Its color</b> shows fuel left, battery left, or height, depending on the mode you pick at the bottom. The key explains the colors.</span></li><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18c5-1 8-6 16-12"/></svg></i><span><b>The line behind it</b> is where it actually flew over the previous two hours.</span></li></ul></div>
-  <div><h3>Try this</h3><ul><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 9l10 4-4 2-2 4z"/><path d="M5 3v3M3 5h3"/></svg></i><span><b>Click a plane</b> to see its airline, route, fuel estimate and more.</span></li><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"/><path d="m20 20-4-4"/></svg></i><span><b>Search</b> for a flight number (UA123), a registration, or a country, state, city or airport. Pick an airport to see a board of every flight heading there.</span></li><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="16" height="10" rx="2"/><path d="M22 11v2M7 10v4"/></svg></i><span><b>Switch to Electric</b> and drag the battery slider to see how many flights batteries could handle.</span></li><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 12h18M8 7l4-4 4 4M8 17l4 4 4-4"/></svg></i><span><b>Drag</b> to spin the globe. <b>Scroll or pinch</b> to zoom.</span></li><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></i><span><b>Replay 24h</b> plays back the last day of air traffic, one recording per hour. Watch night sweep around the world as you scrub.</span></li><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1 1"/><path d="M14 10a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1-1"/></svg></i><span><b>Share</b> what you're looking at: the address bar always links to the flight, place or replay on screen.</span></li></ul></div>
+  <div><h3>Try this</h3><ul><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 9l10 4-4 2-2 4z"/><path d="M5 3v3M3 5h3"/></svg></i><span><b>Click a plane</b> to see its airline, route, fuel estimate and more.</span></li><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"/><path d="m20 20-4-4"/></svg></i><span><b>Search or ask.</b> Type a flight number (UA123), a place, or a question like “longest flight”, “A380s over Europe” or “United flights to London”. Pick an airport to see a board of every flight heading there.</span></li><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="16" height="10" rx="2"/><path d="M22 11v2M7 10v4"/></svg></i><span><b>Switch to Electric</b> and drag the battery slider to see how many flights batteries could handle.</span></li><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 12h18M8 7l4-4 4 4M8 17l4 4 4-4"/></svg></i><span><b>Drag</b> to spin the globe. <b>Scroll or pinch</b> to zoom.</span></li><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></i><span><b>Replay 24h</b> plays back the last day of air traffic, one recording per hour. Watch night sweep around the world as you scrub.</span></li><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1 1"/><path d="M14 10a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1-1"/></svg></i><span><b>Share</b> what you're looking at: the address bar always links to the flight, place or replay on screen.</span></li></ul></div>
   <div><h3>Good to know</h3><ul><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v5l3 2"/><circle cx="12" cy="12" r="8"/></svg></i><span><b>Fuel is an estimate.</b> Planes don't broadcast it, so it's worked out from the route and a performance model of each exact aircraft type (OpenAP, from TU Delft), tuned to match 126 published fuel figures. On flights it hadn't seen, it was off by about 5% on average. It plans fuel the way airlines do, with extra for a backup airport and 30 minutes of holding, so expect a range of about ±12%. Types it doesn't know get a rougher size-class estimate. <a href="../model/" style="color:var(--accent)">See how the model was checked</a> There's also an <a href="../stats/" style="color:var(--accent)">hourly fuel &amp; CO₂ dashboard</a>.</span></li><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3L5 14h6l-1 7 8-11h-6z"/></svg></i><span><b>“Electric” is a thought experiment:</b> each plane carries a battery weighing the same as a full tank of fuel. With today's batteries, almost no airliner could finish its trip.</span></li><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8" stroke-dasharray="3 3"/></svg></i><span><b>Empty areas usually mean no receivers nearby, not no planes.</b> Positions come from volunteers' ground stations, which each hear planes within about 400 km. There are thousands across North America and Europe but very few across Africa, much of Asia and the oceans.</span></li><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 7v5h4"/></svg></i><span><b>This is a snapshot.</b> Each plane keeps moving along its route for up to 30 minutes after it was recorded. The live version runs on a computer with the Fuel Horizon server.</span></li></ul></div>
   <p>Fuel Horizon is one half of a project. The other half is <a href="../chip/">HZN-1</a>, a chip designed to pick up planes' radio signals directly.</p>
   <div class="src">Flights: OpenSky Network, adsb.lol, VRS standing data. Aircraft and airlines: ADS-B Exchange, OpenFlights. Map: NASA Visible Earth, Natural Earth.</div>
@@ -543,7 +555,7 @@ const trails=new THREE.LineSegments(gT,new THREE.LineBasicMaterial({vertexColors
 trails.frustumCulled=false;trails.renderOrder=2;scene.add(trails);
 function updateTrailHeads(){for(const p of trailInfo){const i=p.tHead*6+3;tPos[i]=aPos[p.idx*3];tPos[i+1]=aPos[p.idx*3+1];tPos[i+2]=aPos[p.idx*3+2];}gT.attributes.position.needsUpdate=true;}
 function recolorTrails(){
-  for(const p of trailInfo){const n=p.hist.length,show=!p.landed&&(!area.on||p.inA||p===state.sel);const c=p.col||C_DIM;
+  for(const p of trailInfo){const n=p.hist.length,show=!p.landed&&(((!area.on||p.inA)&&(!state.q||state.q.set.has(p)))||p===state.sel);const c=p.col||C_DIM;
     for(let i=0;i<n;i++){const f0=show?(i/n)*.8:0,f1=show?((i+1)/n)*.8:0,j=(p.tStart+i)*6;
       tCol[j]=c[0]*f0;tCol[j+1]=c[1]*f0;tCol[j+2]=c[2]*f0;tCol[j+3]=c[0]*f1;tCol[j+4]=c[1]*f1;tCol[j+5]=c[2]*f1;}}
   gT.attributes.color.needsUpdate=true;
@@ -621,7 +633,7 @@ const rgb=c=>'rgb('+c.map(v=>Math.round(v*255)).join(',')+')';
 const rgba=(c,a)=>'rgba('+c.map(v=>Math.round(v*255)).join(',')+','+a+')';
 function recolor(){
   for(const p of planes){const i=p.idx;let s=SIZE[p.cls],c=[0,0,0];
-    if(p.landed||(area.on&&!p.inA&&p!==state.sel)){aSize[i]=0;p.col=C_DIM;continue;}
+    if(p.landed||(area.on&&!p.inA&&p!==state.sel)||(state.q&&!state.q.set.has(p)&&p!==state.sel)){aSize[i]=0;p.col=C_DIM;continue;}
     if(state.mode==='alt')altRamp(p.alt,c);
     else if(!p.B){c=C_DIM.map(v=>v*.65);s*=.85;}
     else if(state.mode==='fuel')ramp(fuelState(p).frac,c);
@@ -682,12 +694,13 @@ function summary(){
     $('snapTxt').innerHTML='Replay · <b class="num">'+esc(rWhen(RP.t))+'</b>';
     $('summary').innerHTML='<b class="num">'+fmt(Math.round(lerp(A.n,B.n,f)))+'</b> planes in the air · about <b class="num">'+fmt(lerp(A.burn,B.burn,f)/1000,0)+' t</b> of fuel an hour (modelled flights)';return;}
   let all=0,air=0,burn=0,rt=0,feas=0;
-  for(const p of planes){if(p.landed)continue;all++;if(area.on&&!p.inA)continue;air++;burn+=p.burnEff;if(p.B){rt++;if(elecState(p,state.dens).feasible)feas++;}}
+  for(const p of planes){if(p.landed)continue;all++;if(area.on&&!p.inA)continue;if(state.q&&!state.q.set.has(p))continue;air++;burn+=p.burnEff;if(p.B){rt++;if(elecState(p,state.dens).feasible)feas++;}}
   const mins=Math.round((Date.now()-LOADED)/60000);
   const ageH=(Date.now()-SNAP)/3.6e6,stale=ageH>2.5;$('snap').classList.toggle('stale',stale);
   $('snap').title=stale?'The hourly update is running late, so these flights are from '+Math.round(ageH)+' hours ago.':'Real air traffic, recorded every hour.';
   $('snapTxt').innerHTML=stale?'Data from <b class="num">'+Math.round(ageH)+' h ago</b> · '+ct(SNAP):'Snapshot · <b class="num">'+ct(SNAP)+'</b>'+(mins>=1?' <span class="num">+'+Math.min(mins,30)+' min</span>':'');
-  const where=!area.on?'':area.circle?' within '+fmt(area.circle.km)+' km of '+esc(area.name):' over '+esc(area.name);
+  const asked=state.q?' matching “'+esc(state.q.label)+'”':'';
+  const where=asked+(!area.on||(state.q&&/(^| · )over /.test(state.q.label))?'':area.circle?' within '+fmt(area.circle.km)+' km of '+esc(area.name):' over '+esc(area.name));
   const el=$('summary');
   if(state.mode==='fuel')el.innerHTML='<b class="num">'+fmt(air)+'</b> planes'+where+' · about <b class="num">'+fmt(burn/1000,burn<1e4?1:0)+' t</b> of fuel burned per hour';
   else if(state.mode==='elec')el.innerHTML='<b class="num">'+fmt(feas)+'</b> of '+fmt(rt)+' flights'+where+' ('+fmt(rt?feas/rt*100:0,1)+'%) could finish on batteries';
@@ -817,6 +830,7 @@ function applyHash(){
   if(h.startsWith('flight/')){const id=h.slice(7),p=findFlights(id,1)[0];
     if(p){if(typeof RP!=='undefined'&&RP.on)closeReplay();select(p,true);}else toast(id.toUpperCase()+' isn\'t in the air in the latest snapshot. It refreshes every hour.');}
   else if(h.startsWith('area/')){const id=h.slice(5);if(DATA.areas.index.some(x=>x[0]===id))setArea(id);else toast('That place isn\'t on the map.');}
+  else if(h.startsWith('ask/'))runAsk(h.slice(4));
   else if(h==='replay')openReplay();
 }
 addEventListener('hashchange',applyHash);
@@ -872,9 +886,120 @@ function searchPlaces(q){q=q.trim().toLowerCase();if(q.length<2)return [];const 
     if(alt&&alt===q||low===q)score=0;else if(low.startsWith(q))score=1;else if(low.split(/[\s,·()-]+/).some(w=>w.startsWith(q)))score=2;else continue;
     hits.push([score,PLACE_RANK[kind],-pop,name.length,id,kind,name,detail]);}
   hits.sort((a,b)=>{for(let i=0;i<4;i++)if(a[i]!==b[i])return a[i]-b[i];return 0;});return hits.slice(0,7);}
+// ---------- ask the globe: plain-English questions answered from the flights on screen (no AI service) ----------
+// A question is read as filters (aircraft, airline, where it's going or coming from, a place it's over) plus an
+// optional "record" (longest, highest, lowest on fuel…). Matching planes stay on the globe; the rest step aside.
+const CARGO=new Set(['FDX','UPS','GTI','CLX','CKS','ABW','BOX','ABX','ATN','CAO','CKK','DHK','DHX','BCS','PAC','WGN','AJT','GEC','TAY','MPH','NCA','SQC','CLU','LCO']);
+const ASK_TYPES=[ // [words in the question, label, test]
+  [/\b(a380s?|superjumbos?)\b/,'A380s',p=>/^A38/.test(p.type)],
+  [/\ba350s?\b/,'A350s',p=>/^A35/.test(p.type)],
+  [/\ba330s?\b/,'A330s',p=>/^A33/.test(p.type)],
+  [/\ba340s?\b/,'A340s',p=>/^A34/.test(p.type)],
+  [/\ba220s?\b/,'A220s',p=>/^BCS/.test(p.type)],
+  [/\b(a31[89]s?|a32[01]s?|a320 ?neos?|a321 ?neos?)\b/,'A320 family',p=>/^A3(18|19|20|21)|^A(19|20|21)N/.test(p.type)],
+  [/\b(787s?|dreamliners?)\b/,'787 Dreamliners',p=>/^B78/.test(p.type)],
+  [/\b(777s?|triple sevens?)\b/,'777s',p=>/^B77/.test(p.type)],
+  [/\b(747s?|jumbo jets?|jumbos)\b/,'747s',p=>/^B74/.test(p.type)],
+  [/\b767s?\b/,'767s',p=>/^B76/.test(p.type)],
+  [/\b757s?\b/,'757s',p=>/^B75/.test(p.type)],
+  [/\b(737 ?max|max ?[789]s?)\b/,'737 MAX',p=>/^B3[789X]M/.test(p.type)],
+  [/\b737s?\b/,'737s',p=>/^B73|^B3[789X]M/.test(p.type)],
+  [/\b(embraers?|e-?jets?|e1[79][05]s?)\b/,'Embraer jets',p=>/^E1[79]|^E[79]5|^E29/.test(p.type)],
+  [/\b(crjs?|canadairs?)\b/,'CRJs',p=>/^CRJ/.test(p.type)],
+  [/\b(atrs?|dash ?8s?|q400s?)\b/,'ATRs and Dash 8s',p=>/^AT[4-7]|^DH8/.test(p.type)],
+  [/\b(helicopters?|choppers?)\b/,'Helicopters',p=>p.cls===7],
+  [/\b(private|business|corporate) ?jets?\b|\bbizjets?\b/,'Private jets',p=>p.cls===5],
+  [/\b(turboprops?|propeller planes?)\b/,'Turboprops',p=>p.cls===4],
+  [/\b(small|light|piston) (planes?|aircraft)\b|\bcessnas?\b/,'Small planes',p=>p.cls===6],
+  [/\bwide-?bod(y|ies)\b/,'Widebodies',p=>p.cls<=1],
+  [/\bnarrow-?bod(y|ies)\b/,'Narrowbodies',p=>p.cls===2],
+  [/\bregional jets?\b/,'Regional jets',p=>p.cls===3],
+  [/\bairbus(es)?\b/,'Airbus aircraft',p=>/^A[0-9]{2}|^A[0-9]N|^BCS/.test(p.type)],
+  [/\bboeings?\b/,'Boeing aircraft',p=>/^B7|^B3/.test(p.type)],
+  [/\b(cargo|freight|freighters?)\b/,'Cargo flights',p=>CARGO.has(p.cs.slice(0,3))],
+  [/\bmilitary\b/,'Military aircraft',p=>!!(p.info&&p.info[4]==='1')],
+  [/\b(electric|batter(y|ies))\b/,'Could fly on batteries',p=>!!p.B&&elecState(p,state.dens).feasible],
+];
+const ASK_RECORDS=[ // [words, label, score (higher wins; null = not ranked)]
+  [/\b(lowest on|least|low on|running low on|short on|lowest) fuel\b|\brunning (low|out)\b|\bnear(est)? (its |their )?reserves?\b|\bemptiest\b/,'Lowest on fuel',p=>p.B?-fuelState(p).tank:null],
+  [/\b(most|fullest|full of) fuel\b|\bfullest\b/,'Most fuel on board',p=>p.B?fuelState(p).rem:null],
+  [/\b(about to|closest to) land(ing)?\b|\blanding soon\b|\barriving soon\b/,'About to land',p=>p.B?-p.rem:null],
+  [/\bjust (took|taken) off\b|\bjust (departed|left)\b/,'Just took off',p=>p.B?-(p.Dk-p.rem):null],
+  [/\b(most|longest) (time |distance )?(left|to go|remaining)\b|\bfurthest from (landing|home|its destination)\b/,'Furthest from landing',p=>p.B?p.rem:null],
+  [/\b(longest|furthest|farthest)\b/,'Longest flights',p=>p.B?p.Dk:null],
+  [/\bshortest\b/,'Shortest flights',p=>p.B?-p.Dk:null],
+  [/\b(highest|tallest)\b/,'Highest flying',p=>p.alt],
+  [/\blowest\b/,'Lowest flying',p=>-p.alt],
+  [/\bfastest\b/,'Fastest',p=>p.gs],
+  [/\bslowest\b/,'Slowest',p=>-p.gs],
+  [/\boldest\b/,'Oldest aircraft',p=>{const y=p.info&&+p.info[3];return y>1950?-y:null;}],
+  [/\b(newest|youngest)\b/,'Newest aircraft',p=>{const y=p.info&&+p.info[3];return y>1950?y:null;}],
+  [/\b(biggest|largest|heaviest)\b/,'Biggest aircraft',p=>p.cap],
+  [/\b(smallest|tiniest)\b/,'Smallest aircraft',p=>-p.cap],
+];
+const ASK_AIRLINES=Object.entries(DATA.airlines).map(([icao,a])=>{
+  const key=(a[0]||'').toLowerCase().replace(/\b(airlines?|airways|air lines|aviation|international|limited|ltd|inc|s\.?a\.?)\b/g,' ').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
+  return {icao,name:a[0],re:key.length>=4?new RegExp('\\b'+key.replace(/ /g,'\\s+')+'\\b'):null,len:key.length};}).filter(a=>a.re);
+const STOP='(?=\\s+(?:to|from|over|above|across|in|near|around|with|on|and|that|by|bound|heading|right|now|today)\\b|[?.!,]|$)';
+const PLACE_RE={
+  dest:new RegExp('\\b(?:to|into|towards?|bound for|heading (?:to|for)|landing (?:in|at)|arriving (?:in|at)|going to|flying to)\\s+(?:the\\s+)?([a-z][a-z .\'-]*?)'+STOP),
+  orig:new RegExp('\\b(?:from|out of|leaving|departing|departed)\\s+(?:the\\s+)?([a-z][a-z .\'-]*?)'+STOP),
+  over:new RegExp('\\b(?:over|above|across|in|near|around|within)\\s+(?:the\\s+)?([a-z][a-z .\'-]*?)'+STOP),
+};
+function airportsFor(name){ // airport codes (ICAO keys of AP) for a city, IATA/ICAO code or airport name
+  const n=name.trim().toLowerCase();if(n.length<2)return null;const out=new Set();
+  for(const [icao,a] of Object.entries(AP)){const iata=(a[0]||'').toLowerCase(),city=(a[1]||'').toLowerCase();
+    if(n===iata||n===icao.toLowerCase()||(n.length>=4&&(city===n||city.startsWith(n+' ')||city.startsWith(n+',')||city.startsWith(n+'-'))))out.add(icao);}
+  return out.size?out:null;}
+function parseAsk(text){
+  const t=' '+text.toLowerCase().replace(/[’`]/g,"'").replace(/\s+/g,' ')+' ',parts=[],tests=[];let record=null,areaId=null;
+  for(const [re,label,fn] of ASK_TYPES)if(re.test(t)){parts.push(label);tests.push(fn);break;}
+  let al=null;for(const a of ASK_AIRLINES)if(a.re.test(t)&&(!al||a.len>al.len))al=a;
+  if(al){parts.unshift(al.name);tests.push(p=>p.cs.slice(0,3)===al.icao);}
+  const d=PLACE_RE.dest.exec(t),dAp=d&&airportsFor(d[1]);if(dAp){parts.push('to '+titleCase(d[1]));tests.push(p=>!!p.B&&dAp.has(p.d));}
+  const o=PLACE_RE.orig.exec(t),oAp=o&&airportsFor(o[1]);if(oAp){parts.push('from '+titleCase(o[1]));tests.push(p=>!!p.B&&oAp.has(p.o));}
+  const ov=PLACE_RE.over.exec(t);
+  if(ov&&!/^(the )?(air|sky|world)$/.test(ov[1].trim())){const hit=searchPlaces(ov[1].trim())[0];if(hit){areaId=hit[4];parts.push('over '+(hit[5]==='Airport'?hit[6].split(' · ')[0]:hit[6]));}}
+  for(const r of ASK_RECORDS)if(r[0].test(t)){record=r;break;}
+  if(!parts.length&&!record)return null;
+  return {text,label:(record?record[1]+(parts.length?' · ':''):'')+parts.join(' · '),tests,areaId,record};}
+const titleCase=s=>s.trim().replace(/\b[a-z]/g,c=>c.toUpperCase());
+function askMatches(A){ // planes that pass every filter (and the area, if one was asked for and is active)
+  let list=planes.filter(p=>!p.landed&&A.tests.every(f=>f(p))&&(!A.areaId||!area.on||area.id!==A.areaId||p.inA));
+  if(A.record){list=list.map(p=>[p,A.record[2](p)]).filter(x=>x[1]!=null&&isFinite(x[1])).sort((a,b)=>b[1]-a[1]).slice(0,10).map(x=>x[0]);}
+  return list;}
+function runAsk(text){
+  const A=parseAsk(text);if(!A){toast('Not sure how to answer that. Try “longest flight”, “A380s” or “flights to London”.');return;}
+  if(typeof RP!=='undefined'&&RP.on)closeReplay();
+  if(state.q){state.q=null;$('askChip').hidden=true;} // each question starts from the whole sky
+  if(A.areaId){if(!area.on||area.id!==A.areaId)setArea(A.areaId);}else if(area.on)clearArea();
+  const list=askMatches(A);
+  if(!list.length){recolor();summary();toast('No planes match “'+text+'” right now. The flights refresh every hour.');return;}
+  state.q={label:A.label,set:new Set(list),text};
+  $('askText').textContent=A.label;$('askCount').textContent=list.length===1?'1 plane':list.length+' planes';$('askChip').hidden=false;
+  if(A.record){select(list[0],true);}
+  else{if(state.sel&&!state.q.set.has(state.sel))select(null);
+    if(!A.areaId){const c=new THREE.Vector3();list.forEach(p=>c.add(p.pos));c.normalize();let spread=0;
+      const angs=list.map(p=>ang(p.pos,c)).sort((a,b)=>a-b);spread=angs[Math.floor(angs.length*.9)]||0;
+      flyTo(c,1+clamp(spread*2.4*fitScale(),.12,2.6));}}
+  recolor();summary();setHash('ask/'+encodeURIComponent(text));
+}
+function clearAsk(){if(!state.q)return;state.q=null;$('askChip').hidden=true;recolor();summary();
+  if(/^#ask\//.test(location.hash))setHash(area.on&&area.id?'area/'+area.id:'');}
+$('askClear').addEventListener('click',clearAsk);
+const ASK_EXAMPLES=['longest flight right now','A380s in the air','planes over Texas','flights to London','lowest on fuel','United 787s','fastest plane','private jets over California','about to land','oldest plane flying'];
 const q=$('q'),res=$('results');
-q.addEventListener('input',()=>{const raw=q.value.trim(),s=raw.toUpperCase();res.textContent='';if(s.length<2){res.hidden=true;return;}
+function showExamples(){res.textContent='';const d=document.createElement('div');d.className='sec';d.textContent='Try asking';res.appendChild(d);
+  ASK_EXAMPLES.forEach(x=>{const b=document.createElement('button');b.className='ex';b.textContent=x;
+    b.addEventListener('click',()=>{res.hidden=true;q.value='';q.blur();runAsk(x);});res.appendChild(b);});res.hidden=false;}
+q.addEventListener('focus',()=>{if(!q.value.trim())showExamples();});
+q.addEventListener('input',()=>{const raw=q.value.trim(),s=raw.toUpperCase();res.textContent='';if(s.length<2){if(!raw)showExamples();else res.hidden=true;return;}
   const sec=t=>{const d=document.createElement('div');d.className='sec';d.textContent=t;res.appendChild(d);};
+  const A=raw.length>=3?parseAsk(raw):null;
+  if(A){const list=askMatches(A);sec('Ask the globe');const b=document.createElement('button');b.className='askq';
+    const what=A.areaId&&(!area.on||area.id!==A.areaId)?'Shows the planes there':list.length?(A.record?'Top: '+(list[0].cs||list[0].hex.toUpperCase())+(list[0].B?' · '+AP[list[0].o][0]+' → '+AP[list[0].d][0]:''):list.length+' plane'+(list.length===1?'':'s')+' right now'):'No planes match right now';
+    b.innerHTML='<span class="pl"><b>'+esc(A.label)+'</b><small>'+esc(what)+'</small></span><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></i>';
+    b.addEventListener('click',()=>{res.hidden=true;q.value='';q.blur();runAsk(raw);});res.appendChild(b);}
   const places=searchPlaces(raw);
   if(places.length){sec('Places');places.forEach(h=>{const b=document.createElement('button');
     b.innerHTML='<span class="pl"><b>'+esc(h[6])+'</b>'+(h[7]?'<small>'+esc(h[7])+'</small>':'')+'</span><span class="kind">'+esc(h[5])+'</span>';
@@ -885,7 +1010,7 @@ q.addEventListener('input',()=>{const raw=q.value.trim(),s=raw.toUpperCase();res
     b.addEventListener('click',()=>{select(p,true);res.hidden=true;q.value='';q.blur();});res.appendChild(b);});}
   res.hidden=!res.children.length;});
 q.addEventListener('keydown',e=>{if(e.key==='Enter'){const b=res.querySelector('button');if(b)b.click();}});
-addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(!res.hidden)res.hidden=true;else if(!info.hidden){info.hidden=true;infoBtn.setAttribute('aria-expanded','false');}else if(state.sel)select(null);else if(area.on)clearArea();});
+addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(!res.hidden)res.hidden=true;else if(!info.hidden){info.hidden=true;infoBtn.setAttribute('aria-expanded','false');}else if(state.sel)select(null);else if(state.q)clearAsk();else if(area.on)clearArea();});
 
 // ---------- 24-hour replay: one frame per hour, recorded by the site's refresh job ----------
 // Planes seen in two neighbouring frames glide between them along a great circle; planes that take off or land in
@@ -944,7 +1069,7 @@ function setPlaying(on){RP.playing=on&&RP.frames&&RP.frames.length>1;$('rpPlay')
   $('rpIcon').setAttribute('d',RP.playing?'M7 5h4v14H7zM13 5h4v14h-4z':'M7 5l12 7-12 7z');RP.last=performance.now();}
 async function openReplay(){
   RP.on=true;document.body.classList.add('replaying');$('replay').hidden=false;placeReplay();$('replayBtn').setAttribute('aria-pressed','true');
-  select(null);renderCard();setHash('replay');ptsObj.visible=false;trails.visible=false;rObj.visible=true;
+  clearAsk();select(null);renderCard();setHash('replay');ptsObj.visible=false;trails.visible=false;rObj.visible=true;
   if(!RP.frames&&!RP.loading){RP.loading=true;
     try{const d=await (await fetch(REPLAY_URL)).json();RP.frames=(d.frames||[]).sort((a,b)=>a.t-b.t);RP.frames.forEach(rPrep);}catch(e){RP.frames=[];}
     RP.loading=false;
