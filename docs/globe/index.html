@@ -70,11 +70,15 @@ button{font:inherit;color:inherit}
 .area-radius select{background:rgba(255,255,255,.06);color:var(--text);border:1px solid var(--line-2);border-radius:8px;font:12.5px var(--f-mono);padding:3px 4px}
 .spacer{flex:1}
 .search{position:relative}
-.search input{width:clamp(220px,19vw,280px);height:34px;border-radius:999px;border:1px solid var(--line);background:var(--panel);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);color:var(--text);padding:0 14px 0 34px;font:13px var(--f-sans);outline:none}
+.search input{width:clamp(220px,19vw,280px);height:34px;border-radius:999px;border:1px solid var(--line);background:var(--panel);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);color:var(--text);padding:0 34px 0 34px;font:13px var(--f-sans);outline:none}
+.search .q-x{all:unset;cursor:pointer;position:absolute;right:5px;top:50%;transform:translateY(-50%);width:24px;height:24px;border-radius:50%;display:grid;place-items:center;color:var(--muted)}
+.search .q-x:hover{color:var(--text);background:rgba(255,255,255,.08)}
+.search .q-x:focus-visible{outline:2px solid var(--accent)}
+.search .q-x svg{position:static;transform:none;width:13px;height:13px;color:currentColor}
 .search input:focus{border-color:var(--line-2)}
 .search input::placeholder{color:transparent}
 /* rotating hint: "Try: longest flight", then the next example slides up into place */
-.search .ph{position:absolute;left:34px;right:14px;top:50%;transform:translateY(-50%);height:18px;overflow:hidden;pointer-events:none;
+.search .ph{position:absolute;left:34px;right:34px;top:50%;transform:translateY(-50%);height:18px;overflow:hidden;pointer-events:none;
   font:13px/18px var(--f-sans);color:var(--muted);white-space:nowrap;display:flex;gap:5px;transition:opacity .15s}
 .search .ph b{font-weight:500;color:var(--warn)}
 .search .ph-v{display:block;color:var(--muted);transition:transform .45s cubic-bezier(.3,.7,.2,1),opacity .45s}
@@ -300,6 +304,7 @@ body.replaying #card,body.replaying #tip{display:none!important}
   <div class="search">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
     <input id="q" placeholder=" " autocomplete="off" spellcheck="false" aria-label="Search for a flight or place, or ask a question like longest flight or A380s over Europe">
+    <button class="q-x" id="qx" type="button" aria-label="Close search" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
     <span class="ph" aria-hidden="true"><b>Try:</b><span class="ph-v" id="phv">longest flight</span></span>
     <div class="results glass" id="results" hidden></div>
   </div>
@@ -1039,6 +1044,14 @@ q.addEventListener('input',()=>{const raw=q.value.trim(),s=raw.toUpperCase();res
     b.addEventListener('click',()=>{select(p,true);res.hidden=true;q.value='';q.blur();});res.appendChild(b);});}
   res.hidden=!res.children.length;});
 q.addEventListener('keydown',e=>{if(e.key==='Enter'){const b=res.querySelector('button');if(b)b.click();}});
+// ways out of the search without picking anything: the ✕, a click or tap anywhere else, or tabbing away
+{const qx=$('qx'),box=q.closest('.search');
+  const closeSearch=()=>{res.hidden=true;q.value='';q.blur();};
+  const showX=()=>{qx.hidden=res.hidden&&!q.value;};
+  q.addEventListener('input',showX);new MutationObserver(showX).observe(res,{attributes:true,attributeFilter:['hidden']});
+  qx.addEventListener('click',closeSearch);
+  document.addEventListener('pointerdown',e=>{if(!res.hidden&&!box.contains(e.target))res.hidden=true;},true);
+  box.addEventListener('focusout',e=>{if(!box.contains(e.relatedTarget)&&e.relatedTarget)res.hidden=true;});}
 addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(!res.hidden)res.hidden=true;else if(!info.hidden){info.hidden=true;infoBtn.setAttribute('aria-expanded','false');}else if(state.sel)select(null);else if(state.q)clearAsk();else if(area.on)clearArea();});
 
 // ---------- 24-hour replay: one frame per hour, recorded by the site's refresh job ----------
