@@ -10,6 +10,14 @@ The public website lives in [`docs/`](docs/) and is plain static files, so GitHu
 | [`docs/globe/`](docs/globe/) | Fuel Horizon with a recorded snapshot of real flights |
 | [`docs/chip/`](docs/chip/) | Inside HZN-1, the interactive chip explorer |
 | [`docs/model/`](docs/model/) | Fuel model check against 126 published figures |
+| [`docs/stats/`](docs/stats/) | Hourly fuel & CO₂ dashboard with what-if scenarios (sources in [`site-src/scenario-sources.md`](site-src/scenario-sources.md)) |
+
+The globe also has a 24-hour replay, search by flight number or registration, airport boards, and shareable links
+(`#flight/UAL123`, `#area/airport:ORD`, `#replay`).
+
+## Visitor counts
+
+[`docs/assets/analytics.js`](docs/assets/analytics.js) loads [GoatCounter](https://www.goatcounter.com) (free, no cookies) on every page once its site code is filled in. It stays off while the code is empty.
 
 ## Preview locally
 
@@ -21,7 +29,7 @@ Then open http://localhost:8770. Add `?debug` to the landing page URL to expose 
 
 ## Hourly refresh
 
-[`.github/workflows/site.yml`](.github/workflows/site.yml) rebuilds and deploys the site every hour and on every push. It runs [`tools/refresh_snapshot.py`](tools/refresh_snapshot.py), which pulls OpenSky's global feed three times a few minutes apart, runs the fuel model on every flight, and rewrites the globe data. The fresh data goes straight into the Pages deployment, so the repo doesn't grow with each refresh; flight paths carry over between runs in the Actions cache. If OpenSky can't be reached, the site is deployed with the data already in `docs/`.
+[`.github/workflows/site.yml`](.github/workflows/site.yml) rebuilds and deploys the site every hour and on every push. It runs [`tools/refresh_snapshot.py`](tools/refresh_snapshot.py), which pulls OpenSky's global feed three times a few minutes apart, runs the fuel model on every flight, and rewrites the globe data, a replay frame (the last 24 kept in the Actions cache) and the dashboard numbers. The fresh data goes straight into the Pages deployment, so the repo doesn't grow with each refresh; flight paths carry over between runs in the Actions cache. If OpenSky can't be reached, the site is deployed with the data already in `docs/`.
 
 - Run it now: Actions → *Build and deploy site* → *Run workflow*, or `gh workflow run site.yml`.
 - Optional: add `OPENSKY_CLIENT_ID` and `OPENSKY_CLIENT_SECRET` as repository secrets for higher OpenSky limits.
