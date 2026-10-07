@@ -67,7 +67,9 @@ a{color:inherit}
 @media (max-width:760px){.rail{display:none}}
 
 /* chapters */
-main{position:relative;z-index:5}
+main{position:relative;z-index:5;touch-action:pan-y;cursor:grab}
+.copy,.cards,footer{cursor:auto}
+body.dragging,body.dragging *{cursor:grabbing!important;user-select:none;-webkit-user-select:none}
 .ch{position:relative;min-height:100vh;min-height:100svh;display:flex;align-items:center;padding:calc(var(--nav-h) + 24px) clamp(20px,6vw,88px) 48px}
 .ch[data-len="1.4"]{min-height:140vh}
 .ch[data-len="1.6"]{min-height:160vh}
@@ -193,7 +195,7 @@ footer a{color:var(--muted)}
       <h1>A chip that <em>listens to the sky.</em></h1>
       <p>Every airliner broadcasts who and where it is, several times a second. <strong>HZN-1</strong> hears those signals, decodes them, and estimates how much fuel each plane has left. Scroll to take it apart.</p>
       <ul class="specs"><li><b>Process</b>SKY130 · 130 nm</li><li><b>Die</b>3 × 3 mm</li><li><b>Clock</b>50 MHz</li><li><b>Tracks</b>1,024 planes</li></ul>
-      <div class="hint"><i></i><span class="mouse">Scroll to open it up</span><span class="touch">Swipe up or tap to open it up</span></div>
+      <div class="hint"><i></i><span class="mouse">Scroll to open it up · drag to spin it</span><span class="touch">Swipe up to open it up · drag sideways to spin</span></div>
     </div>
   </section>
 

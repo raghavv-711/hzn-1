@@ -316,8 +316,38 @@ rail.innerHTML = sections.map((s, i) => '<button type="button" data-i="' + i + '
 const railBtns = [...rail.children];
 railBtns.forEach(b => b.addEventListener('click', () => sections[+b.dataset.i].scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' })));
 // on touch screens, tapping empty space moves on to the next reveal
-if (coarse) document.querySelector('main').addEventListener('click', e => {
-  if (e.target.closest('a,button,.copy,.cards,footer')) return;
+// drag anywhere outside the copy to spin the chip (or the globe); a flick keeps it turning for a moment
+const mainEl = document.querySelector('main');
+const NO_DRAG = 'a,button,input,.copy,.cards,footer';
+const TURN = Math.PI * 2;
+let dragging = false, dragX = 0, dragT = 0, dragMoved = 0, yawVel = 0, spinDelta = 0, userYaw = 0, idle = 0;
+mainEl.addEventListener('pointerdown', e => {
+  if (e.button !== 0 || e.target.closest(NO_DRAG)) return;
+  dragging = true; dragMoved = 0; dragX = e.clientX; dragT = performance.now(); yawVel = 0;
+  document.body.classList.add('dragging');
+});
+addEventListener('pointermove', e => {
+  if (!dragging) return;
+  const now = performance.now(), dx = e.clientX - dragX, a = dx * 7 / Math.max(innerWidth, 400);
+  dragMoved += Math.abs(dx); spinDelta += a; idle = 0;
+  const v = a / Math.max((now - dragT) / 1000, 1 / 240);
+  yawVel = lerp(yawVel, v, .5); dragX = e.clientX; dragT = now;
+});
+const endDrag = () => {
+  if (!dragging) return; dragging = false; document.body.classList.remove('dragging');
+  if (reduce || performance.now() - dragT > 90) yawVel = 0; // a drag that stopped before release doesn't fling
+  yawVel = clamp(yawVel, -9, 9);
+};
+addEventListener('pointerup', endDrag); addEventListener('pointercancel', endDrag);
+function spin(dt) {
+  if (!dragging) { spinDelta += yawVel * dt; yawVel *= Math.exp(-dt * 2.4); if (Math.abs(yawVel) < .02) yawVel = 0; }
+  userYaw += spinDelta; globe.rotation.y += spinDelta; spinDelta = 0;
+  // after a pause, drift back to the nearest whole turn so each chapter's view lines up again
+  if (!dragging && !yawVel && (idle += dt) > 2.5) userYaw = lerp(userYaw, Math.round(userYaw / TURN) * TURN, reduce ? 1 : 1 - Math.exp(-dt * 1.4));
+}
+
+if (coarse) mainEl.addEventListener('click', e => {
+  if (dragMoved > 8 || e.target.closest('a,button,.copy,.cards,footer')) return;
   scrollBy({ top: innerHeight * .8, behavior: reduce ? 'auto' : 'smooth' });
 });
 
@@ -382,7 +412,8 @@ function tick(now) {
   // chip
   chip.visible = cur.chip > .01;
   const cs = .0001 + smooth(clamp(cur.chip, 0, 1)) * .9999; chip.scale.setScalar(cs);
-  chip.rotation.y = Math.sin(time * .32) * .45 * cur.sway;
+  spin(dt);
+  chip.rotation.y = Math.sin(time * .32) * .45 * cur.sway + userYaw;
   chip.position.y = Math.sin(time * .8) * .08 * cur.sway;
   const ys = LAYERS.map((L, i) => L.base + i * GAP * cur.ex + (i > FE ? cur.top * (6 + (i - FE) * 1.6) : 0) + (i === LID ? cur.lid * 5 : 0));
   layerObjs.forEach((o, i) => { o.g.position.y = ys[i]; });
