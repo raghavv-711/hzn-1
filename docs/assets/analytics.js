@@ -3,7 +3,7 @@
 // Leave it empty and nothing is loaded.
 const GOATCOUNTER = '';
 
-if (GOATCOUNTER && location.hostname.endsWith('github.io')) {
+if (GOATCOUNTER && /(^|\.)hzn1\.com$|github\.io$/.test(location.hostname)) {
   const s = document.createElement('script');
   s.async = true;
   s.src = 'https://gc.zgo.at/count.js';

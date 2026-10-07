@@ -44,7 +44,7 @@ def rep(s, a, b):
     return s.replace(a, b)
 
 
-SITE = "https://raghavv-711.github.io/hzn-1/"
+SITE = "https://hzn1.com/"
 DESCRIPTIONS = {  # what search engines and link previews show for each page
     "globe": "Every flight in the air on a 3D globe, refreshed hourly, with an estimate of the fuel each plane has left, "
              "its electric twin, airport boards and a 24-hour replay.",

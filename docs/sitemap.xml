@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://raghavv-711.github.io/hzn-1/</loc><changefreq>monthly</changefreq></url>
-  <url><loc>https://raghavv-711.github.io/hzn-1/globe/</loc><changefreq>hourly</changefreq></url>
-  <url><loc>https://raghavv-711.github.io/hzn-1/stats/</loc><changefreq>hourly</changefreq></url>
-  <url><loc>https://raghavv-711.github.io/hzn-1/chip/</loc><changefreq>monthly</changefreq></url>
-  <url><loc>https://raghavv-711.github.io/hzn-1/silicon/</loc><changefreq>monthly</changefreq></url>
-  <url><loc>https://raghavv-711.github.io/hzn-1/model/</loc><changefreq>monthly</changefreq></url>
+  <url><loc>https://hzn1.com/</loc><changefreq>monthly</changefreq></url>
+  <url><loc>https://hzn1.com/globe/</loc><changefreq>hourly</changefreq></url>
+  <url><loc>https://hzn1.com/stats/</loc><changefreq>hourly</changefreq></url>
+  <url><loc>https://hzn1.com/chip/</loc><changefreq>monthly</changefreq></url>
+  <url><loc>https://hzn1.com/silicon/</loc><changefreq>monthly</changefreq></url>
+  <url><loc>https://hzn1.com/model/</loc><changefreq>monthly</changefreq></url>
 </urlset>
