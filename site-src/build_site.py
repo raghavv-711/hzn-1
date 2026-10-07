@@ -18,6 +18,7 @@ HEAD = ('<!doctype html>\n<html lang="en">\n<meta charset="utf-8">\n'
         '<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">\n'
         '<script src="../assets/analytics.js" defer></script>\n'
         '<script src="../assets/sitenav.js" defer></script>\n'
+        '<script src="../assets/tour.js" defer></script>\n'
         '<style>@view-transition{navigation:auto}::view-transition-old(root),::view-transition-new(root){animation-duration:.32s}</style>\n'
         + ''.join(f'<meta {k}="{n}" content="{v}">\n' for k, n, v in [
             ("property", "og:image:width", "1200"), ("property", "og:image:height", "630"),

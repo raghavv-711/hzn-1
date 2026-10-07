@@ -20,6 +20,7 @@
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <script src="assets/analytics.js" defer></script>
 <script src="assets/sitenav.js" defer></script>
+<script src="assets/tour.js" defer></script>
 <style>@view-transition{navigation:auto}::view-transition-old(root),::view-transition-new(root){animation-duration:.32s}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -126,6 +127,12 @@ h2{font-size:clamp(30px,4.2vw,50px);line-height:1.02}
 @keyframes broadcast{0%,100%{stroke-opacity:.25}35%{stroke-opacity:1}}
 @media (prefers-reduced-motion:reduce){.emblem .arc{animation:none}}
 @media (max-width:760px),(max-aspect-ratio:21/20){.emblem{width:72px}}
+.tour-btn{all:unset;cursor:pointer;align-self:flex-start;display:inline-flex;align-items:center;gap:10px;padding:11px 18px 11px 14px;border-radius:999px;
+  background:var(--ink);color:#05080c;font-weight:600;font-size:15px;box-shadow:0 0 0 0 rgba(124,196,255,.5);transition:transform .2s,box-shadow .3s;margin-top:4px}
+.tour-btn svg{width:18px;height:18px}
+.tour-btn small{font-weight:500;font-size:12.5px;color:#4b5868}
+.tour-btn:hover{transform:translateY(-1px);box-shadow:0 0 0 6px rgba(124,196,255,.18)}
+.tour-btn:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
 .quick{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:6px;width:min(640px,calc(100vw - 40px))}
 .quick a{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:14px;text-decoration:none;background:rgba(10,16,24,.62);border:1px solid var(--line);
   backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);transition:border-color .2s,transform .2s,background .2s;min-width:0}
@@ -241,6 +248,7 @@ footer a{color:var(--muted)}
       <h1>A chip that <em>listens to the sky.</em></h1>
       <p>Every airliner broadcasts who and where it is, several times a second. <strong>HZN-1</strong> hears those signals, decodes them, and estimates how much fuel each plane has left. Scroll to take it apart.</p>
       <ul class="specs"><li><b>Process</b>SKY130 · 130 nm</li><li><b>Die</b>3 × 3 mm</li><li><b>Clock</b>50 MHz</li><li><b>Tracks</b>1,024 planes</li></ul>
+      <button type="button" class="tour-btn" data-tour-start><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg><span>Take the tour</span><small>90 seconds</small></button>
       <div class="quick" aria-label="Jump straight to">
         <a href="globe/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.8 3 2.8 15 0 18M12 3c-2.8 3-2.8 15 0 18"/></svg><span><b>Globe</b><small>Every flight now</small></span></a>
         <a href="stats/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span><b>Dashboard</b><small>Fuel &amp; CO₂</small></span></a>
