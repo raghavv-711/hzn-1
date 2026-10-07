@@ -1,7 +1,7 @@
 // One navigation for every page: Home · Globe · Dashboard · Chip · Silicon · Model check.
-// Put <nav data-sitenav data-page="globe" data-collapse="1100" data-align="left"></nav> where it should appear.
-// Wider than data-collapse it shows as tabs; narrower, as a single Menu button that opens the same list.
-// data-collapse="auto" collapses only when the tabs don't fit in their row; data-icons="false" drops the tab icons.
+// Put <div data-sitenav data-page="globe"></div> anywhere on the page. It's docked in the same place on every page,
+// top right, so switching pages never moves it: full tabs on wide windows, one Menu button below COLLAPSE pixels.
+// Pages keep the top 65px of their right side clear for it (12px gap + 41px bar + 12px).
 (() => {
   const base = new URL('../', document.currentScript.src);
   const ICON = {
@@ -12,6 +12,7 @@
     model: '<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
     silicon: '<rect x="5" y="5" width="14" height="14" rx="2"/><path d="M9 9h6v6H9zM9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/>',
   };
+  const COLLAPSE = 1080;
   const PAGES = [
     { id: 'home', href: '', label: 'Home', desc: 'The chip, taken apart layer by layer' },
     { id: 'globe', href: 'globe/', label: 'Globe', desc: 'Every flight in the air, with fuel left' },
@@ -26,6 +27,7 @@
   css.textContent = `
 .sn{--sn-text:var(--text,var(--ink,#e8eef5));--sn-muted:var(--muted,#8a98aa);--sn-line:var(--line,rgba(160,190,225,.14));--sn-accent:var(--accent,#7cc4ff);
   position:relative;display:flex;align-items:center;font:500 13.5px/1 Geist,ui-sans-serif,system-ui,-apple-system,sans-serif;pointer-events:auto}
+.sn-dock{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));right:calc(16px + env(safe-area-inset-right,0px));z-index:900}
 .sn-tabs{display:flex;gap:2px;padding:4px;border-radius:999px;background:rgba(10,16,24,.66);border:1px solid var(--sn-line);backdrop-filter:blur(14px) saturate(1.2);-webkit-backdrop-filter:blur(14px) saturate(1.2)}
 .sn-tab{display:flex;align-items:center;gap:7px;padding:8px 13px;border-radius:999px;color:var(--sn-muted);text-decoration:none;white-space:nowrap;transition:color .15s,background .15s}
 .sn-tab svg{width:15px;height:15px;flex-shrink:0}
@@ -35,10 +37,10 @@
 .sn-btn svg{width:15px;height:15px}
 .sn-btn:focus-visible,.sn-tab:focus-visible,.sn-item:focus-visible{outline:2px solid var(--sn-accent);outline-offset:2px}
 .sn.compact .sn-tabs{display:none}
-.sn.compact .sn-btn{display:inline-flex}
+.sn.compact .sn-btn{display:inline-flex;box-sizing:border-box;width:144px}  /* one width on every page, so the menu never shifts */
 .sn-pop{position:absolute;top:calc(100% + 8px);left:0;z-index:60;width:min(300px,calc(100vw - 32px));padding:6px;border-radius:16px;background:rgba(10,16,24,.94);border:1px solid var(--sn-line);
   backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);box-shadow:0 18px 40px rgba(0,0,0,.45);display:flex;flex-direction:column}
-.sn[data-align="right"] .sn-pop{left:auto;right:0}
+.sn-dock .sn-pop{left:auto;right:0}
 .sn-item{display:grid;grid-template-columns:34px 1fr;gap:2px 10px;align-items:center;padding:9px 10px;border-radius:11px;text-decoration:none;color:#e8eef5}
 .sn-item:hover{background:rgba(255,255,255,.06)}
 .sn-item i{grid-row:1/span 2;width:34px;height:34px;border-radius:9px;display:grid;place-items:center;background:rgba(124,196,255,.12);color:#7cc4ff}
@@ -54,22 +56,19 @@
 .sn-sound:hover,.sn-sound[aria-pressed="true"]{color:var(--sn-text)}
 .sn-sound:focus-visible{outline:2px solid var(--sn-accent);outline-offset:2px}
 .sn-sound.waiting::after{content:"";position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;background:#f5b041;animation:snpulse 1.4s ease-in-out infinite}
-@keyframes snpulse{50%{opacity:.25}}
-@media (prefers-color-scheme:light){:root:not([data-theme="dark"]) .sn.light-aware .sn-tabs,:root:not([data-theme="dark"]) .sn.light-aware .sn-btn{background:rgba(255,255,255,.8)}
-  :root:not([data-theme="dark"]) .sn.light-aware .sn-tab[aria-current="page"]{color:#fff}}
-:root[data-theme="light"] .sn.light-aware .sn-tabs,:root[data-theme="light"] .sn.light-aware .sn-btn{background:rgba(255,255,255,.8)}
-:root[data-theme="light"] .sn.light-aware .sn-tab[aria-current="page"]{color:#fff}`;
+@keyframes snpulse{50%{opacity:.25}}`;
   document.head.appendChild(css);
 
   document.querySelectorAll('[data-sitenav]').forEach(nav => {
-    const here = nav.dataset.page, auto = nav.dataset.collapse === 'auto', collapse = +(nav.dataset.collapse || 760), icons = nav.dataset.icons !== 'false';
-    nav.classList.add('sn');
+    const here = nav.dataset.page;
+    document.body.appendChild(nav);  // out of the page's own header, so every page shows it in exactly the same spot
+    nav.classList.add('sn', 'sn-dock');
     nav.setAttribute('aria-label', 'Site');
     if (nav.tagName !== 'NAV') nav.setAttribute('role', 'navigation');
     const url = p => new URL(p.href, base).href;
     const cur = p => (p.id === here ? ' aria-current="page"' : '');
     nav.innerHTML =
-      '<div class="sn-tabs">' + PAGES.map(p => '<a class="sn-tab" href="' + url(p) + '"' + cur(p) + '>' + (icons ? icon(p.id) : '') + '<span>' + p.label + '</span></a>').join('') + '</div>' +
+      '<div class="sn-tabs">' + PAGES.map(p => '<a class="sn-tab" href="' + url(p) + '"' + cur(p) + '>' + icon(p.id) + '<span>' + p.label + '</span></a>').join('') + '</div>' +
       '<button class="sn-btn" type="button" aria-expanded="false" aria-haspopup="true">' +
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>' +
         '<span>' + (PAGES.find(p => p.id === here) || PAGES[0]).label + '</span></button>' +
@@ -82,23 +81,12 @@
         snd.setAttribute('aria-pressed', String(st !== 'off')); snd.classList.toggle('waiting', st === 'waiting');
         const t = st === 'off' ? 'Sound: off' : st === 'waiting' ? 'Sound: tap anywhere to start' : 'Sound: on'; snd.title = t; snd.setAttribute('aria-label', t); }); }
     else snd.remove();
-    // while open, lift the bar that holds the menu above panels like the globe's key and flight card
-    const host = nav.closest('.top, .nav, .sitebar') || nav.parentElement;
-    const setOpen = open => { pop.hidden = !open; btn.setAttribute('aria-expanded', String(open)); host.style.zIndex = open ? '1000' : '';
+    const setOpen = open => { pop.hidden = !open; btn.setAttribute('aria-expanded', String(open));
       if (open) pop.querySelector('.sn-item').focus({ preventScroll: true }); };
     btn.addEventListener('click', e => { e.stopPropagation(); setOpen(pop.hidden); });
     document.addEventListener('click', e => { if (!nav.contains(e.target)) setOpen(false); });
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && !pop.hidden) { setOpen(false); btn.focus(); } });
-    const row = nav.parentElement;
-    const fit = () => {
-      let compact = innerWidth < collapse;
-      if (auto) { nav.classList.remove('compact'); compact = innerWidth < 600 || row.scrollWidth > row.clientWidth + 1; }
-      nav.classList.toggle('compact', compact); if (!compact) setOpen(false);
-    };
+    const fit = () => { const compact = innerWidth < COLLAPSE; nav.classList.toggle('compact', compact); if (!compact) setOpen(false); };
     addEventListener('resize', fit); fit();
-    if (auto) { // re-check when things appear or disappear in the same row (e.g. a place chip)
-      new MutationObserver(() => requestAnimationFrame(fit)).observe(row, { subtree: true, attributes: true, attributeFilter: ['hidden'] });
-      document.fonts && document.fonts.ready.then(fit);
-    }
   });
 })();

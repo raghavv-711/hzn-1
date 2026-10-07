@@ -29,12 +29,13 @@ body{background:radial-gradient(120% 90% at 50% 45%,#0c1420 0%,var(--bg) 62%);co
 button{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
-.top{position:fixed;top:calc(16px + env(safe-area-inset-top,0px));left:16px;right:16px;display:flex;align-items:center;gap:10px;pointer-events:none;z-index:20}
+/* two rows: brand and data time beside the site tabs (docked top right by sitenav.js), then chips, search and About */
+.top{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));left:16px;right:16px;display:flex;flex-wrap:wrap;align-items:center;gap:10px;pointer-events:none;z-index:20}
+.top>.brk{flex-basis:100%;height:0}
 .top>*{pointer-events:auto}
-/* nothing in the top row squeezes; when it gets crowded the site tabs fold into their menu button instead */
-.top>.brand,.top>.pill,.top>.sn,.top>.about-btn,.top>#infoBtn{flex-shrink:0;white-space:nowrap}
+.top>.brand,.top>.pill,.top>.about-btn,.top>#infoBtn{flex-shrink:0;white-space:nowrap}
 .top>.area{min-width:180px}
-.brand{font-weight:600;font-size:15px;letter-spacing:-.01em;display:flex;align-items:center;gap:8px;margin-right:4px;pointer-events:none;text-shadow:0 1px 6px rgba(0,0,0,.7)}
+.brand{font-weight:600;font-size:15px;letter-spacing:-.01em;display:flex;align-items:center;gap:8px;margin-right:4px;min-height:41px;pointer-events:none;text-shadow:0 1px 6px rgba(0,0,0,.7)}
 .brand svg{width:18px;height:18px}
 .pill{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 12px;border-radius:999px;font-size:12.5px;color:var(--muted);white-space:nowrap;flex-shrink:0}
 .pill i{width:7px;height:7px;border-radius:50%;background:var(--good,#4fd1c5)}
@@ -101,12 +102,12 @@ button{font:inherit;color:inherit}
 .about .src,.about .feed{font-size:12px;border-top:1px solid var(--line);padding-top:14px}
 @media (max-width:760px){.about{padding:22px 18px}.about h2{font-size:22px}.about .actions{bottom:-22px;margin:0 -18px -22px;padding:14px 18px 16px}}
 
-.card{position:fixed;left:16px;bottom:calc(86px + env(safe-area-inset-bottom,0px));width:340px;max-height:calc(100vh - 170px);overflow-y:auto;overscroll-behavior:contain;padding:16px 18px;display:flex;flex-direction:column;gap:14px}
+.card{position:fixed;left:16px;bottom:calc(86px + env(safe-area-inset-bottom,0px));width:340px;max-height:calc(100vh - 212px);overflow-y:auto;overscroll-behavior:contain;padding:16px 18px;display:flex;flex-direction:column;gap:14px}
 .card-head{display:flex;align-items:flex-start;gap:10px}
 .link-btn{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:var(--accent);padding:6px 0}
 .link-btn svg{width:14px;height:14px}
 .link-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
-.toast{position:fixed;left:50%;top:calc(70px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:30;padding:10px 14px;border-radius:12px;font-size:13px;max-width:calc(100vw - 32px)}
+.toast{position:fixed;left:50%;top:calc(110px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:30;padding:10px 14px;border-radius:12px;font-size:13px;max-width:calc(100vw - 32px)}
 .results small{color:var(--muted);font-weight:400;margin-left:4px}
 .area.ask{border-color:rgba(245,176,65,.5)}
 .area.ask>svg{color:var(--warn)}
@@ -165,7 +166,7 @@ button{font:inherit;color:inherit}
 .links a:hover{text-decoration:underline}
 .foot{font-size:12px;color:var(--muted)}
 
-.key{position:fixed;top:calc(64px + env(safe-area-inset-top,0px));right:16px;width:236px;padding:12px 14px;display:flex;flex-direction:column;gap:10px;font-size:12.5px}
+.key{position:fixed;top:calc(108px + env(safe-area-inset-top,0px));right:16px;width:236px;padding:12px 14px;display:flex;flex-direction:column;gap:10px;font-size:12.5px}
 .key-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .key-head b{font-weight:600;font-size:13px}
 .key-head span{color:var(--muted);font-weight:400}
@@ -229,7 +230,9 @@ body.replaying #card,body.replaying #tip{display:none!important}
 @media (max-width:1320px){#attrib{bottom:calc(76px + env(safe-area-inset-bottom,0px))}}
 @media (max-width:760px){
   .brand span{display:none}
-  .top{flex-wrap:wrap}
+  .top{top:calc(61px + env(safe-area-inset-top,0px))}
+  .top>.brk{display:none}
+  .toast{top:calc(150px + env(safe-area-inset-top,0px))}
   .area{max-width:none;flex:1 1 100%}
   .spacer{display:none}
   .brand{display:none}
@@ -259,8 +262,9 @@ body.replaying #card,body.replaying #tip{display:none!important}
 
 <header class="top">
   <div class="brand"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.8 3 2.8 15 0 18M12 3c-2.8 3-2.8 15 0 18"/></svg><span>Fuel Horizon</span></div>
-  <div data-sitenav data-page="globe" data-collapse="auto" data-icons="false" data-align="left"></div>
+  <div data-sitenav data-page="globe"></div>
   <div class="pill glass" id="snap" title="Real air traffic, recorded every hour."><i></i><span id="snapTxt">Snapshot</span></div>
+  <div class="brk"></div>
   <div class="area ask glass" id="askChip" hidden>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15.5l-1.9-4.6L5.5 9l4.6-1.4z"/><path d="M19 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg>
     <span class="area-text"><b id="askText"></b> <span id="askCount"></span></span>
