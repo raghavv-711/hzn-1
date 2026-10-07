@@ -166,7 +166,7 @@ button{font:inherit;color:inherit}
 .links a:hover{text-decoration:underline}
 .foot{font-size:12px;color:var(--muted)}
 
-.key{position:fixed;top:calc(108px + env(safe-area-inset-top,0px));right:16px;width:236px;padding:12px 14px;display:flex;flex-direction:column;gap:10px;font-size:12.5px}
+.key{position:fixed;top:calc(108px + env(safe-area-inset-top,0px));right:16px;width:236px;transition:top .28s cubic-bezier(.3,.7,.2,1);overscroll-behavior:contain;padding:12px 14px;display:flex;flex-direction:column;gap:10px;font-size:12.5px}
 .key-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .key-head b{font-weight:600;font-size:13px}
 .key-head span{color:var(--muted);font-weight:400}
@@ -252,7 +252,7 @@ body.replaying #card,body.replaying #tip{display:none!important}
   .replay{left:16px;right:16px;transform:none;width:auto;bottom:calc(132px + env(safe-area-inset-bottom,0px))}
   body.replaying #attrib{display:none}
 }
-@media (prefers-reduced-motion:reduce){.key-head svg{transition:none}}
+@media (prefers-reduced-motion:reduce){.key-head svg,.key{transition:none}}
 [hidden]{display:none!important}
 .about h2{font-family:"Bricolage Grotesque",Geist,ui-sans-serif,system-ui,sans-serif;font-weight:700}
 </style>
@@ -972,6 +972,14 @@ const PH_EXAMPLES=['longest flight','A380s in the air','flights to London','lowe
     v.classList.add('out');setTimeout(()=>{v.textContent=PH_EXAMPLES[i];v.classList.remove('out');v.classList.add('in');void v.offsetWidth;v.classList.remove('in');},450);},3200);}
 const ASK_EXAMPLES=['longest flight right now','A380s in the air','planes over Texas','flights to London','lowest on fuel','United 787s','fastest plane','private jets over California','about to land','oldest plane flying'];
 const q=$('q'),res=$('results');
+// while the search suggestions are open, the key slides down below them instead of being covered
+{const keyEl=$('key');
+  const placeKey=()=>{ if(res.hidden||!res.offsetHeight){keyEl.style.top='';keyEl.style.maxHeight='';keyEl.style.overflowY='';return;}
+    const r=res.getBoundingClientRect(),k=keyEl.getBoundingClientRect();
+    if(r.left>k.right||r.right<k.left)return;  // side by side: nothing to move
+    const top=Math.max(r.bottom+10,innerWidth<=760?104:108);keyEl.style.top=top+'px';keyEl.style.maxHeight=Math.max(120,innerHeight-top-96)+'px';keyEl.style.overflowY='auto';};
+  new MutationObserver(placeKey).observe(res,{attributes:true,attributeFilter:['hidden'],childList:true,subtree:true});
+  new ResizeObserver(placeKey).observe(res);addEventListener('resize',placeKey);}
 function showExamples(){res.textContent='';const d=document.createElement('div');d.className='sec';d.textContent='Try asking';res.appendChild(d);
   ASK_EXAMPLES.forEach(x=>{const b=document.createElement('button');b.className='ex';b.textContent=x;
     b.addEventListener('click',()=>{res.hidden=true;q.value='';q.blur();runAsk(x);});res.appendChild(b);});res.hidden=false;}
