@@ -5,8 +5,8 @@
 Pulls OpenSky's global feed a few times (a few minutes apart, so each plane gets a short trail), runs the
 fuel model on every flight, and writes docs/globe/data.js and docs/assets/globe-points.json through
 site-src/build_site.py. Recent paths are kept in .fuel-horizon-cache/history.json.gz between runs, so trails
-grow longer when this runs on a schedule. Country, state, city and airport shapes are reused from the current
-docs/globe/data.js, since they don't change.
+grow longer when this runs on a schedule. Country, state, city and airport shapes live in docs/globe/static.js,
+which this leaves alone since they don't change.
 
 Exits with an error (leaving the site's data untouched) if OpenSky can't be reached or returns too few flights.
 """
@@ -84,11 +84,8 @@ def main():
     als = {r[1][:3]: list(airlines[r[1][:3]]) for r in rows
            if re.match(r"^[A-Z]{3}\d", r[1]) and r[1][:3] in airlines and airlines[r[1][:3]][0]}
 
-    # shapes and place names don't change between snapshots: carry them over from the current site data
-    old = (ROOT / "docs" / "globe" / "data.js").read_text()
-    old = json.loads(old[old.index("{"):old.rindex("}") + 1])
-    data = {"t": t, "ap": payload["ap"], "p": rows, "trails": trails, "info": info, "airlines": als,
-            "areas": old["areas"], "places": old["places"]}
+    # country/state/city shapes and place names don't change, so they stay in docs/globe/static.js
+    data = {"t": t, "ap": payload["ap"], "p": rows, "trails": trails, "info": info, "airlines": als}
     js = json.dumps(data, separators=(",", ":"), ensure_ascii=False).replace("</", "<\\/")
     with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8") as f:
         f.write(js)

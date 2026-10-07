@@ -6,7 +6,7 @@ Pages: docs/globe (Fuel Horizon snapshot), docs/chip (Inside HZN-1 explorer), do
 The landing page (docs/index.html) and docs/assets are edited directly.
 Passing a fresh fh-data.json (from the snapshot bundler) also refreshes the globe's recorded flights.
 """
-import json, math, re, sys
+import hashlib, json, math, re, sys
 from pathlib import Path
 
 SRC = Path(__file__).resolve().parent
@@ -14,7 +14,11 @@ DOCS = SRC.parent / "docs"
 
 HEAD = ('<!doctype html>\n<html lang="en">\n<meta charset="utf-8">\n'
         '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n'
-        '<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">\n')
+        '<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">\n'
+        + ''.join(f'<meta {k}="{n}" content="{v}">\n' for k, n, v in [
+            ("property", "og:image", "https://raghavv-711.github.io/hzn-1/assets/og.jpg"),
+            ("property", "og:image:width", "1200"), ("property", "og:image:height", "630"),
+            ("property", "og:site_name", "HZN-1"), ("name", "twitter:card", "summary_large_image")]))
 LINKS = {  # the published artifact links become relative links inside the site
     "https://claude.ai/artifact/BPyUVxays1xfAfQw4hxFaD": "../globe/",
     "https://claude.ai/artifact/QikibNNyAbzssymtuLyMsT": "../model/",
@@ -71,19 +75,64 @@ def globe_points(d):
     (DOCS / "assets" / "globe-points.json").write_text(json.dumps(out, separators=(",", ":")))
 
 
+def write_globe_data(d):
+    """Split a snapshot into static.js (outlines and place names, which never change) and data.js (the flights),
+    so the hourly refresh only changes the smaller file."""
+    static = {k: d.pop(k) for k in ("areas", "places") if k in d}
+    if static:
+        (DOCS / "globe" / "static.js").write_text("window.FH_STATIC=" + json.dumps(static, separators=(",", ":"), ensure_ascii=False).replace("</", "<\\/") + ";\n")
+    (DOCS / "globe" / "data.js").write_text("window.FH_DATA=" + json.dumps(d, separators=(",", ":"), ensure_ascii=False).replace("</", "<\\/") + ";\n")
+
+
+def version(path):
+    """Short content hash, added to file links so browsers fetch a file again only when it changes."""
+    return hashlib.sha1(path.read_bytes()).hexdigest()[:10] if path.exists() else "0"
+
+
+# loading indicator: covers the page while the flight data downloads, then shrinks to a pill until the imagery arrives
+LOADING = """<style>
+#loading{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:radial-gradient(120% 90% at 50% 45%,#0c1420 0%,#060a10 62%);transition:opacity .45s,background .45s}
+#loading .pill{display:flex;align-items:center;gap:12px;padding:12px 18px;border-radius:999px;background:rgba(13,19,27,.82);border:1px solid rgba(255,255,255,.08);font:500 14px/1.2 Geist,system-ui,sans-serif;color:#e6edf5;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+#loading i{width:16px;height:16px;border-radius:50%;border:2px solid rgba(124,196,255,.25);border-top-color:#7cc4ff;animation:spin .8s linear infinite}
+#loading.imagery{inset:auto 0 auto 0;top:calc(76px + env(safe-area-inset-top,0px));background:none;pointer-events:none}
+#loading.done{opacity:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){#loading i{animation-duration:3s}}
+</style>
+<div id="loading" role="status" aria-live="polite"><div class="pill"><i aria-hidden="true"></i><span>Loading flights…</span></div></div>
+<script>
+function setLoading(t){const e=document.getElementById('loading');if(e){e.classList.add('imagery');e.querySelector('span').textContent=t;}}
+function hideLoading(){const e=document.getElementById('loading');if(e&&!e.classList.contains('done')){e.classList.add('done');setTimeout(()=>e.remove(),500);}}
+setTimeout(hideLoading,20000);
+</script>
+"""
+
+
 def build(data_json=None):
-    # globe: data and imagery become separate files the browser can cache
+    if data_json:
+        d = json.loads(Path(data_json).read_text())
+        globe_points(d)
+        write_globe_data(d)
+        print("refreshed docs/globe/data.js and docs/assets/globe-points.json")
+    # globe: data and imagery are separate files the browser can cache; phones get half-size imagery,
+    # larger screens load it first and then swap in the full-resolution version
     g = (SRC / "globe.html").read_text()
-    g = rep(g, '<script type="application/json" id="fh">__DATA__</script>', '<script src="data.js"></script>')
-    g = rep(g, '<script>const EARTH_WEST="data:image/jpeg;base64,__EARTH0__";</script>', '<script>const EARTH_WEST="earth-west.jpg";</script>')
-    g = rep(g, '<script>const EARTH_EAST="data:image/jpeg;base64,__EARTH1__";</script>', '<script>const EARTH_EAST="earth-east.jpg";</script>')
-    g = rep(g, "const DATA=JSON.parse(document.getElementById('fh').textContent);", "const DATA=window.FH_DATA;")
+    g = rep(g, '<script type="application/json" id="fh">__DATA__</script>',
+            LOADING + f'<script src="static.js?v={version(DOCS / "globe" / "static.js")}"></script>\n'
+                      f'<script src="data.js?v={version(DOCS / "globe" / "data.js")}"></script>')
+    g = rep(g, '<script>const EARTH_WEST="data:image/jpeg;base64,__EARTH0__";</script>',
+            '<script>const EARTH_WEST="earth-west-small.webp",EARTH_EAST="earth-east-small.webp";'
+            'const EARTH_HI=Math.min(screen.width,screen.height)<820||(navigator.connection&&navigator.connection.saveData)?null:["earth-west.webp","earth-east.webp"];</script>')
+    g = rep(g, '<script>const EARTH_EAST="data:image/jpeg;base64,__EARTH1__";</script>\n', '')
+    g = rep(g, "const DATA=JSON.parse(document.getElementById('fh').textContent);", "const DATA=Object.assign({},window.FH_STATIC,window.FH_DATA);")
+    g = rep(g, "function buildEarth(){\n  [EARTH_WEST,EARTH_EAST].forEach((src,i)=>{const img=new Image();img.onload=()=>{",
+            "function buildEarth(){\n  setLoading('Loading satellite imagery…');\n  loadEarth([EARTH_WEST,EARTH_EAST],()=>{hideLoading();if(EARTH_HI)loadEarth(EARTH_HI);});\n}\n"
+            "function loadEarth(srcs,done){let left=srcs.length;const finish=()=>{if(--left===0&&done)done();};\n"
+            "  srcs.forEach((src,i)=>{const img=new Image();img.onerror=finish;img.onload=()=>{")
+    g = rep(g, "earthMats[i].uniforms.map.value=tex;earthMats[i].uniforms.hasMap.value=1;};img.src=src;});",
+            "const old=earthMats[i].uniforms.map.value;earthMats[i].uniforms.map.value=tex;earthMats[i].uniforms.hasMap.value=1;if(old&&old.dispose)old.dispose();finish();};img.src=src;});")
     g = re.sub(r'<div class="brand">(.*?)</div>', r'<a class="brand" href="../" style="pointer-events:auto;color:inherit;text-decoration:none" aria-label="HZN-1 home">\1</a>', g, count=1)
     write("globe", g)
-    if data_json:
-        (DOCS / "globe" / "data.js").write_text("window.FH_DATA=" + Path(data_json).read_text() + ";\n")
-        globe_points(json.loads(Path(data_json).read_text()))
-        print("refreshed docs/globe/data.js and docs/assets/globe-points.json")
 
     c = (SRC / "chip.html").read_text()
     c = rep(c, '<header class="top">\n  <div class="brand">', '<header class="top">\n  <a class="brand" href="../" style="color:inherit;text-decoration:none" aria-label="HZN-1 home">')

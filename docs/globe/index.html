@@ -3,6 +3,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<meta property="og:image" content="https://raghavv-711.github.io/hzn-1/assets/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:site_name" content="HZN-1">
+<meta name="twitter:card" content="summary_large_image">
 <title>Fuel Horizon</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -271,9 +276,24 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border:0;border-radiu
 <div id="attrib">Earth imagery: NASA Visible Earth<br>Made by Raghav Vijayapal</div>
 <div id="tip" class="glass" hidden></div>
 
-<script src="data.js"></script>
-<script>const EARTH_WEST="earth-west.jpg";</script>
-<script>const EARTH_EAST="earth-east.jpg";</script>
+<style>
+#loading{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:radial-gradient(120% 90% at 50% 45%,#0c1420 0%,#060a10 62%);transition:opacity .45s,background .45s}
+#loading .pill{display:flex;align-items:center;gap:12px;padding:12px 18px;border-radius:999px;background:rgba(13,19,27,.82);border:1px solid rgba(255,255,255,.08);font:500 14px/1.2 Geist,system-ui,sans-serif;color:#e6edf5;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+#loading i{width:16px;height:16px;border-radius:50%;border:2px solid rgba(124,196,255,.25);border-top-color:#7cc4ff;animation:spin .8s linear infinite}
+#loading.imagery{inset:auto 0 auto 0;top:calc(76px + env(safe-area-inset-top,0px));background:none;pointer-events:none}
+#loading.done{opacity:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){#loading i{animation-duration:3s}}
+</style>
+<div id="loading" role="status" aria-live="polite"><div class="pill"><i aria-hidden="true"></i><span>Loading flights…</span></div></div>
+<script>
+function setLoading(t){const e=document.getElementById('loading');if(e){e.classList.add('imagery');e.querySelector('span').textContent=t;}}
+function hideLoading(){const e=document.getElementById('loading');if(e&&!e.classList.contains('done')){e.classList.add('done');setTimeout(()=>e.remove(),500);}}
+setTimeout(hideLoading,20000);
+</script>
+<script src="static.js?v=9cdf53407c"></script>
+<script src="data.js?v=41f9f18ff7"></script>
+<script>const EARTH_WEST="earth-west-small.webp",EARTH_EAST="earth-east-small.webp";const EARTH_HI=Math.min(screen.width,screen.height)<820||(navigator.connection&&navigator.connection.saveData)?null:["earth-west.webp","earth-east.webp"];</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/lines/LineSegmentsGeometry.js"></script>
@@ -281,7 +301,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border:0;border-radiu
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/lines/LineSegments2.js"></script>
 <script>
 (function(){
-const DATA=window.FH_DATA;
+const DATA=Object.assign({},window.FH_STATIC,window.FH_DATA);
 const R_E=6371, D2R=Math.PI/180;
 const FUEL_WH=4190, ETA=0.9, RES_H=0.75, OVH_TO=0.25, OVH_TRIP=0.4, MAX_EXTRAP_H=0.5;
 const CLS={0:'Heavy widebody',1:'Widebody',2:'Narrowbody',3:'Regional jet',4:'Turboprop',5:'Business jet',6:'Piston',7:'Helicopter'};
@@ -381,11 +401,15 @@ scene.add(new THREE.Mesh(new THREE.SphereGeometry(1.08,64,64),new THREE.ShaderMa
 // earth texture: NASA imagery, plus country borders and names drawn on top
 const countryIds=Object.keys(DATA.areas.shapes).filter(k=>k.startsWith('country:'));
 function buildEarth(){
-  [EARTH_WEST,EARTH_EAST].forEach((src,i)=>{const img=new Image();img.onload=()=>{
+  setLoading('Loading satellite imagery…');
+  loadEarth([EARTH_WEST,EARTH_EAST],()=>{hideLoading();if(EARTH_HI)loadEarth(EARTH_HI);});
+}
+function loadEarth(srcs,done){let left=srcs.length;const finish=()=>{if(--left===0&&done)done();};
+  srcs.forEach((src,i)=>{const img=new Image();img.onerror=finish;img.onload=()=>{
     const max=renderer.capabilities.maxTextureSize;let source=img;
     if(img.width>max){const c=document.createElement('canvas');c.width=c.height=max;c.getContext('2d').drawImage(img,0,0,max,max);source=c;} // smaller GPUs
     const tex=new THREE.Texture(source);tex.anisotropy=renderer.capabilities.getMaxAnisotropy();tex.minFilter=THREE.LinearMipmapLinearFilter;tex.needsUpdate=true;
-    earthMats[i].uniforms.map.value=tex;earthMats[i].uniforms.hasMap.value=1;};img.src=src;});
+    const old=earthMats[i].uniforms.map.value;earthMats[i].uniforms.map.value=tex;earthMats[i].uniforms.hasMap.value=1;if(old&&old.dispose)old.dispose();finish();};img.src=src;});
 }
 
 // country borders as real lines (not painted into the image) so they stay sharp at any zoom; width is in screen pixels
