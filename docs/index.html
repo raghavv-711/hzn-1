@@ -44,6 +44,16 @@ a{color:inherit}
 #stage{position:fixed;inset:0;width:100%;height:100%;display:block;z-index:0;touch-action:pan-y}
 .vignette{position:fixed;inset:0;pointer-events:none;z-index:1;
   background:radial-gradient(120% 80% at 70% 45%,transparent 40%,rgba(4,7,11,.55) 75%,rgba(4,7,11,.92) 100%)}
+/* a whisper of film grain so large dark areas don't look flat */
+.grain{position:fixed;inset:-50%;z-index:1;pointer-events:none;opacity:.07;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+/* chapter copy slides in as each chapter arrives (only when the script runs and motion is welcome) */
+.reveal .ch .copy>*,.reveal .ch .cards>.card{opacity:0;transform:translateY(18px);transition:opacity .75s ease,transform .8s cubic-bezier(.2,.7,.2,1)}
+.reveal .ch.in .copy>*,.reveal .ch.in .cards>.card{opacity:1;transform:none}
+.reveal .ch.in .copy>:nth-child(2),.reveal .ch.in .cards>:nth-child(2){transition-delay:.08s}
+.reveal .ch.in .copy>:nth-child(3),.reveal .ch.in .cards>:nth-child(3){transition-delay:.16s}
+.reveal .ch.in .copy>:nth-child(4),.reveal .ch.in .cards>:nth-child(4){transition-delay:.24s}
+.reveal .ch.in .copy>:nth-child(n+5){transition-delay:.3s}
 #labels{position:fixed;inset:0;pointer-events:none;z-index:2;overflow:hidden}
 .lbl{position:absolute;left:0;top:0;font:500 11.5px/1 var(--f-mono);letter-spacing:.03em;color:var(--ink);white-space:nowrap;
   padding:5px 8px;border-radius:6px;background:rgba(4,7,11,.62);border:1px solid var(--line);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
@@ -166,7 +176,7 @@ footer a{color:var(--muted)}
 @media (max-width:860px){.cards{grid-template-columns:minmax(0,1fr)}.card{min-height:0}}
 
 /* phone: the chip sits in the top part of the screen and the copy rides in a glass card at the bottom */
-@media (max-width:760px), (max-aspect-ratio:4/5){
+@media (max-width:760px), (max-aspect-ratio:21/20){
   .ch{align-items:flex-end;padding:calc(var(--nav-h) + 12px) 16px calc(28px + env(safe-area-inset-bottom,0px))}
   .ch.sticky-copy{align-items:flex-end}
   .ch.sticky-copy .copy{top:auto;bottom:calc(16px + env(safe-area-inset-bottom,0px))}
@@ -191,6 +201,7 @@ footer a{color:var(--muted)}
 <body>
 <canvas id="stage" aria-label="3D model of the HZN-1 chip that changes as you scroll"></canvas>
 <div class="vignette"></div>
+<div class="grain" aria-hidden="true"></div>
 <div id="labels" aria-hidden="true"></div>
 <div class="bar" id="bar"></div>
 
@@ -305,7 +316,7 @@ footer a{color:var(--muted)}
 </main>
 <noscript><div class="noscript">The 3D chip needs JavaScript. You can still open the <a href="globe/">globe</a>, <a href="chip/">chip explorer</a> or <a href="model/">model check</a>.</div></noscript>
 
-<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"}}</script>
-<script type="module" src="assets/story.js?v=6"></script>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
+<script type="module" src="assets/story.js?v=8"></script>
 </body>
 </html>

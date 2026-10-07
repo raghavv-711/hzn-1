@@ -75,10 +75,22 @@ const canvas = $('stage');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = .95;
+// glow: a bloom pass makes the brightest things (the message pulse, gold wires, flight dots, metal highlights)
+// bleed soft light. It loads alongside the page; until then (or if it can't load) frames render directly.
+let composer = null, bloomPass = null;
 renderer.setClearColor('#04070b');
 const scene = new THREE.Scene();
 scene.fog = new THREE.Fog('#04070b', 40, 90);
 const camera = new THREE.PerspectiveCamera(34, 1, .1, 300);
+Promise.all(['EffectComposer', 'RenderPass', 'UnrealBloomPass', 'OutputPass'].map(n => import('three/addons/postprocessing/' + n + '.js')))
+  .then(([E, R, U, O]) => {
+    const c = new E.EffectComposer(renderer);
+    c.addPass(new R.RenderPass(scene, camera));
+    bloomPass = new U.UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), coarse ? .38 : .5, .5, .86);
+    c.addPass(bloomPass); c.addPass(new O.OutputPass());
+    c.setPixelRatio(renderer.getPixelRatio()); c.setSize(innerWidth, innerHeight);
+    composer = c;
+  }).catch(() => {});
 scene.add(new THREE.HemisphereLight(0xc4dcff, 0x0a0f16, 1.35));
 const key = new THREE.DirectionalLight(0xffffff, 3.1); key.position.set(6, 14, 8); scene.add(key);
 const fill = new THREE.DirectionalLight(0x9fc2ff, 1.6); fill.position.set(-9, 6, -5); scene.add(fill);
@@ -195,7 +207,7 @@ const viaGaps = [];
 
 const wires = new THREE.Group(); chip.add(wires);
 {
-  const gold = metal('#e0b65a', .25, 1);
+  const gold = metal('#e0b65a', .25, 1); gold.emissive = new THREE.Color('#6b4a12'); gold.emissiveIntensity = 1.4;
   const drop = (LAYERS[idx('pkg')].base + LAYERS[idx('pkg')].h) - DIE_TOP;
   for (let i = 0; i < 12; i++) {
     const t = -3.5 + i * (7 / 11);
@@ -230,7 +242,7 @@ const wpIndex = PATH.map(k => routePts.findIndex(p => p === WP[k]));
 const cum = [0]; for (let i = 1; i < routePts.length; i++) cum.push(cum[i - 1] + Math.hypot(routePts[i][0] - routePts[i - 1][0], routePts[i][1] - routePts[i - 1][1]));
 const routeMat = new THREE.LineBasicMaterial({ color: '#7cc4ff', transparent: true, opacity: 0 });
 routeGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(routePts.map(p => new THREE.Vector3(p[0], 0, p[1]))), routeMat));
-const pulseMat = new THREE.SpriteMaterial({ map: glowTex, color: '#9fd4ff', transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
+const pulseMat = new THREE.SpriteMaterial({ map: glowTex, color: new THREE.Color(1.6, 2.3, 3.0), transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
 const pulse = new THREE.Sprite(pulseMat); pulse.scale.set(1.3, 1.3, 1.3); routeGroup.add(pulse);
 const TRAIL = 40, trailPos = new Float32Array(TRAIL * 3), trailCol = new Float32Array(TRAIL * 3);
 for (let i = 0; i < TRAIL; i++) { const k = Math.pow(1 - i / TRAIL, 1.5); trailCol.set([.49 * k, .77 * k, k], i * 3); }
@@ -282,7 +294,7 @@ fetch('assets/globe-points.json').then(r => r.json()).then(G => {
     fc.set(f >= 0 ? c : c.map(v => v * .55), i * 3);
   }
   const fg = new THREE.BufferGeometry(); fg.setAttribute('position', new THREE.BufferAttribute(fp, 3)); fg.setAttribute('color', new THREE.BufferAttribute(fc, 3));
-  const fm = new THREE.PointsMaterial({ size: 3, vertexColors: true, map: dotTex, alphaTest: .3, transparent: true, sizeAttenuation: false, toneMapped: false });
+  const fm = new THREE.PointsMaterial({ size: 3, vertexColors: true, color: new THREE.Color(1.45, 1.45, 1.45), map: dotTex, alphaTest: .3, transparent: true, sizeAttenuation: false, toneMapped: false });
   pointMats.flights = fm; sizePoints();
   globe.add(new THREE.Points(fg, fm)); globeMats.push([fm, 1]);
   flightCount = G.n;
@@ -313,6 +325,12 @@ showStep(0);
 
 // ------------------------------------------------------------ chapters, rail, progress
 const sections = [...document.querySelectorAll('section[data-key]')];
+if (!reduce && 'IntersectionObserver' in window) {
+  document.documentElement.classList.add('reveal');
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: .18 });
+  sections.forEach(s => io.observe(s));
+  setTimeout(() => sections[0].classList.add('in'), 60);
+}
 const rail = $('rail');
 rail.innerHTML = sections.map((s, i) => '<button type="button" data-i="' + i + '" aria-label="Go to ' + s.dataset.name + '"><span>' + s.dataset.name + '</span><i></i></button>').join('');
 const railBtns = [...rail.children];
@@ -380,21 +398,32 @@ function target() {
 const cur = target();
 const camPos = new THREE.Vector3(), camTgt = new THREE.Vector3(), tmp = new THREE.Vector3(), p2 = [0, 0];
 let last = performance.now(), time = 0, curChapter = -1, msgEased = cur.msg;
+// on first load (at the top of the page) the layers drop into place, bottom first
+const introT0 = performance.now() + 200; let intro = !reduce && scrollY < innerHeight * .3;
+// the chip leans a little toward the cursor in the opening chapters
+let tiltX = 0, tiltZ = 0, aimX = 0, aimZ = 0;
+if (!coarse && !reduce) addEventListener('pointermove', e => { aimX = (e.clientY / innerHeight - .5) * .16; aimZ = -(e.clientX / innerWidth - .5) * .12; });
 function layout() {
   const w = innerWidth, h = innerHeight;
   renderer.setSize(w, h, false); camera.aspect = w / h;
+  if (composer) composer.setSize(w, h);
   applyShift(true); sizePoints();
 }
 // move the subject out from under the copy: right of it on wide screens, above it on phones
-let shiftNow = -1;
+// On stacked layouts the chip fits into the space between the top bar and where the chapter's text begins.
+let shiftNow = -1, availTop = innerHeight * .6;
+const isNarrow = () => innerWidth <= 760 || innerWidth / innerHeight < 1.05;
 function applyShift(force) {
-  const w = innerWidth, h = innerHeight, narrow = w <= 760 || w / h < .8, s = narrow ? .17 : (cur?.shift ?? .2);
-  if (!force && Math.abs(s - shiftNow) < .001) return; shiftNow = s;
+  const w = innerWidth, h = innerHeight, narrow = isNarrow();
+  const s = narrow ? (h / 2 - (64 + (availTop - 64) / 2)) / h : (cur?.shift ?? .2);
+  if (!force && Math.abs(s - shiftNow) < .002) return; shiftNow = s;
   if (narrow) camera.setViewOffset(w, h, 0, h * s, w, h); else camera.setViewOffset(w, h, -w * s, 0, w, h);
   camera.updateProjectionMatrix();
 }
 layout(); addEventListener('resize', layout);
-const fitScale = () => { const a = innerWidth / innerHeight; return a < 1 ? Math.min(2.2, 1.05 / a) : a < 1.3 ? 1.15 : 1; };
+const fitScale = () => { const a = innerWidth / innerHeight;
+  if (isNarrow()) return Math.min(3.2, Math.max(1, 1.05 / Math.min(a, 1)) * clamp(innerHeight * .62 / Math.max(availTop - 64, 120), 1, 2.4));
+  return a < 1.45 ? 1.3 : 1; };
 const labelPos = (v, el, alpha) => {
   if (alpha < .02) { if (el.style.opacity !== '0') el.style.opacity = '0'; return; }
   v.project(camera);
@@ -423,7 +452,11 @@ function tick(now) {
   spin(dt);
   chip.rotation.y = Math.sin(time * .32) * .45 * cur.sway + userYaw;
   chip.position.y = Math.sin(time * .8) * .08 * cur.sway;
-  const ys = LAYERS.map((L, i) => L.base + i * GAP * cur.ex + (i > FE ? cur.top * (6 + (i - FE) * 1.6) : 0) + (i === LID ? cur.lid * 5 : 0));
+  const kt = 1 - Math.exp(-dt * 4); tiltX = lerp(tiltX, aimX * cur.sway, kt); tiltZ = lerp(tiltZ, aimZ * cur.sway, kt);
+  chip.rotation.x = tiltX; chip.rotation.z = tiltZ;
+  const ip = intro ? clamp((now - introT0) / 1900, 0, 1) : 1; if (ip >= 1) intro = false;
+  const ys = LAYERS.map((L, i) => L.base + i * GAP * cur.ex + (i > FE ? cur.top * (6 + (i - FE) * 1.6) : 0) + (i === LID ? cur.lid * 5 : 0)
+    + (ip < 1 ? (1 - smooth(clamp(ip * 1.6 - i * .055, 0, 1))) * (2.5 + i * .9) : 0));
   layerObjs.forEach((o, i) => { o.g.position.y = ys[i]; });
   const lidA = 1 - smooth(clamp(cur.lid * 1.4, 0, 1));
   LAYERS[LID].mats.forEach(m => { m.opacity = lidA; m.depthWrite = lidA > .98; });
@@ -468,6 +501,8 @@ function tick(now) {
   }
 
   // camera
+  if (isNarrow()) { const c = sections[curChapter] && sections[curChapter].querySelector('.copy');
+    const top = c ? c.getBoundingClientRect().top : innerHeight * .6; availTop = lerp(availTop, clamp(top, innerHeight * .3, innerHeight * .9), k); }
   applyShift();
   const fs = fitScale();
   camTgt.fromArray(cur.tgt); camPos.fromArray(cur.cam).sub(camTgt).multiplyScalar(fs).add(camTgt);
@@ -486,7 +521,7 @@ function tick(now) {
     if (a > .02) o.label.style.transform += ' translate(calc(50% + 14px),0)';
   });
 
-  renderer.render(scene, camera);
+  if (composer) composer.render(); else renderer.render(scene, camera);
 }
 requestAnimationFrame(frame);
 // ?debug: lets automated checks advance frames while the tab is in the background
