@@ -1,0 +1,989 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Fuel Horizon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cesium@1.146.0/Build/Cesium/Widgets/widgets.css">
+<style>
+/* Layout: satellite globe fills the screen; one top bar, one flight card, one bottom control strip. Single committed dark look. */
+:root{
+  --bg:#060a10;
+  --panel:rgba(13,19,27,.80);
+  --line:rgba(255,255,255,.08);
+  --line-2:rgba(255,255,255,.14);
+  --text:#e9eef3;
+  --muted:#8693a1;
+  --accent:#7cc4ff;
+  --good:#4fd1c5;
+  --warn:#f5b041;
+  --bad:#ff6b6b;
+  --f-sans:"Geist",ui-sans-serif,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;
+  --f-mono:"Geist Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --r:14px;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--text);font:14px/1.45 var(--f-sans);overflow:hidden;-webkit-font-smoothing:antialiased}
+[hidden]{display:none!important}
+#globe{position:fixed;inset:0}
+#globe .cesium-widget canvas{cursor:grab}
+#globe .cesium-widget canvas:active{cursor:grabbing}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.glass{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);backdrop-filter:blur(14px) saturate(1.2);-webkit-backdrop-filter:blur(14px) saturate(1.2)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* top bar */
+.top{position:fixed;top:calc(16px + env(safe-area-inset-top,0px));left:16px;right:16px;display:flex;align-items:center;gap:10px;pointer-events:none}
+.top>*{pointer-events:auto}
+.brand{font-weight:600;font-size:15px;letter-spacing:-.01em;display:flex;align-items:center;gap:8px;margin-right:4px;pointer-events:none;text-shadow:0 1px 6px rgba(0,0,0,.6)}
+.brand svg{width:18px;height:18px}
+.pill{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 12px;border-radius:999px;font-size:12.5px;color:var(--muted);white-space:nowrap;flex-shrink:0}
+.pill i{width:7px;height:7px;border-radius:50%;background:var(--muted)}
+.pill[data-state="live"] i{background:var(--good);box-shadow:0 0 0 3px rgba(79,209,197,.18);animation:pulse 2.4s ease-in-out infinite}
+.pill[data-state="warn"] i{background:var(--warn)}
+.pill[data-state="down"] i{background:var(--bad)}
+.pill b{color:var(--text);font-weight:500}
+@keyframes pulse{50%{box-shadow:0 0 0 6px rgba(79,209,197,0)}}
+.spacer{flex:1}
+.search{position:relative}
+.search input{width:220px;height:34px;border-radius:999px;border:1px solid var(--line);background:var(--panel);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);color:var(--text);padding:0 14px 0 34px;font:13px var(--f-sans);outline:none}
+.search input:focus{border-color:var(--line-2)}
+.search input::placeholder{color:var(--muted)}
+.search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:var(--muted);pointer-events:none}
+.results{position:absolute;top:calc(100% + 6px);right:0;width:260px;padding:4px;display:flex;flex-direction:column}
+.results button{all:unset;cursor:pointer;display:flex;justify-content:space-between;gap:10px;padding:8px 10px;border-radius:9px;font:13px var(--f-mono)}
+.results button span{color:var(--muted)}
+.results button:hover,.results button:focus-visible{background:rgba(255,255,255,.06)}
+.icon-btn{all:unset;pointer-events:auto;cursor:pointer;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:var(--muted)}
+.icon-btn:hover{color:var(--text)}
+.icon-btn svg{width:16px;height:16px}
+
+.area{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 4px 0 12px;border-radius:999px;font-size:13px;min-width:0;max-width:min(440px,50vw);border-color:rgba(124,196,255,.45)}
+.area>svg{width:15px;height:15px;color:var(--accent);flex-shrink:0}
+.area-text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.area-text b{font-weight:600}
+.area-text span{color:var(--muted)}
+.area-radius{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12.5px;white-space:nowrap}
+.area-radius select{background:rgba(255,255,255,.06);color:var(--text);border:1px solid var(--line-2);border-radius:8px;font:12.5px var(--f-mono);padding:3px 4px}
+.area .icon-btn{width:28px;height:28px}
+.results .sec{padding:8px 10px 4px;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.results button .kind{font:11px var(--f-sans);color:var(--muted);border:1px solid var(--line-2);border-radius:999px;padding:1px 7px;flex-shrink:0;align-self:center}
+.results button .pl{display:flex;flex-direction:column;min-width:0;font-family:var(--f-sans)}
+.results button .pl b{font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.results button .pl small{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.results{width:300px}
+
+/* info popover */
+.about-btn{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 14px 0 11px;border-radius:999px;font:500 13px var(--f-sans);color:var(--text);cursor:pointer;flex-shrink:0;pointer-events:auto}
+.about-btn svg{width:15px;height:15px;color:var(--accent)}
+.about-btn:hover{border-color:var(--line-2)}
+.info{position:fixed;inset:0;z-index:20;display:grid;place-items:center;padding:24px 16px;background:rgba(3,6,10,.55);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+.about{position:relative;width:min(580px,100%);max-height:100%;overflow-y:auto;overscroll-behavior:contain;padding:26px 28px;display:flex;flex-direction:column;gap:18px;font-size:14px;color:var(--muted);background:rgba(13,19,27,.94)}
+.about .kicker{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.about h2{margin:2px 0 0;font-size:26px;font-weight:600;color:var(--text);letter-spacing:-.02em;text-wrap:balance}
+.about .lede{margin:0;font-size:15.5px;line-height:1.5;color:var(--text);max-width:52ch}
+.about h3{margin:0 0 10px;font-size:11.5px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.about ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px}
+.about li{display:flex;gap:12px;line-height:1.45}
+.about li>i{flex-shrink:0;width:26px;height:26px;border-radius:8px;display:grid;place-items:center;background:rgba(124,196,255,.1);color:var(--accent)}
+.about li>i svg{width:15px;height:15px}
+.about li b{color:var(--text);font-weight:500}
+.about p{margin:0;line-height:1.5}
+.about a{color:var(--accent);text-decoration:none}
+.about a:hover{text-decoration:underline}
+.about .actions{position:sticky;bottom:-26px;margin:0 -28px -26px;padding:14px 28px 18px;display:flex;background:linear-gradient(rgba(13,19,27,0),rgba(13,19,27,.98) 40%)}
+.about .go{all:unset;cursor:pointer;padding:10px 20px;border-radius:10px;background:var(--accent);color:#06121c;font-weight:600;font-size:14px}
+.about .go:hover{filter:brightness(1.08)}
+.about .go:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.about .x{position:absolute;top:14px;right:14px}
+.about .src,.about .feed{font-size:12px;border-top:1px solid var(--line);padding-top:14px}
+@media (max-width:760px){.about{padding:22px 18px}.about h2{font-size:22px}.about .actions{bottom:-22px;margin:0 -18px -22px;padding:14px 18px 16px}}
+
+/* flight card */
+.card{position:fixed;left:16px;bottom:calc(86px + env(safe-area-inset-bottom,0px));width:340px;max-height:calc(100vh - 170px);overflow-y:auto;overscroll-behavior:contain;padding:16px 18px;display:flex;flex-direction:column;gap:14px}
+.card .airline{font-size:13px;color:var(--text);margin-top:4px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:11.5px;padding:2px 8px;border-radius:999px;border:1px solid var(--line-2);color:var(--muted)}
+.chip.bad{color:var(--bad);border-color:rgba(255,107,107,.45);background:rgba(255,107,107,.08)}
+.chip.warn{color:var(--warn);border-color:rgba(245,176,65,.4)}
+.eta{font-size:12.5px;color:var(--muted)}
+.eta strong{color:var(--text);font-weight:500}
+.sect{border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:8px}
+.sect h3{margin:0;font-size:11.5px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.dl{display:grid;grid-template-columns:auto 1fr;gap:5px 14px;margin:0;font-size:12.5px}
+.dl dt{color:var(--muted)}
+.dl dd{margin:0;text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.links{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px}
+.links a{color:var(--accent);text-decoration:none}
+.links a:hover{text-decoration:underline}
+.card-head{display:flex;align-items:flex-start;gap:10px}
+.card-head .cs{font-size:20px;font-weight:600;letter-spacing:-.01em;line-height:1.1}
+.card-head .sub{color:var(--muted);font-size:12.5px;margin-top:3px}
+.card-head .icon-btn{margin:-6px -8px 0 auto;width:30px;height:30px}
+.route{display:flex;flex-direction:column;gap:8px}
+.route-ends{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.route-ends b{font:500 15px var(--f-mono)}
+.route-ends span{color:var(--muted);font-size:12px;display:block;max-width:14ch;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.route-ends>div:last-child{text-align:right}
+.route-ends>div:last-child span{margin-left:auto}
+.track{position:relative;height:4px;border-radius:2px;background:rgba(255,255,255,.08)}
+.track .done{position:absolute;left:0;top:0;bottom:0;border-radius:2px;background:var(--accent)}
+.track .me{position:absolute;top:50%;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:var(--text);box-shadow:0 0 0 3px rgba(124,196,255,.3)}
+.track .dead{position:absolute;top:-3px;bottom:-3px;width:2px;margin-left:-1px;background:var(--bad);border-radius:1px}
+.metric{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line);padding-top:14px}
+.metric .label{font-size:12px;color:var(--muted)}
+.metric .big{font:500 28px/1 var(--f-mono);letter-spacing:-.02em}
+.metric .big small{font-size:14px;color:var(--muted);margin-left:3px}
+.metric .note{font-size:12.5px;color:var(--muted)}
+.metric .note strong{color:var(--text);font-weight:500}
+.meter{position:relative;height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
+.meter .fill{position:absolute;inset:0 auto 0 0;border-radius:3px;transition:width .4s ease}
+.meter .tick{position:absolute;top:0;bottom:0;width:2px;background:var(--text);opacity:.6}
+.foot{font-size:12px;color:var(--muted)}
+
+/* bottom bar */
+.bar{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:flex;align-items:center;gap:16px;padding:8px 10px 8px 8px;width:max-content;max-width:calc(100vw - 32px);flex-wrap:wrap;justify-content:center}
+.seg{display:flex;background:rgba(255,255,255,.05);border-radius:10px;padding:3px}
+.seg button{all:unset;cursor:pointer;padding:6px 12px;border-radius:8px;font-size:13px;color:var(--muted);white-space:nowrap}
+.seg button[aria-pressed="true"]{background:rgba(255,255,255,.1);color:var(--text)}
+.slider{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--muted)}
+.slider output{font:500 13px var(--f-mono);color:var(--text);min-width:8.5ch}
+input[type=range]{-webkit-appearance:none;appearance:none;width:150px;height:4px;border-radius:2px;background:rgba(255,255,255,.14);outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--text);cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.4)}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border:0;border-radius:50%;background:var(--text);cursor:pointer}
+.summary{font-size:12.5px;color:var(--muted);padding-right:6px;white-space:nowrap}
+.summary b{color:var(--text);font-weight:500}
+
+/* imagery attribution (required by Esri and Cesium) */
+#attrib{position:fixed;right:16px;bottom:calc(18px + env(safe-area-inset-bottom,0px));max-width:230px;display:flex;flex-direction:column;align-items:flex-end;gap:2px;text-align:right;font-size:10.5px;line-height:1.3;color:var(--muted);text-shadow:0 1px 3px rgba(0,0,0,.8)}
+#credits *{color:var(--muted)!important;font-size:10.5px!important}
+#credits .cesium-credit-logoContainer img{height:14px;opacity:.75;vertical-align:middle}
+#credits .cesium-credit-expand-link{text-decoration:underline}
+
+.zoom{position:fixed;right:16px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:2px;padding:4px;border-radius:12px}
+.zoom button{all:unset;cursor:pointer;width:32px;height:32px;display:grid;place-items:center;border-radius:8px;color:var(--text)}
+.zoom button:hover{background:rgba(255,255,255,.08)}
+.zoom svg{width:16px;height:16px}
+/* color key */
+.key{position:fixed;top:calc(64px + env(safe-area-inset-top,0px));right:16px;width:236px;padding:12px 14px;display:flex;flex-direction:column;gap:10px;font-size:12.5px}
+.key-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.key-head b{font-weight:600;font-size:13px}
+.key-head span{color:var(--muted);font-weight:400}
+.key-head button{all:unset;cursor:pointer;color:var(--muted);display:grid;place-items:center;width:24px;height:24px;border-radius:6px}
+.key-head button:hover{color:var(--text);background:rgba(255,255,255,.06)}
+.key-head svg{width:14px;height:14px;transition:transform .2s}
+.key[data-collapsed="true"] .key-body{display:none}
+.key[data-collapsed="true"] .key-head svg{transform:rotate(180deg)}
+.key-body{display:flex;flex-direction:column;gap:10px}
+.key-desc{margin:0;color:var(--muted);line-height:1.4}
+.key-ramp{height:8px;border-radius:4px}
+.key-ticks{display:flex;justify-content:space-between;margin-top:-4px;color:var(--muted);font:11px var(--f-mono)}
+.key-list{list-style:none;margin:0;padding:10px 0 0;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:7px}
+.key-list li{display:flex;align-items:center;gap:9px;color:var(--muted);line-height:1.3}
+.sw{width:12px;height:12px;flex-shrink:0;clip-path:polygon(50% 0,100% 100%,50% 76%,0 100%)}
+.sw.ring{clip-path:none;border:1.5px dashed var(--accent);border-radius:50%}
+.sw.line{clip-path:none;height:3px;border-radius:2px;background:var(--accent);box-shadow:0 0 6px var(--accent)}
+.sw.trail{clip-path:none;height:2px;border-radius:1px;background:linear-gradient(90deg,transparent,var(--muted))}
+@media (prefers-reduced-motion:reduce){.key-head svg{transition:none}}
+#tip{position:fixed;pointer-events:none;padding:6px 10px;border-radius:9px;font:12px var(--f-mono);white-space:nowrap;transform:translate(14px,-50%);z-index:3}
+#tip span{color:var(--muted)}
+
+@media (max-width:1320px){#attrib{bottom:calc(76px + env(safe-area-inset-bottom,0px))}}
+@media (max-width:760px){
+  .brand span{display:none}
+  .top{flex-wrap:wrap}
+  .area{order:5;max-width:none;flex:1 1 100%}
+  .search input{width:150px}
+  .card{left:16px;right:16px;width:auto;bottom:calc(132px + env(safe-area-inset-bottom,0px));max-height:45vh;overflow:auto}
+  .bar{left:16px;right:16px;transform:none;width:auto;max-width:none;gap:10px}
+  .summary{white-space:normal;text-align:center}
+  .key{width:auto;max-width:calc(100vw - 32px)}
+  #attrib{top:calc(58px + env(safe-area-inset-top,0px));bottom:auto;max-width:70vw}
+}
+@media (prefers-reduced-motion:reduce){.pill i{animation:none!important}.meter .fill{transition:none}}
+</style>
+</head>
+<body>
+<div id="globe" aria-label="Satellite globe of aircraft in flight"></div>
+<div id="attrib"><span>Imagery: Esri, Maxar, Earthstar Geographics, and the GIS User Community</span><span>Made by Raghav Vijayapal</span><div id="credits"></div></div>
+
+<header class="top">
+  <div class="brand"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.8 3 2.8 15 0 18M12 3c-2.8 3-2.8 15 0 18"/></svg><span>Fuel Horizon</span></div>
+  <div class="pill glass" id="live" data-state="wait"><i></i><span id="liveTxt">Connecting</span></div>
+  <div class="area glass" id="areaChip" hidden>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+    <span class="area-text"><b id="areaName"></b> <span id="areaKind"></span></span>
+    <label class="area-radius" id="areaRadiusWrap" hidden><span>within</span>
+      <select id="areaRadius" aria-label="Radius"><option value="25">25 km</option><option value="50">50 km</option><option value="100">100 km</option><option value="200">200 km</option><option value="400">400 km</option></select></label>
+    <button class="icon-btn" id="areaClear" aria-label="Show all traffic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </div>
+  <div class="spacer"></div>
+  <div class="search">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input id="q" placeholder="Search flights or places" autocomplete="off" spellcheck="false" aria-label="Search for a flight, country, state, city or airport">
+    <div class="results glass" id="results" hidden></div>
+  </div>
+  <button class="about-btn glass" id="infoBtn" aria-expanded="false" aria-controls="info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/></svg>About</button>
+</header>
+
+<div class="info" id="info" hidden>
+<section class="about glass" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
+  <button class="icon-btn x" id="aboutClose" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  <div><span class="kicker">About</span><h2 id="aboutTitle">Fuel Horizon</h2></div>
+  <p class="lede">Every plane in the sky right now that volunteer receivers can hear, with an estimate of how much fuel each one has left and how far it could get on batteries instead.</p>
+  <div><h3>What you're seeing</h3><ul><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 17-7-4-7 4z"/></svg></i><span><b>Each arrow is a real plane</b>, pointing the way it's flying. Up close, they turn into airplane shapes.</span></li><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="12" r="3"/><circle cx="17" cy="12" r="3"/></svg></i><span><b>Its color</b> shows fuel left, battery left, or height, depending on the mode you pick at the bottom. The key explains the colors.</span></li><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18c5-1 8-6 16-12"/></svg></i><span><b>The line behind it</b> is where it actually flew over the previous two hours.</span></li></ul></div>
+  <div><h3>Try this</h3><ul><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 9l10 4-4 2-2 4z"/><path d="M5 3v3M3 5h3"/></svg></i><span><b>Click a plane</b> to see its airline, route, fuel estimate and more.</span></li><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"/><path d="m20 20-4-4"/></svg></i><span><b>Search</b> for a flight number, or for a country, state, city or airport to see only the traffic there.</span></li><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="16" height="10" rx="2"/><path d="M22 11v2M7 10v4"/></svg></i><span><b>Switch to Electric</b> and drag the battery slider to see how many flights batteries could handle.</span></li><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 12h18M8 7l4-4 4 4M8 17l4 4 4-4"/></svg></i><span><b>Drag</b> to spin the globe. <b>Scroll or pinch</b> to zoom.</span></li></ul></div>
+  <div><h3>Good to know</h3><ul><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v5l3 2"/><circle cx="12" cy="12" r="8"/></svg></i><span><b>Fuel is an estimate.</b> Planes don't broadcast it, so it's worked out from the route and a performance model of each exact aircraft type (OpenAP, from TU Delft), tuned to match 126 published fuel figures. On flights it hadn't seen, it was off by about 5% on average. It plans fuel the way airlines do, with extra for a backup airport and 30 minutes of holding, so expect a range of about ±12%. Types it doesn't know get a rougher size-class estimate. <a href="https://claude.ai/artifact/QikibNNyAbzssymtuLyMsT" target="_blank" rel="noopener" style="color:var(--accent)">See how the model was checked ↗</a></span></li><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3L5 14h6l-1 7 8-11h-6z"/></svg></i><span><b>“Electric” is a thought experiment:</b> each plane carries a battery weighing the same as a full tank of fuel. With today's batteries, almost no airliner could finish its trip.</span></li><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8" stroke-dasharray="3 3"/></svg></i><span><b>Empty areas usually mean no receivers nearby, not no planes.</b> Positions come from volunteers' ground stations, which each hear planes within about 400 km. There are thousands across North America and Europe but very few across Africa, much of Asia and the oceans.</span></li><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12a7 7 0 0 1 14 0M8.5 12a3.5 3.5 0 0 1 7 0"/><circle cx="12" cy="12" r="1"/></svg></i><span><b>It updates as you watch.</b> The whole globe refreshes every couple of minutes, and the area you're looking at every few seconds.</span></li></ul></div>
+  <p>Fuel Horizon is one half of a project. The other half is <a href="https://claude.ai/artifact/FZrd6xYcEQB9wsWajUwTsp" target="_blank" rel="noopener">HZN-1 ↗</a>, a chip designed to pick up planes' radio signals directly.</p>
+  <div class="feed" id="feedInfo">Waiting for data.</div>
+  <div class="src">Flights: OpenSky Network, adsb.lol, VRS standing data. Aircraft and airlines: ADS-B Exchange, OpenFlights. Imagery: Esri World Imagery. Places: Natural Earth.</div>
+  <div class="actions"><button class="go" id="aboutGo">Start exploring</button></div>
+</section>
+</div>
+
+<aside class="card glass" id="card" hidden aria-live="polite"></aside>
+
+<aside class="key glass" id="key" data-collapsed="false" aria-label="Color key">
+  <div class="key-head"><b>Key <span id="keyMode">· Fuel</span></b>
+    <button id="keyToggle" aria-expanded="true" aria-controls="keyBody" aria-label="Hide key"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg></button></div>
+  <div class="key-body" id="keyBody"></div>
+</aside>
+
+<footer class="bar glass">
+  <div class="seg" role="group" aria-label="Color aircraft by">
+    <button id="mFuel" aria-pressed="true">Fuel</button>
+    <button id="mElec" aria-pressed="false">Electric</button>
+    <button id="mAlt" aria-pressed="false">Altitude</button>
+  </div>
+  <div class="seg" role="group" aria-label="Trails"><button id="trailBtn" aria-pressed="true">Trails</button></div>
+  <div class="slider" id="sliderWrap" hidden>
+    <label for="dens">Battery</label>
+    <input id="dens" type="range" min="0" max="1000" value="318">
+    <output id="densOut" for="dens">300 Wh/kg</output>
+  </div>
+  <div class="summary" id="summary"></div>
+</footer>
+<div class="zoom glass" role="group" aria-label="Zoom">
+  <button id="zIn" aria-label="Zoom in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+  <button id="zOut" aria-label="Zoom out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+</div>
+<div id="tip" class="glass" hidden></div>
+
+<script>window.CESIUM_BASE_URL="https://cdn.jsdelivr.net/npm/cesium@1.146.0/Build/Cesium/";</script>
+<script src="https://cdn.jsdelivr.net/npm/cesium@1.146.0/Build/Cesium/Cesium.js"></script>
+<script>
+(function(){
+const R_E=6371, D2R=Math.PI/180;
+const FUEL_WH=4190, ETA=0.9, RES_H=0.75, OVH_TO=0.25, OVH_TRIP=0.4;
+const TRAIL_MS=2*3600e3, CLOSE_BELOW=2.5e6; // trails: last 2 hours; below 2,500 km they're bolder and follow each plane every frame
+const MAX_EXTRAP_H=0.25, BLEND_MS=2500, FOCUS_NM=250, FT=0.3048;
+const CLS={0:'Heavy widebody',1:'Widebody',2:'Narrowbody',3:'Regional jet',4:'Turboprop',5:'Business jet',6:'Piston',7:'Helicopter'};
+const PERF={0:[150000,7600,490],1:[100000,5600,485],2:[21000,2450,450],3:[9500,1600,430],4:[5000,650,280],5:[7000,850,450],6:[150,30,120],7:[600,250,120]};
+const SIZE=[1.25,1.15,1,.95,.85,.85,.75,.75];
+const IMAGERY='https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer';
+const REFERENCE='https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer';
+const AP={};
+const $=id=>document.getElementById(id);
+const fmt=(n,d=0)=>n.toLocaleString('en-US',{maximumFractionDigits:d,minimumFractionDigits:d});
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const lerp=(a,b,t)=>a+(b-a)*t;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+// ---------- unit-sphere math (x→lon 0, y→lon 90E, z→north pole) ----------
+const fromLL=(lat,lon,o)=>{o=o||[0,0,0];const a=lat*D2R,b=lon*D2R,c=Math.cos(a);o[0]=c*Math.cos(b);o[1]=c*Math.sin(b);o[2]=Math.sin(a);return o;};
+const toLL=v=>{const l=Math.hypot(v[0],v[1],v[2]);return [Math.asin(clamp(v[2]/l,-1,1))/D2R,Math.atan2(v[1],v[0])/D2R];};
+const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+const cross=(a,b,o)=>{o=o||[0,0,0];const x=a[1]*b[2]-a[2]*b[1],y=a[2]*b[0]-a[0]*b[2],z=a[0]*b[1]-a[1]*b[0];o[0]=x;o[1]=y;o[2]=z;return o;};
+const norm=v=>{const l=Math.hypot(v[0],v[1],v[2])||1;v[0]/=l;v[1]/=l;v[2]/=l;return v;};
+const copy=(o,a)=>{o[0]=a[0];o[1]=a[1];o[2]=a[2];return o;};
+const ang=(a,b)=>Math.acos(clamp(dot(a,b),-1,1));
+function slerp(a,b,f,o){const w=ang(a,b);if(w<1e-9)return copy(o,a);const s=Math.sin(w),ka=Math.sin((1-f)*w)/s,kb=Math.sin(f*w)/s;
+  o[0]=a[0]*ka+b[0]*kb;o[1]=a[1]*ka+b[1]*kb;o[2]=a[2]*ka+b[2]*kb;return o;}
+const Z=[0,0,1];
+const validUnit=v=>Number.isFinite(v[0])&&Number.isFinite(v[1])&&Number.isFinite(v[2])&&Math.abs(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]-1)<0.01;
+const validC=c=>c&&Number.isFinite(c.x)&&Number.isFinite(c.y)&&Number.isFinite(c.z)&&(c.x*c.x+c.y*c.y+c.z*c.z)>1e12;
+function frame(P){const east=cross(Z,P);if(dot(east,east)<1e-12){east[0]=0;east[1]=1;east[2]=0;}norm(east);return {east,north:cross(P,east)};}
+
+// ---------- viewer ----------
+const viewer=new Cesium.Viewer('globe',{
+  baseLayer:false,animation:false,timeline:false,baseLayerPicker:false,geocoder:false,homeButton:false,
+  sceneModePicker:false,navigationHelpButton:false,fullscreenButton:false,infoBox:false,selectionIndicator:false,
+  skyBox:false,creditContainer:$('credits'),msaaSamples:4
+});
+viewer.useBrowserRecommendedResolution=false;
+window.fuelHorizon={viewer}; // handy for poking at the scene from the console
+const scene=viewer.scene;
+scene.backgroundColor=Cesium.Color.fromCssColorString('#060a10');
+scene.globe.baseColor=Cesium.Color.fromCssColorString('#0b1520');
+scene.globe.enableLighting=false;
+scene.globe.showGroundAtmosphere=false; // the haze washes out the dimmed imagery
+if(scene.sun)scene.sun.show=false;if(scene.moon)scene.moon.show=false;
+scene.screenSpaceCameraController.minimumZoomDistance=1500;
+scene.screenSpaceCameraController.maximumZoomDistance=4.5e7;
+scene.postProcessStages.fxaa.enabled=false;      // FXAA softens the imagery; MSAA handles edges instead
+scene.globe.maximumScreenSpaceError=1.33;         // load sharper tiles than the default (2)
+scene.globe.tileCacheSize=400;
+viewer.screenSpaceEventHandler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
+// a Mac trackpad pinch arrives as Ctrl + wheel with small deltas, which Cesium ignores; zoom proportionally instead
+scene.canvas.addEventListener('wheel',e=>{
+  if(!e.ctrlKey)return;e.preventDefault();
+  const h=viewer.camera.positionCartographic.height,next=clamp(h*Math.exp(e.deltaY*0.012),1500,4.5e7);
+  viewer.camera.zoomIn(h-next);
+},{passive:false});
+viewer.camera.setView({destination:Cesium.Cartesian3.fromDegrees(10,35,1.6e7)});
+
+// satellite imagery, dimmed when zoomed out so the aircraft stay readable, plus Esri's borders & place names
+let satLayer=null,refLayer=null;
+(async()=>{
+  try{satLayer=viewer.imageryLayers.addImageryProvider(await Cesium.ArcGisMapServerImageryProvider.fromUrl(IMAGERY));}catch(e){console.warn('Imagery failed to load',e);}
+  try{refLayer=viewer.imageryLayers.addImageryProvider(await Cesium.ArcGisMapServerImageryProvider.fromUrl(REFERENCE));}catch(e){console.warn('Reference layer failed to load',e);}
+  tuneImagery();
+})();
+let zoomScale=1,usePlaneIcon=false;
+function tuneImagery(){
+  const lh=Math.log10(Math.max(viewer.camera.positionCartographic.height,1));
+  const t=clamp((lh-4.3)/(7.0-4.3),0,1); // 0 ≈ 20 km up, 1 ≈ 10,000 km up
+  if(satLayer){satLayer.brightness=lerp(1.0,.72,t);satLayer.saturation=lerp(1.0,.8,t);satLayer.contrast=lerp(1.0,1.08,t);}
+  // Esri's own detailed borders and names take over from ours once you're close
+  const tr=clamp((lh-5.8)/(6.1-5.8),0,1); // 0 ≈ 630 km, 1 ≈ 1,260 km
+  if(refLayer){refLayer.alpha=lerp(.9,0,tr);refLayer.show=refLayer.alpha>.01;}
+  // aircraft grow as you zoom in, and become airplane silhouettes below ~1,200 km
+  zoomScale=lerp(3.0,.8,clamp((lh-4.5)/(7.2-4.5),0,1));
+  const wantPlane=usePlaneIcon?lh<6.15:lh<6.0;
+  if(wantPlane!==usePlaneIcon){usePlaneIcon=wantPlane;for(const p of planes)p.bb.image=usePlaneIcon?PLANE:ARROW;}
+}
+viewer.camera.percentageChanged=0.02;
+viewer.camera.changed.addEventListener(()=>{tuneImagery();recolor();});
+
+// ---------- aircraft billboards ----------
+function icon(draw){const c=document.createElement('canvas');c.width=c.height=128;const g=c.getContext('2d');
+  g.beginPath();draw(g);g.closePath();g.lineJoin='round';g.lineWidth=10;g.strokeStyle='rgba(0,0,0,.55)';g.stroke();g.fillStyle='#fff';g.fill();return c.toDataURL();}
+const ARROW=icon(g=>{g.moveTo(64,10);g.lineTo(110,114);g.lineTo(64,90);g.lineTo(18,114);});
+const PLANE=icon(g=>{ // top-down airliner, nose up
+  g.moveTo(64,6);g.bezierCurveTo(71,6,72,16,72,26);g.lineTo(72,46);g.lineTo(120,76);g.lineTo(120,86);g.lineTo(72,72);
+  g.lineTo(72,100);g.lineTo(90,113);g.lineTo(90,121);g.lineTo(64,114);g.lineTo(38,121);g.lineTo(38,113);g.lineTo(56,100);
+  g.lineTo(56,72);g.lineTo(8,86);g.lineTo(8,76);g.lineTo(56,46);g.lineTo(56,26);g.bezierCurveTo(56,16,57,6,64,6);});
+const bbs=scene.primitives.add(new Cesium.BillboardCollection());
+const scratchPos=new Cesium.Cartesian3(),scratchCol=new Cesium.Color();
+
+// ---------- live aircraft table ----------
+const planes=[];const byHex=new Map();
+window.fuelHorizon.planes=planes;
+function setRoute(p,o,d){
+  if(o&&d&&AP[o]&&AP[d]){
+    if(p.o!==o||p.d!==d){p.o=o;p.d=d;p.A=fromLL(AP[o][2],AP[o][3]);p.B=fromLL(AP[d][2],AP[d][3]);p.Dk=ang(p.A,p.B)*R_E;}
+    const tripH=p.Dk/p.ck+OVH_TRIP;
+    if(p.fm&&p.fm[0]){p.planned=p.fm[0];p.burnEff=p.fm[7];p.needDens=usedAt(p,p.Dk)*FUEL_WH/(p.cap*ETA);}
+    else{p.burnEff=Math.min(p.burn,p.cap/(tripH+RES_H));
+      p.planned=p.burnEff*(tripH+RES_H);
+      p.needDens=p.burnEff*(p.Dk/p.ck+OVH_TO)*FUEL_WH/(p.cap*ETA);}
+    p.rem0=ang(p.P0,p.B)*R_E;
+  }else{p.o=p.d='';p.A=p.B=null;p.burnEff=p.fm?p.fm[7]:p.burn;}
+}
+const qv=[0,0,0],qT=[0,0,0];
+function predict(p,now,out,outT){
+  const hrs=clamp((now-p.t0)/3.6e6,0,MAX_EXTRAP_H);const dist=p.gs*1.852*hrs/R_E;
+  // aircraft from the fast local feed follow their reported heading; the rest follow their route to the destination
+  if(p.B&&p.src!=='r'){const tot=p.rem0/R_E;
+    if(dist>=tot){copy(out,p.B);p.landed=true;p.rem=0;}
+    else{slerp(p.P0,p.B,tot>0?dist/tot:1,out);p.landed=false;p.rem=(tot-dist)*R_E;}
+    const k=dot(out,p.B);outT[0]=p.B[0]-out[0]*k;outT[1]=p.B[1]-out[1]*k;outT[2]=p.B[2]-out[2]*k;
+    if(dot(outT,outT)<1e-12)copy(outT,p.T0);norm(outT);
+  }else{const c=Math.cos(dist),s=Math.sin(dist);
+    for(let i=0;i<3;i++){out[i]=p.P0[i]*c+p.T0[i]*s;outT[i]=p.T0[i]*c-p.P0[i]*s;}p.landed=false;
+    if(p.B)p.rem=ang(out,p.B)*R_E;}
+}
+function upsert(r,src,now){
+  const [hex,cs,type,lat,lon,alt,gs,trk,vr,cls,inf,o,d,country,tpos,squawk,fuel]=r;
+  let p=byHex.get(hex);
+  if(p&&tpos<=p.t0){p.seen=now;if(src==='r')p.seenR=now;return;}
+  if(!p){
+    p={hex,P0:[0,0,0],T0:[0,0,0],pos:[0,0,0],T:[0,0,0],corr:[0,0,0],blendAt:0,o:'',d:'',A:null,B:null,landed:false,type:'',country:'',t0:0,fresh:true};
+    p.bb=bbs.add({image:usePlaneIcon?PLANE:ARROW,width:16,height:16,alignedAxis:Cesium.Cartesian3.UNIT_Z,id:p});
+    p.idx=planes.length;planes.push(p);byHex.set(hex,p);
+  }else{copy(p.corr,p.pos);p.fresh=false;}
+  p.cs=cs;p.type=type||p.type;p.alt=alt;p.gs=gs;p.trk=trk;p.vr=vr;p.cls=cls;p.inf=!!inf;if(squawk)p.sq=squawk;
+  if(country)p.country=country;
+  const pf=PERF[cls];p.burn=pf[1];p.ck=pf[2]*1.852;
+  p.fm=Array.isArray(fuel)&&fuel[8]?fuel:null;p.cap=p.fm?p.fm[6]:pf[0];
+  fromLL(lat,lon,p.P0);
+  const f=frame(p.P0);const c=Math.cos(trk*D2R),s=Math.sin(trk*D2R);
+  for(let i=0;i<3;i++)p.T0[i]=f.north[i]*c+f.east[i]*s;
+  p.t0=tpos;p.seen=now;if(src==='r')p.seenR=now;p.src=src;
+  if(!p.hist)p.hist=[];
+  if(!p.hist.length||tpos>p.hist[p.hist.length-1][3]+5000){p.hist.push([lat,lon,alt,tpos]);
+    while(p.hist.length&&p.hist[0][3]<now-TRAIL_MS)p.hist.shift();p.histVer=(p.histVer||0)+1;}
+  setRoute(p,o,d);
+  if(!p.fresh){predict(p,now,qv,qT);for(let i=0;i<3;i++)p.corr[i]-=qv[i];p.blendAt=now;}
+}
+function removePlane(p){
+  bbs.remove(p.bb);if(p.trail)trailsColl.remove(p.trail);
+  const last=planes.pop();
+  if(last!==p){planes[p.idx]=last;last.idx=p.idx;}
+  byHex.delete(p.hex);
+  if(state.sel===p)select(null);
+  if(state.hover===p)state.hover=null;
+}
+// per-aircraft model from the server: [takeoff, trip, reserve, toc km, toc fuel, cruise kg/km, tank, burn now kg/h, label, ±]
+function usedAt(p,flown){const f=p.fm;const taxi=Math.max(0,f[0]-f[1]-f[2]);
+  const x=flown<f[3]?f[4]*flown/Math.max(f[3],1e-6):f[4]+(flown-f[3])*f[5];return taxi+Math.min(x,f[1]);}
+function fuelState(p){
+  const flown=Math.max(0,p.Dk-p.rem);
+  if(p.fm&&p.fm[0]){const f=p.fm;const used=Math.min(f[0],usedAt(p,flown));const rem=f[0]-used;const u=f[9]*f[0];
+    return {flown,used,rem,frac:rem/f[0],tank:rem/f[6],reserve:f[2],lo:Math.max(0,rem-u),hi:Math.min(f[6],rem+u)};}
+  const used=Math.min(p.planned,p.burnEff*(flown/p.ck+OVH_TO));
+  const rem=p.planned-used;
+  return {flown,used,rem,frac:rem/p.planned,tank:rem/p.cap,reserve:p.burnEff*RES_H};
+}
+function elecState(p,dens){
+  const Eb=p.cap*dens*ETA;
+  let xdead;
+  if(p.fm&&p.fm[0]){const f=p.fm;const budget=Eb/FUEL_WH-Math.max(0,f[0]-f[1]-f[2]);
+    xdead=budget<=0?0:budget<=f[4]?f[3]*budget/Math.max(f[4],1e-6):f[3]+(budget-f[4])/f[5];}
+  else xdead=(Eb/FUEL_WH/p.burnEff-OVH_TO)*p.ck;
+  if(!p.B) return {endH:Eb/FUEL_WH/p.burnEff,xdead};
+  const fs=fuelState(p);
+  return {batt:1-fs.used*FUEL_WH/Eb,xdead,feasible:xdead>=p.Dk};
+}
+
+// ---------- state ----------
+const state={mode:'fuel',dens:300,sel:null,hover:null};
+const feed={globalAt:0,regionAt:0,gT:0,globalNote:'',regionNote:'',down:false,started:false};
+const ago=ms=>{const s=Math.max(0,Math.round(ms/1000));return s<90?s+' s':Math.round(s/60)+' min';};
+
+// ---------- motion ----------
+// `all` updates every aircraft; otherwise only those on the visible side of the globe, which keeps
+// per-frame updates cheap when zoomed in. Visible aircraft also turn smoothly every frame when close.
+const nadir=[0,0,0];
+function step(now,all,close){
+  const cw=viewer.camera.positionWC,cl=Math.hypot(cw.x,cw.y,cw.z);
+  nadir[0]=cw.x/cl;nadir[1]=cw.y/cl;nadir[2]=cw.z/cl;
+  const lim=Math.cos(Math.acos(clamp(6371000/cl,0,1))+0.03);
+  for(const p of planes){
+    const near=dot(p.pos,nadir)>lim;
+    if(!all&&!near)continue;
+    predict(p,now,p.pos,p.T);
+    if(p.blendAt){const k=(now-p.blendAt)/BLEND_MS;
+      if(k>=1)p.blendAt=0;else{const e=k*k*(3-2*k);for(let i=0;i<3;i++)p.pos[i]+=p.corr[i]*(1-e);norm(p.pos);}}
+    if(!validUnit(p.pos)){ // recover from any bad blend or input instead of handing NaN to the renderer
+      if(!validUnit(p.P0)){p.bb.show=false;continue;}copy(p.pos,p.P0);p.blendAt=0;}
+    if(p.landed){p.bb.show=false;continue;}
+    const ll=toLL(p.pos);
+    p.bb.position=Cesium.Cartesian3.fromDegrees(ll[1],ll[0],p.alt*FT,undefined,scratchPos);
+    if(close&&near){const f=frame(p.pos);p.bb.rotation=-Math.atan2(dot(p.T,f.east),dot(p.T,f.north));}
+  }
+}
+
+// ---------- colors ----------
+const C_HI=[.31,.82,.77],C_MID=[.96,.69,.25],C_LO=[1,.42,.42],C_DIM=[.70,.75,.80],C_DEAD=[.62,.27,.29];
+function ramp(t,out){t=clamp(t,0,1);let a,b,f;if(t<.5){a=C_LO;b=C_MID;f=t/.5;}else{a=C_MID;b=C_HI;f=(t-.5)/.5;}
+  out[0]=a[0]+(b[0]-a[0])*f;out[1]=a[1]+(b[1]-a[1])*f;out[2]=a[2]+(b[2]-a[2])*f;return out;}
+const A_LO=[.98,.80,.08],A_MID=[.20,.83,.60],A_HI=[.38,.65,.98]; // yellow near the ground → green → blue at cruise; white stays reserved for the selected flight
+function altRamp(ft,out){const t=clamp(ft/40000,0,1);let a,b,f;if(t<.5){a=A_LO;b=A_MID;f=t/.5;}else{a=A_MID;b=A_HI;f=(t-.5)/.5;}
+  out[0]=a[0]+(b[0]-a[0])*f;out[1]=a[1]+(b[1]-a[1])*f;out[2]=a[2]+(b[2]-a[2])*f;return out;}
+const rgb=c=>'rgb('+c.map(v=>Math.round(v*255)).join(',')+')';
+const tmpC=[0,0,0];
+function recolor(){
+  for(const p of planes){
+    if(p.landed||(area.on&&!p.inA&&p!==state.sel)){p.bb.show=false;continue;}
+    p.bb.show=true;
+    let s=SIZE[p.cls],c=tmpC,a=1,t=null,tk; // t: position on the color scale, bucketed for the trail
+    if(state.mode==='alt'){t=clamp(p.alt/40000,0,1);altRamp(p.alt,c);tk='a';}
+    else if(!p.B){c=C_DIM;a=.55;s*=.85;tk='dim';}
+    else if(state.mode==='fuel'){t=clamp(fuelState(p).frac,0,1);ramp(t,c);tk='f';}
+    else{const e=elecState(p,state.dens);if(e.batt>0){t=clamp(e.batt,0,1);ramp(t,c);tk='f';}else{c=C_DEAD;a=.85;tk='dead';}}
+    if(p===state.sel){s=1.7;c=[1,1,1];a=1;tk='sel';t=null;}else if(p===state.hover)s*=1.4;
+    scratchCol.red=c[0];scratchCol.green=c[1];scratchCol.blue=c[2];scratchCol.alpha=a;
+    p.bb.color=scratchCol;p.bb.scale=s*zoomScale;
+    // trails share a handful of colors (8 steps per scale): every distinct material is a separate, costly draw
+    if(t===null){p.tkey=tk;p.tcol=tk==='sel'?[1,1,1]:tk==='dim'?C_DIM:C_DEAD;}
+    else{const b=Math.round(t*7);p.tkey=tk+b;p.tcol=tk==='a'?altRamp(b/7*40000,[0,0,0]):ramp(b/7,[0,0,0]);}
+    const f=frame(p.pos);p.bb.rotation=-Math.atan2(dot(p.T,f.east),dot(p.T,f.north));
+  }
+}
+
+// ---------- selected route, airports, battery marker ----------
+let routeEnts=[];
+function clearRoute(){routeEnts.forEach(e=>viewer.entities.remove(e));routeEnts=[];}
+function arcPositions(p,f0,f1,n){
+  const out=[],v=[0,0,0],cruise=Math.max(p.alt*FT,3000);
+  for(let i=0;i<=n;i++){const f=f0+(f1-f0)*(n?i/n:0);slerp(p.A,p.B,f,v);const ll=toLL(v);
+    out.push(Cesium.Cartesian3.fromDegrees(ll[1],ll[0],cruise*Math.min(1,Math.sin(Math.PI*f)*5)+200));}
+  return out;
+}
+const progress=p=>p.Dk>0?clamp(1-p.rem/p.Dk,0,1):0;
+const labelStyle=(text,color)=>({text,font:'500 12px "Geist Mono", monospace',fillColor:color||Cesium.Color.WHITE,showBackground:true,
+  backgroundColor:Cesium.Color.fromCssColorString('rgba(13,19,27,.85)'),backgroundPadding:new Cesium.Cartesian2(7,4),
+  pixelOffset:new Cesium.Cartesian2(0,-18),verticalOrigin:Cesium.VerticalOrigin.BOTTOM});
+function airportEnt(code){const a=AP[code];return viewer.entities.add({position:Cesium.Cartesian3.fromDegrees(a[3],a[2],50),
+  point:{pixelSize:6,color:Cesium.Color.WHITE,outlineColor:Cesium.Color.fromCssColorString('#0b1520'),outlineWidth:2},label:labelStyle(a[0])});}
+// fill coverage gaps (e.g. over oceans) with great-circle points so the path follows the globe instead of cutting under it
+function densify(pts){
+  const out=[],A=[0,0,0],B=[0,0,0],v=[0,0,0];
+  for(let i=0;i<pts.length;i++){
+    if(i){const a=pts[i-1],b=pts[i];fromLL(a[0],a[1],A);fromLL(b[0],b[1],B);const n=Math.floor(ang(A,B)*R_E/50);
+      for(let k=1;k<n;k++){const f=k/n;slerp(A,B,f,v);const ll=toLL(v);out.push([ll[0],ll[1],a[2]+(b[2]-a[2])*f,a[3]+(b[3]-a[3])*f]);}}
+    out.push(pts[i]);
+  }
+  return out;
+}
+// remaining leg: from where the aircraft is now to the destination, descending near the end
+function remainingPositions(p){
+  const out=[],v=[0,0,0],alt=Math.max(p.alt*FT,3000);
+  for(let i=0;i<=64;i++){const f=i/64;slerp(p.pos,p.B,f,v);const ll=toLL(v);
+    out.push(Cesium.Cartesian3.fromDegrees(ll[1],ll[0],alt*Math.min(1,(1-f)*6)+200));}
+  return out;
+}
+function buildRoute(){
+  clearRoute();const p=state.sel;if(!p)return;
+  const glow=new Cesium.PolylineGlowMaterialProperty({glowPower:.22,color:Cesium.Color.fromCssColorString('#7cc4ff')});
+  if(p.track){
+    if(!p.trackC)p.trackC=densify(p.track).map(x=>Cesium.Cartesian3.fromDegrees(x[1],x[0],Math.max(x[2],0)*FT+100));
+    routeEnts.push(viewer.entities.add({polyline:{positions:new Cesium.CallbackProperty(()=>p.trackC.concat([Cesium.Cartesian3.clone(p.bb.position)]).filter(validC),false),
+      width:6,arcType:Cesium.ArcType.NONE,material:glow}}));
+  }else if(p.B){
+    routeEnts.push(viewer.entities.add({polyline:{positions:new Cesium.CallbackProperty(()=>arcPositions(p,0,progress(p),64).filter(validC),false),
+      width:7,arcType:Cesium.ArcType.NONE,material:glow}}));
+  }
+  if(!p.B)return;
+  routeEnts.push(viewer.entities.add({polyline:{positions:new Cesium.CallbackProperty(()=>(p.track?remainingPositions(p):arcPositions(p,progress(p),1,64)).filter(validC),false),
+    width:2,arcType:Cesium.ArcType.NONE,material:new Cesium.PolylineDashMaterialProperty({color:Cesium.Color.WHITE.withAlpha(.65),dashLength:14})}}));
+  routeEnts.push(airportEnt(p.o),airportEnt(p.d));
+  if(state.mode==='elec'){const e=elecState(p,state.dens);
+    if(!e.feasible){const f=clamp(e.xdead/p.Dk,0,1);const pos=arcPositions(p,f,f,0)[0];const red=Cesium.Color.fromCssColorString('#ff6b6b');
+      routeEnts.push(viewer.entities.add({position:pos,point:{pixelSize:9,color:red,outlineColor:Cesium.Color.WHITE,outlineWidth:1.5},
+        label:labelStyle(e.xdead<=0?'Battery empty in climb':'Battery empty · '+fmt(e.xdead)+' km',red)}));}}
+}
+
+// focus ring: the area adsb.lol refreshes every few seconds
+const focusEnt=viewer.entities.add({show:false,polyline:{positions:[],width:1.5,arcType:Cesium.ArcType.NONE,
+  material:new Cesium.PolylineDashMaterialProperty({color:Cesium.Color.fromCssColorString('#7cc4ff').withAlpha(.55),dashLength:10})}});
+function setFocusRing(lat,lon){
+  const c=fromLL(lat,lon),f=frame(c),a=FOCUS_NM*1.852/R_E,pts=[],v=[0,0,0];
+  for(let i=0;i<=128;i++){const t=i/128*Math.PI*2;
+    for(let j=0;j<3;j++)v[j]=c[j]*Math.cos(a)+(f.north[j]*Math.cos(t)+f.east[j]*Math.sin(t))*Math.sin(a);
+    const ll=toLL(v);pts.push(Cesium.Cartesian3.fromDegrees(ll[1],ll[0],300));}
+  focusEnt.polyline.positions=pts;focusEnt.show=true;
+}
+
+// ---------- country borders and place names (crisp text at every zoom) ----------
+async function buildPlaces(){
+  let topo,places;
+  try{[topo,places]=await Promise.all([fetch('/countries.json').then(r=>r.json()),fetch('/places.json').then(r=>r.json())]);}catch(e){return;}
+  try{await Promise.all([document.fonts.load('600 11px Geist'),document.fonts.load('500 12px Geist'),document.fonts.load('600 13px Geist')]);}catch(e){}
+  const NEAR=1.0e6; // closer than this, Esri's reference layer shows names and borders
+  const [sx,sy]=topo.transform.scale,[tx,ty]=topo.transform.translate;
+  const arcs=topo.arcs.map(a=>{let x=0,y=0;return a.map(q=>{x+=q[0];y+=q[1];return [x*sx+tx,y*sy+ty];});});
+  const uses=new Array(arcs.length).fill(0);
+  const geos=topo.objects.countries.geometries;
+  const polysOf=g=>g.type==='Polygon'?[g.arcs]:g.type==='MultiPolygon'?g.arcs:[];
+  for(const g of geos)for(const poly of polysOf(g))for(const ring of poly)for(const i of ring)uses[i<0?~i:i]++;
+  // borders: arcs shared by two countries (coastlines are left to the imagery)
+  const lines=scene.primitives.add(new Cesium.PolylineCollection());
+  const borderMat=Cesium.Material.fromType('Color',{color:Cesium.Color.WHITE.withAlpha(.32)});
+  const ddBorder=new Cesium.DistanceDisplayCondition(NEAR*.8,Number.MAX_VALUE);
+  arcs.forEach((a,i)=>{if(uses[i]<2)return;
+    lines.add({positions:Cesium.Cartesian3.fromDegreesArray(a.flat()),width:1,material:borderMat,distanceDisplayCondition:ddBorder});});
+  const labels=scene.primitives.add(new Cesium.LabelCollection());
+  const dots=scene.primitives.add(new Cesium.PointPrimitiveCollection());
+  const OUT=Cesium.Color.BLACK.withAlpha(.65),FILL=Cesium.Color.WHITE.withAlpha(.93),COUNTRY=Cesium.Color.WHITE.withAlpha(.6);
+  // country names at the centroid of each country's largest polygon; big countries show from farther away
+  for(const g of geos){
+    const name=g.properties&&g.properties.name;if(!name||name==='Antarctica')continue;
+    let best=null;
+    for(const poly of polysOf(g)){const r=[];for(const i of poly[0]){const a=i>=0?arcs[i]:arcs[~i].slice().reverse();for(let j=r.length?1:0;j<a.length;j++)r.push(a[j].slice());}
+      for(let j=1;j<r.length;j++){while(r[j][0]-r[j-1][0]>180)r[j][0]-=360;while(r[j][0]-r[j-1][0]<-180)r[j][0]+=360;}
+      let A=0,cx=0,cy=0;for(let j=0;j<r.length;j++){const [x0,y0]=r[j],[x1,y1]=r[(j+1)%r.length];const f=x0*y1-x1*y0;A+=f;cx+=(x0+x1)*f;cy+=(y0+y1)*f;}
+      if(Math.abs(A)<1e-9)continue;A/=2;const area=Math.abs(A)*Math.cos(cy/(6*A)*D2R);
+      if(!best||area>best.area)best={area,lon:cx/(6*A),lat:cy/(6*A)};}
+    if(!best||best.area<1.5)continue;
+    const far=best.area>150?3.2e7:best.area>28?1.6e7:best.area>6?7e6:3.5e6;
+    labels.add({position:Cesium.Cartesian3.fromDegrees(((best.lon+180)%360+360)%360-180,best.lat),text:name.toUpperCase().split('').join('\u200A'),
+      font:'600 11px Geist, -apple-system, sans-serif',fillColor:COUNTRY,outlineColor:OUT,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,
+      horizontalOrigin:Cesium.HorizontalOrigin.CENTER,verticalOrigin:Cesium.VerticalOrigin.CENTER,distanceDisplayCondition:new Cesium.DistanceDisplayCondition(NEAR,far)});
+  }
+  // cities: the biggest show from orbit, smaller ones appear as you zoom in
+  const FAR=[2.6e7,1.9e7,9e6,5e6,3e6];
+  for(const [name,lat,lon,rank,,cap] of places){
+    const far=FAR[rank]||1.8e6,big=rank<=1;
+    const dd=new Cesium.DistanceDisplayCondition(NEAR,far),pos=Cesium.Cartesian3.fromDegrees(lon,lat);
+    dots.add({position:pos,pixelSize:big?5:4,color:FILL,outlineColor:OUT,outlineWidth:1,distanceDisplayCondition:dd});
+    labels.add({position:pos,text:name,font:(big||cap?'600 13px':'500 12px')+' Geist, -apple-system, sans-serif',fillColor:FILL,outlineColor:OUT,outlineWidth:3,
+      style:Cesium.LabelStyle.FILL_AND_OUTLINE,horizontalOrigin:Cesium.HorizontalOrigin.LEFT,verticalOrigin:Cesium.VerticalOrigin.CENTER,
+      pixelOffset:new Cesium.Cartesian2(7,0),distanceDisplayCondition:dd});
+  }
+}
+
+// ---------- trails: each aircraft's recent reported path, fading toward the tail ----------
+const trailsColl=scene.primitives.add(new Cesium.PolylineCollection());
+const trailMats=new Map();
+function trailMat(k,c,close){ // one shared material per color step keeps the trails batched
+  const key=k+(close?'c':'f');let m=trailMats.get(key);
+  // a minimal fade (transparent at the tail, solid at the plane); Cesium's general 'Fade' material is ~4x slower here
+  if(!m){m=new Cesium.Material({translucent:true,fabric:{type:'TrailFade',uniforms:{color:new Cesium.Color(c[0],c[1],c[2],close?.85:.55)},
+    source:'czm_material czm_getMaterial(czm_materialInput materialInput){czm_material m=czm_getDefaultMaterial(materialInput);m.diffuse=color.rgb;m.alpha=color.a*materialInput.st.s;return m;}'}});
+    trailMats.set(key,m);}
+  return {m,key};
+}
+// points at least `gap` ms apart, within the trail window; the newest report is always kept
+function thinHist(h,now,gap){const out=[];let last=-1e15;
+  for(let i=0;i<h.length;i++){const x=h[i];if(now-x[3]>TRAIL_MS)continue;if(x[3]-last>=gap||i===h.length-1){out.push(x);last=x[3];}}return out;}
+let trailsClose=null,trailsWanted=true;
+try{trailsWanted=localStorage.getItem('fh-trails')!=='off';}catch(e){}
+function updateTrails(now){
+  trailsColl.show=trailsWanted;if(!trailsWanted)return;
+  const close=viewer.camera.positionCartographic.height<CLOSE_BELOW;
+  const modeChanged=close!==trailsClose;trailsClose=close;
+  const cw=viewer.camera.positionWC,cl=Math.hypot(cw.x,cw.y,cw.z);
+  nadir[0]=cw.x/cl;nadir[1]=cw.y/cl;nadir[2]=cw.z/cl;
+  const lim=Math.cos(Math.acos(clamp(6371000/cl,0,1))+0.03);
+  for(const p of planes){
+    const showFull=p===state.sel&&p.track; // the selected flight shows its full path instead
+    if(p.landed||showFull||(area.on&&!p.inA)||!p.hist||p.hist.length<2||dot(p.pos,nadir)<=lim){if(p.trail)p.trail.show=false;continue;}
+    const tm=trailMat(p.tkey||'dim',p.tcol||C_DIM,close);
+    // zoomed out, a trail is only rebuilt when the aircraft reports a new position; zoomed in it follows the plane
+    if(p.trail&&!close&&!modeChanged&&p.trailVer===p.histVer){
+      if(p.trailKey!==tm.key){p.trail.material=tm.m;p.trailKey=tm.key;}
+      p.trail.show=true;continue;}
+    if(p.trailVer!==p.histVer||modeChanged){p.trailVer=p.histVer;
+      p.histC=thinHist(p.hist,now,close?15e3:60e3).map(h=>Cesium.Cartesian3.fromDegrees(h[1],h[0],h[2]*FT));}
+    if(p.histC.length<1){if(p.trail)p.trail.show=false;continue;}
+    const head=p.bb.position,positions=p.histC.filter(validC);
+    if(validC(head))positions.push(Cesium.Cartesian3.clone(head));
+    if(positions.length<2){if(p.trail)p.trail.show=false;continue;}
+    if(!p.trail){p.trail=trailsColl.add({width:close?2:1.25,positions,material:tm.m,id:p});p.trailKey=tm.key;}
+    else{p.trail.positions=positions;if(modeChanged)p.trail.width=close?2:1.25;if(p.trailKey!==tm.key){p.trail.material=tm.m;p.trailKey=tm.key;}}
+    p.trail.show=true;
+  }
+}
+// paths come from the server's memory of every report (kept 2 hours, and across restarts), merged with this page's own
+function decodeTrail(f){const out=[];let t=0,la=0,lo=0,al=0;
+  for(let i=0;i+3<f.length;i+=4){t+=f[i];la+=f[i+1];lo+=f[i+2];al+=f[i+3];out.push([la/1e4,lo/1e4,al,t*1000]);}return out;}
+function mergeTrails(j){
+  const now=Date.now();
+  for(const hex in j){const p=byHex.get(hex);if(!p)continue;
+    const srv=decodeTrail(j[hex]);if(!srv.length)continue;
+    const lastT=srv[srv.length-1][3],mine=(p.hist||[]).filter(h=>h[3]>lastT+5000);
+    if(!p.hist||!p.hist.length||srv[0][3]<p.hist[0][3]){p.hist=srv.concat(mine).filter(h=>now-h[3]<TRAIL_MS);p.histVer=(p.histVer||0)+1;}}
+}
+async function pullAllTrails(){ // once, when the first traffic arrives: every aircraft's history, one point a minute
+  try{mergeTrails(await (await fetch('/api/trails?all=1',{cache:'no-store'})).json());}catch(e){}
+}
+async function pullTrails(){ // zoomed in: denser paths for the area in view
+  const c=viewer.camera.positionCartographic;
+  if(!document.hidden&&c.height<CLOSE_BELOW){
+    const r=Math.min(4000,R_E*Math.acos(R_E/(R_E+c.height/1000)));
+    try{mergeTrails(await (await fetch('/api/trails?lat='+(c.latitude/D2R).toFixed(2)+'&lon='+(c.longitude/D2R).toFixed(2)+'&r='+Math.round(r),{cache:'no-store'})).json());}catch(e){}
+  }
+  setTimeout(pullTrails,8000);
+}
+// the selected aircraft's actual path since takeoff (from adsb.lol), drawn instead of the estimated route line
+async function loadTrack(p){
+  p.trackAt=Date.now();
+  try{const j=await (await fetch('/api/trace?hex='+p.hex,{cache:'no-store'})).json();
+    if(j.points&&j.points.length>1){p.track=j.points;p.trackC=null;if(state.sel===p){buildRoute();renderCard();}}}catch(e){}
+}
+
+// ---------- isolate an area: a country, state, city or airport ----------
+const area={on:false,rings:[],circle:null,ents:[],name:'',kind:'',label:''};
+function ringsOf(polys){const out=[];for(const poly of polys)for(const r of poly){let a=1e9,b=-1e9,c=1e9,d=-1e9;
+  for(const [x,y] of r){if(x<a)a=x;if(x>b)b=x;if(y<c)c=y;if(y>d)d=y;}out.push({pts:r,minX:a,maxX:b,minY:c,maxY:d});}return out;}
+function pip(r,x,y){let c=false;for(let i=0,j=r.length-1;i<r.length;j=i++){const xi=r[i][0],yi=r[i][1],xj=r[j][0],yj=r[j][1];
+  if((yi>y)!==(yj>y)&&x<(xj-xi)*(y-yi)/(yj-yi)+xi)c=!c;}return c;}
+function inArea(p){
+  if(!area.on)return true;
+  if(area.circle){const c=area.circle;return ang(p.pos,c.v)*R_E<=c.km;}
+  const ll=toLL(p.pos),lat=ll[0];let inside=false;
+  for(const r of area.rings){if(lat<r.minY||lat>r.maxY)continue;
+    for(const L of [ll[1],ll[1]+360,ll[1]-360])if(L>=r.minX&&L<=r.maxX){if(pip(r.pts,L,lat))inside=!inside;break;}}
+  return inside;
+}
+function refreshArea(){for(const p of planes)p.inA=inArea(p);}
+function drawArea(){
+  area.ents.forEach(e=>viewer.entities.remove(e));area.ents=[];if(!area.on)return;
+  const mat=Cesium.Color.fromCssColorString('#7cc4ff').withAlpha(.95);
+  const lines=area.circle?[circlePts(area.circle)]:area.rings.map(r=>Cesium.Cartesian3.fromDegreesArray(r.pts.flat()));
+  for(const positions of lines)area.ents.push(viewer.entities.add({polyline:{positions,width:2.5,arcType:Cesium.ArcType.NONE,material:mat}}));
+}
+function circlePts(c){const f=frame(c.v),a=c.km/R_E,pts=[],v=[0,0,0];
+  for(let i=0;i<=180;i++){const t=i/180*Math.PI*2;for(let j=0;j<3;j++)v[j]=c.v[j]*Math.cos(a)+(f.north[j]*Math.cos(t)+f.east[j]*Math.sin(t))*Math.sin(a);
+    const ll=toLL(v);pts.push(Cesium.Cartesian3.fromDegrees(ll[1],ll[0],0));}return pts;}
+async function setArea(id){
+  let a;try{a=await (await fetch('/api/area?id='+encodeURIComponent(id))).json();}catch(e){return;}
+  if(!a||!a.center)return;
+  area.on=true;area.kind=a.kind;area.name=a.kind==='Airport'?a.name.split(' · ')[0]:a.name;
+  area.circle=a.radius?{v:fromLL(a.center[0],a.center[1]),km:a.radius}:null;area.rings=a.polys?ringsOf(a.polys):[];
+  $('areaName').textContent=a.kind==='Airport'?a.name:a.name;
+  $('areaKind').textContent=a.radius?'':'· '+(a.detail?a.detail.split(',')[0]:a.kind);
+  $('areaRadiusWrap').hidden=!a.radius;if(a.radius)$('areaRadius').value=String(a.radius);
+  $('areaChip').hidden=false;refreshArea();drawArea();if(state.sel&&!state.sel.inA)select(null);else{recolor();summary();}
+  const ext=(a.radius||a.extent||500)*1000;
+  viewer.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(a.center[1],a.center[0],clamp(ext*2.6,2.5e5,1.6e7)),duration:1.6});
+}
+function clearArea(){area.on=false;area.circle=null;area.rings=[];$('areaChip').hidden=true;drawArea();refreshArea();recolor();summary();}
+$('areaClear').addEventListener('click',clearArea);
+$('areaRadius').addEventListener('change',()=>{if(!area.circle)return;area.circle.km=+$('areaRadius').value;refreshArea();drawArea();recolor();summary();
+  viewer.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(toLL(area.circle.v)[1],toLL(area.circle.v)[0],clamp(area.circle.km*2600,2.5e5,1.6e7)),duration:1});});
+
+// ---------- summary line ----------
+function summary(){
+  let all=0,air=0,burn=0,rt=0,feas=0;
+  for(const p of planes){if(p.landed)continue;all++;if(area.on&&!p.inA)continue;air++;burn+=p.burnEff;if(p.B){rt++;if(elecState(p,state.dens).feasible)feas++;}}
+  const el=$('summary');
+  $('liveTxt').innerHTML=feed.down?'Offline':!feed.started?'Connecting':'Live · <b class="num">'+fmt(all)+'</b>';
+  $('live').title=feed.globalNote||feed.regionNote||'';
+  if(!all){el.textContent='Waiting for aircraft…';return;}
+  const where=!area.on?'':area.circle?' within '+fmt(area.circle.km)+' km of '+esc(area.name):' over '+esc(area.name);
+  if(state.mode==='fuel')el.innerHTML='<b class="num">'+fmt(air)+'</b> aircraft'+where+' · about <b class="num">'+fmt(burn/1000,burn<1e4?1:0)+' t</b> of fuel burned per hour';
+  else if(state.mode==='elec')el.innerHTML='<b class="num">'+fmt(feas)+'</b> of '+fmt(rt)+' flights'+where+' ('+fmt(rt?feas/rt*100:0,1)+'%) could finish on batteries';
+  else el.innerHTML='<b class="num">'+fmt(air)+'</b> aircraft'+(where||' in the air');
+}
+
+// ---------- flight card ----------
+const card=$('card');
+const dur=h=>{const m=Math.max(0,Math.round(h*60));return m<60?m+' min':Math.floor(m/60)+' h '+String(m%60).padStart(2,'0')+' min';};
+const localTime=t=>new Date(t).toLocaleTimeString([],{hour:'numeric',minute:'2-digit',timeZoneName:'short'});
+const EMERGENCY={'7500':'Hijack code 7500','7600':'Radio failure 7600','7700':'Emergency 7700'};
+const row=(k,v)=>v===''||v==null?'':'<dt>'+esc(k)+'</dt><dd>'+v+'</dd>';
+function cardHTML(){
+  const p=state.sel;const now=Date.now();const info=p.info||{};const ac=info.aircraft||{},al=info.airline;
+  const chips=[];
+  if(EMERGENCY[p.sq])chips.push('<span class="chip bad">'+EMERGENCY[p.sq]+'</span>');
+  if(ac.mil)chips.push('<span class="chip">Military</span>');
+  if(p.inf)chips.push('<span class="chip warn">Aircraft class guessed</span>');
+  if(p.landed)chips.push('<span class="chip">Arrived</span>');
+  let h='<div class="card-head"><div><div class="cs">'+esc(p.cs)+'</div>'+
+    (al?'<div class="airline">'+esc(al.name)+'</div>':'')+
+    '<div class="sub">'+esc([ac.model||p.type,CLS[p.cls]].filter(Boolean).join(' · '))+'</div></div>'+
+    '<button class="icon-btn" id="closeCard" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>';
+  if(chips.length)h+='<div class="chips">'+chips.join('')+'</div>';
+  if(p.B){const fs=fuelState(p);const prog=clamp(fs.flown/p.Dk,0,1);const e=elecState(p,state.dens);const etaH=p.rem/(Math.max(p.gs,150)*1.852);
+    h+='<div class="route"><div class="route-ends"><div><b>'+esc(AP[p.o][0])+'</b><span>'+esc(AP[p.o][1])+'</span></div><div><b>'+esc(AP[p.d][0])+'</b><span>'+esc(AP[p.d][1])+'</span></div></div>'+
+      '<div class="track"><div class="done" style="width:'+prog*100+'%"></div>'+(state.mode==='elec'&&!e.feasible?'<div class="dead" style="left:'+clamp(e.xdead/p.Dk,0,1)*100+'%"></div>':'')+
+      '<div class="me" style="left:'+prog*100+'%"></div></div>'+
+      '<div class="eta">'+(p.landed?'Arrived':'Arrives about <strong>'+localTime(now+etaH*3.6e6)+'</strong> · in '+dur(etaH))+'</div></div>';}
+  h+='<div class="metric">';
+  if(state.mode==='alt'){
+    h+='<span class="label">Altitude</span><div class="big">'+fmt(p.alt)+'<small>ft</small></div><div class="note"><strong class="num">'+fmt(p.gs)+' kt</strong> ground speed · '+(p.vr>300?'climbing':p.vr<-300?'descending':'level')+'</div>';
+  }else if(!p.B){
+    h+='<span class="label">'+(state.mode==='fuel'?'Fuel on board':'Electric version')+'</span><div class="note">No route on file for this callsign, so there\'s nothing to estimate from. '+
+      (state.mode==='fuel'?(p.fm?'It\'s burning about <strong class="num">'+fmt(p.burnEff)+' kg/h</strong> right now.':'Typical burn for this class is <strong class="num">'+fmt(p.burn)+' kg/h</strong>.'):'At '+fmt(state.dens)+' Wh/kg it could fly about <strong class="num">'+fmt(elecState(p,state.dens).endH*60)+' min</strong>.')+'</div>';
+  }else if(state.mode==='fuel'){const fs=fuelState(p);const toRes=(fs.rem-fs.reserve)/p.burnEff;
+    h+='<span class="label">Estimated fuel on board</span><div class="big">'+fmt(fs.rem)+'<small>kg</small></div>'+
+      '<div class="meter"><div class="fill" style="width:'+clamp(fs.tank,0,1)*100+'%;background:'+rgb(ramp(fs.frac,[0,0,0]))+'"></div><div class="tick" style="left:'+clamp(fs.reserve/p.cap,0,1)*100+'%"></div></div>'+
+      '<div class="note"><strong>'+fmt(fs.tank*100)+'%</strong> of tank · '+(toRes>0?'<strong>'+fmt(toRes,1)+' h</strong> until reserve':'on reserve')+' · '+fmt(p.burnEff)+' kg/h'+(p.fm?' now':'')+'</div>'+
+      (fs.hi!==undefined?'<div class="note">Likely <strong class="num">'+fmt(Math.round(fs.lo/100)*100)+'–'+fmt(Math.round(fs.hi/100)*100)+' kg</strong> · '+esc(p.fm[8])+'</div>':'<div class="note">Rough class estimate (no model for this type)</div>');
+  }else{const e=elecState(p,state.dens);const col=e.batt>0?rgb(ramp(e.batt,[0,0,0])):'var(--bad)';
+    h+='<span class="label">Battery left at '+fmt(state.dens)+' Wh/kg</span><div class="big" style="color:'+col+'">'+(e.batt>0?fmt(e.batt*100):'0')+'<small>%</small></div>'+
+      '<div class="meter"><div class="fill" style="width:'+clamp(e.batt,0,1)*100+'%;background:'+col+'"></div></div>'+
+      '<div class="note">'+(e.feasible?'<strong>Makes it.</strong> ':'<strong>Runs out '+(e.xdead>0?'after '+fmt(e.xdead)+' km':'before cruise')+'.</strong> ')+'This flight needs <strong class="num">'+fmt(p.needDens)+' Wh/kg</strong>.</div>';}
+  h+='</div>';
+  // live state
+  const ll=toLL(p.pos);const vr=p.vr>300?'▲ '+fmt(p.vr)+' ft/min':p.vr<-300?'▼ '+fmt(-p.vr)+' ft/min':'Level';
+  h+='<div class="sect"><h3>Right now</h3><dl class="dl">'+row('Altitude',fmt(p.alt)+' ft')+row('Ground speed',fmt(p.gs)+' kt · '+fmt(p.gs*1.852)+' km/h')+
+    row('Vertical rate',vr)+row('Heading',fmt(p.trk)+'°')+row('Squawk',p.sq?esc(p.sq):'')+
+    row('Position',fmt(Math.abs(ll[0]),2)+'°'+(ll[0]>=0?'N':'S')+' '+fmt(Math.abs(ll[1]),2)+'°'+(ll[1]>=0?'E':'W'))+
+    row('Last report',ago(now-p.t0)+' ago · '+(p.src==='r'?'adsb.lol':'OpenSky'))+'</dl></div>';
+  // trip estimates
+  if(p.B){const fs=fuelState(p);
+    h+='<div class="sect"><h3>Trip <span style="text-transform:none;letter-spacing:0">(estimated)</span></h3><dl class="dl">'+
+      row('Distance',fmt(fs.flown)+' of '+fmt(p.Dk)+' km')+row('Time to go',p.landed?'—':dur(p.rem/(Math.max(p.gs,150)*1.852)))+
+      row('Fuel burned so far',fmt(fs.used)+' kg')+row('CO₂ so far',fmt(fs.used*3.16/1000,1)+' t')+
+      row('Fuel at takeoff',fmt(p.planned)+' kg')+row('Fuel model',p.fm?esc(p.fm[8])+' · ±'+fmt(p.fm[9]*100)+'%':'Class average')+'</dl></div>';}
+  // aircraft
+  h+='<div class="sect"><h3>Aircraft</h3><dl class="dl">'+row('Model',esc(ac.model||p.type||'Unknown'))+row('Type code',esc(p.type||''))+
+    row('Registration',esc(ac.reg||''))+row('Operator',esc(ac.operator||''))+row('Built',esc(ac.year||''))+
+    row('Registered in',esc(p.country||''))+row('ICAO address',p.hex.toUpperCase())+
+    (al&&al.country?row('Airline country',esc(al.country)):'')+'</dl></div>';
+  const csq=encodeURIComponent(p.cs);
+  h+='<div class="links"><a href="https://adsb.lol/?icao='+p.hex+'" target="_blank" rel="noopener">Track on adsb.lol ↗</a>'+
+    (/^[A-Z]{3}\d/.test(p.cs)?'<a href="https://www.flightaware.com/live/flight/'+csq+'" target="_blank" rel="noopener">FlightAware ↗</a>':'')+'</div>'+
+    '<div class="foot">'+(p.track?'Path since takeoff from adsb.lol.':p.B?'Path is estimated from the route.':'No route on file.')+'</div>';
+  return h;
+}
+function renderCard(){
+  if(!state.sel){card.hidden=true;return;}
+  const st=card.scrollTop; // the card refreshes every second; keep the reader's place
+  card.hidden=false;card.innerHTML=cardHTML();card.scrollTop=st;
+  $('closeCard').addEventListener('click',()=>select(null));
+}
+async function loadInfo(p){
+  p.infoReq=true;
+  try{p.info=await (await fetch('/api/flight?hex='+p.hex+'&cs='+encodeURIComponent(p.cs),{cache:'no-store'})).json();if(state.sel===p)renderCard();}catch(e){p.infoReq=false;}
+}
+
+// ---------- interaction ----------
+function flyTo(p){
+  const ll=toLL(validUnit(p.pos)?p.pos:p.P0);if(!Number.isFinite(ll[0])||!Number.isFinite(ll[1]))return;
+  const h=clamp(viewer.camera.positionCartographic.height,1.2e6,8e6);
+  viewer.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(ll[1],ll[0],h),duration:1.6});
+}
+function select(p,doFly){
+  state.sel=p||null;buildRoute();recolor();renderCard();
+  if(p&&(!p.trackAt||Date.now()-p.trackAt>60000))loadTrack(p);
+  if(p&&!p.infoReq)loadInfo(p);
+  if(p&&doFly)flyTo(p);
+}
+function pickPlane(pos,tolerant){
+  for(const o of scene.drillPick(pos,4))if(o&&o.id&&o.id.hex)return o.id; // skip labels and borders on top
+  if(!tolerant)return null;
+  // small icons are hard to hit: take the nearest aircraft within 12 px of the click
+  const toWin=Cesium.SceneTransforms.worldToWindowCoordinates||Cesium.SceneTransforms.wgs84ToWindowCoordinates;
+  const cw=viewer.camera.positionWC,cl=Math.hypot(cw.x,cw.y,cw.z);
+  nadir[0]=cw.x/cl;nadir[1]=cw.y/cl;nadir[2]=cw.z/cl;const lim=Math.cos(Math.acos(clamp(6371000/cl,0,1)));
+  let best=null,bd=144;const w=new Cesium.Cartesian2();
+  for(const p of planes){if(p.landed||(area.on&&!p.inA)||dot(p.pos,nadir)<=lim)continue;
+    if(!toWin(scene,p.bb.position,w))continue;const d=(w.x-pos.x)**2+(w.y-pos.y)**2;if(d<bd){bd=d;best=p;}}
+  return best;
+}
+const tip=$('tip');const handler=new Cesium.ScreenSpaceEventHandler(scene.canvas);
+let hoverPos=null,hoverQueued=false;
+handler.setInputAction(m=>{hoverPos=m.endPosition;if(hoverQueued)return;hoverQueued=true;
+  requestAnimationFrame(()=>{hoverQueued=false;if(!hoverPos)return;const p=pickPlane(hoverPos);
+    if(p!==state.hover){state.hover=p;recolor();}
+    scene.canvas.style.cursor=p?'pointer':'';
+    if(p){tip.hidden=false;tip.style.left=hoverPos.x+'px';tip.style.top=hoverPos.y+'px';
+      tip.innerHTML=esc(p.cs)+' <span>'+esc(p.B?AP[p.o][0]+' → '+AP[p.d][0]:(p.type||CLS[p.cls]))+' · click for details</span>';}else tip.hidden=true;});
+},Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+handler.setInputAction(c=>select(pickPlane(c.position,true)),Cesium.ScreenSpaceEventType.LEFT_CLICK);
+scene.canvas.addEventListener('pointerleave',()=>{hoverPos=null;tip.hidden=true;});
+
+const MODES={mFuel:'fuel',mElec:'elec',mAlt:'alt'};
+Object.keys(MODES).forEach(id=>$(id).addEventListener('click',()=>{state.mode=MODES[id];
+  Object.keys(MODES).forEach(k=>$(k).setAttribute('aria-pressed',k===id?'true':'false'));
+  $('sliderWrap').hidden=state.mode!=='elec';renderKey();recolor();buildRoute();renderCard();summary();}));
+const dens=$('dens');
+const sliderToDens=v=>Math.round(Math.pow(10,2+v/1000*1.5)/10)*10; // 100 → ~3,160 Wh/kg
+function onDens(){state.dens=sliderToDens(+dens.value);$('densOut').textContent=fmt(state.dens)+' Wh/kg';recolor();summary();renderCard();buildRoute();renderKey();}
+dens.addEventListener('input',onDens);
+
+function zoomBy(f){const c=viewer.camera.positionCartographic;const h=clamp(c.height*f,1500,4.5e7);
+  viewer.camera.flyTo({destination:Cesium.Cartesian3.fromRadians(c.longitude,c.latitude,h),orientation:{heading:viewer.camera.heading,pitch:viewer.camera.pitch,roll:0},duration:.6});}
+$('zIn').addEventListener('click',()=>zoomBy(.4));
+$('zOut').addEventListener('click',()=>zoomBy(2.5));
+addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'||e.metaKey||e.ctrlKey)return;
+  if(e.key==='+'||e.key==='=')zoomBy(.4);else if(e.key==='-'||e.key==='_')zoomBy(2.5);});
+const trailBtn=$('trailBtn');trailBtn.setAttribute('aria-pressed',String(trailsWanted));
+trailBtn.addEventListener('click',()=>{trailsWanted=!trailsWanted;trailBtn.setAttribute('aria-pressed',String(trailsWanted));
+  try{localStorage.setItem('fh-trails',trailsWanted?'on':'off');}catch(e){}trailsClose=null;updateTrails(Date.now());});
+const infoBtn=$('infoBtn'),info=$('info');
+function setAbout(open){info.hidden=!open;infoBtn.setAttribute('aria-expanded',String(open));if(open)$('aboutGo').focus({preventScroll:true});}
+infoBtn.addEventListener('click',()=>setAbout(info.hidden));
+$('aboutClose').addEventListener('click',()=>setAbout(false));$('aboutGo').addEventListener('click',()=>setAbout(false));
+info.addEventListener('click',e=>{if(e.target===info)setAbout(false);});
+// first visit: open the About window once, then it's one click away
+{let seen=false;try{seen=localStorage.getItem('fh-about-seen')==='1';localStorage.setItem('fh-about-seen','1');}catch(e){}if(!seen)setAbout(true);}
+const q=$('q'),res=$('results');
+let searchSeq=0;
+q.addEventListener('input',()=>{
+  const raw=q.value.trim(),s=raw.toUpperCase(),seq=++searchSeq;
+  if(s.length<2){res.textContent='';res.hidden=true;return;}
+  const flights=[];for(const p of planes){if(!p.landed&&p.cs.startsWith(s)){flights.push(p);if(flights.length>=5)break;}}
+  const render=places=>{
+    if(seq!==searchSeq)return;res.textContent='';
+    const sec=t=>{const d=document.createElement('div');d.className='sec';d.textContent=t;res.appendChild(d);};
+    if(places.length){sec('Places');places.forEach(pl=>{const b=document.createElement('button');
+      b.innerHTML='<span class="pl"><b>'+esc(pl.name)+'</b>'+(pl.detail?'<small>'+esc(pl.detail)+'</small>':'')+'</span><span class="kind">'+esc(pl.kind)+'</span>';
+      b.addEventListener('click',()=>{setArea(pl.id);res.hidden=true;q.value='';q.blur();});res.appendChild(b);});}
+    if(flights.length){sec('Flights');flights.forEach(p=>{const b=document.createElement('button');b.innerHTML=esc(p.cs)+'<span>'+esc(p.B?AP[p.o][0]+' → '+AP[p.d][0]:(p.type||CLS[p.cls]))+'</span>';
+      b.addEventListener('click',()=>{select(p,true);res.hidden=true;q.value='';q.blur();});res.appendChild(b);});}
+    res.hidden=!res.children.length;
+  };
+  render([]);
+  clearTimeout(q._t);q._t=setTimeout(async()=>{try{render(await (await fetch('/api/places?q='+encodeURIComponent(raw))).json());}catch(e){}},180);
+});
+q.addEventListener('keydown',e=>{if(e.key==='Enter'){const b=res.querySelector('button');if(b)b.click();}});
+addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(!res.hidden)res.hidden=true;else if(!info.hidden){info.hidden=true;infoBtn.setAttribute('aria-expanded','false');}else if(state.sel)select(null);else if(area.on)clearArea();});
+
+const rgba=(c,a)=>'rgba('+c.map(v=>Math.round(v*255)).join(',')+','+a+')';
+function renderKey(){
+  const grad=fn=>'linear-gradient(90deg,'+Array.from({length:24},(_,i)=>rgb(fn(i/23))).join(',')+')';
+  const fuelGrad=grad(t=>ramp(t,[0,0,0])),noRoute=[rgba(C_DIM,.55),'No route on file, so it can\'t be estimated'];
+  const K={
+    fuel:{name:'Fuel',desc:'Estimated fuel left, compared with what the flight took off with.',g:fuelGrad,ticks:['Reserve','Half','Full'],items:[noRoute]},
+    elec:{name:'Electric',desc:'Battery left if this flight were all-electric, with '+fmt(state.dens)+' Wh/kg cells.',g:fuelGrad,ticks:['Empty','Half','Full'],
+      items:[[rgb(C_DEAD),'Battery would already be empty'],noRoute]},
+    alt:{name:'Altitude',desc:'Current altitude above sea level.',g:grad(t=>altRamp(t*40000,[0,0,0])),ticks:['0 ft','20,000','40,000+'],items:[]}
+  }[state.mode];
+  $('keyMode').textContent='· '+K.name;
+  const li=(sw,text)=>'<li><span class="sw'+(sw.startsWith('.')?' '+sw.slice(1)+'"':'" style="background:'+sw+'"')+'></span>'+esc(text)+'</li>';
+  $('keyBody').innerHTML='<p class="key-desc">'+esc(K.desc)+'</p><div class="key-ramp" style="background:'+K.g+'"></div>'+
+    '<div class="key-ticks">'+K.ticks.map(t=>'<span>'+t+'</span>').join('')+'</div>'+
+    '<ul class="key-list">'+K.items.map(i=>li(i[0],i[1])).join('')+li('#ffffff','Selected flight')+li('.line','Selected flight\'s path so far')+li('.trail','Path over the last 2 hours')+
+    li('.ring','Area refreshed every few seconds')+'</ul>';
+}
+$('keyToggle').addEventListener('click',()=>{const k=$('key'),open=k.dataset.collapsed==='true';k.dataset.collapsed=String(!open);
+  $('keyToggle').setAttribute('aria-expanded',String(open));$('keyToggle').setAttribute('aria-label',open?'Hide key':'Show key');});
+if(innerWidth<=760){$('key').dataset.collapsed='true';$('keyToggle').setAttribute('aria-expanded','false');$('keyToggle').setAttribute('aria-label','Show key');}
+
+// ---------- live feed ----------
+function afterBatch(){
+  if(!feed.started&&planes.length){feed.started=true;step(Date.now(),true,false);pullAllTrails();
+    const cand=planes.filter(p=>p.B&&p.cls<=1&&p.Dk>5000).map(p=>({p,f:1-p.rem0/p.Dk})).filter(x=>x.f>.3&&x.f<.7).sort((a,b)=>b.p.Dk-a.p.Dk);
+    const start=(cand[0]&&cand[0].p)||planes.find(p=>p.B);if(start&&!area.on)select(start,true);} // don't pull the camera away from a chosen area
+  recolor();summary();
+}
+async function pullGlobal(){
+  try{
+    const r=await fetch('/api/global?since='+feed.gT,{cache:'no-store'});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const j=await r.json();feed.down=false;feed.globalNote=j.note||'';
+    if(j.p&&j.t){
+      Object.assign(AP,j.ap);const now=Date.now();const seen=new Set();
+      for(const row of j.p){upsert(row,'g',now);seen.add(row[0]);}
+      feed.gT=j.t;feed.globalAt=j.t*1000;
+      for(let i=planes.length-1;i>=0;i--){const p=planes[i];if(!seen.has(p.hex)&&!(p.seenR&&now-p.seenR<60000))removePlane(p);}
+      afterBatch();
+    }
+  }catch(e){feed.down=true;}
+  setTimeout(pullGlobal,10000);
+}
+async function pullRegion(){
+  if(!document.hidden){
+    const c=viewer.camera.positionCartographic;
+    try{
+      const r=await fetch('/api/region?lat='+(c.latitude/D2R).toFixed(2)+'&lon='+(c.longitude/D2R).toFixed(2),{cache:'no-store'});
+      if(!r.ok)throw new Error('HTTP '+r.status);
+      const j=await r.json();feed.down=false;feed.regionNote=j.note||'';
+      if(j.t&&j.t*1000!==feed.regionAt){
+        feed.regionAt=j.t*1000;Object.assign(AP,j.ap);const now=Date.now();
+        for(const row of j.p)upsert(row,'r',now);
+        if(j.center)setFocusRing(j.center[0],j.center[1]);
+        afterBatch();
+      }
+    }catch(e){feed.down=true;}
+  }
+  setTimeout(pullRegion,5000);
+}
+function feedStatus(){
+  const now=Date.now();const note=feed.globalNote||feed.regionNote;
+  $('live').dataset.state=feed.down?'down':!feed.started?'wait':note?'warn':'live';
+  $('feedInfo').textContent=feed.down?'Can\'t reach the local server. Start it with python3 fuel_horizon.py.':
+    'Whole globe updated '+(feed.globalAt?ago(now-feed.globalAt)+' ago':'–')+'. The dashed circle (the area in view) updated '+(feed.regionAt?ago(now-feed.regionAt)+' ago':'–')+'.'+(note?' '+note:'');
+}
+
+// ---------- loop ----------
+let lastStep=0,lastSlow=0,lastTrail=0;
+scene.preRender.addEventListener(()=>{
+  const now=Date.now(),close=viewer.camera.positionCartographic.height<3e6;
+  // zoomed in: visible aircraft every frame, the rest a few times a second; zoomed out, motion is sub-pixel anyway
+  if(now-lastStep>=(close?400:100)){lastStep=now;step(now,true,close);}
+  else if(close)step(now,false,true);
+  if(now-lastTrail>=(close?500:1000)){lastTrail=now;updateTrails(now);}
+  if(now-lastSlow>=1000){lastSlow=now;if(area.on)refreshArea();recolor();summary();feedStatus();if(state.sel){renderCard();if(now-(state.sel.trackAt||0)>60000)loadTrack(state.sel);}}
+});
+
+// ---------- boot ----------
+renderKey();summary();feedStatus();
+dens.value=String(Math.round(1000*(Math.log10(300)-2)/1.5));onDens();
+buildPlaces();pullGlobal();setTimeout(pullRegion,1500);setTimeout(pullTrails,3000);
+})();
+</script>
+</body>
+</html>

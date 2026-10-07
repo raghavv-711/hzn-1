@@ -1,0 +1,10 @@
+.DS_Store
+__pycache__/
+*.pyc
+.fuel-horizon-cache/
+*.bak.html
+.claude/
+# published single-file copies of the pages; the site builds its own from site-src/
+fuel-horizon.html
+fuel-model-check.html
+inside-hzn-1.html

@@ -1,0 +1,504 @@
+<title>Fuel Horizon Model Check</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one 1000px report column, like a flight-test summary: verdict and numbers, then the evidence, then method and sources */
+:root{
+  --bg:#070b11; --surface:#0d141d; --raise:#121b27; --line:rgba(146,176,208,.16); --line-strong:rgba(146,176,208,.3);
+  --text:#e6edf5; --muted:#8c9bad; --faint:#5f6d7e;
+  --accent:#7cc4ff; --accent-soft:rgba(124,196,255,.12); --raw:#a3adbb; --raw-soft:rgba(163,173,187,.16);
+  --good:#4fd1c5; --warn:#f5b041; --bad:#ff6b6b;
+  --f-sans:"Geist",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"Geist Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){
+  --bg:#f4f7fa; --surface:#ffffff; --raise:#eef3f8; --line:#dde5ee; --line-strong:#c3cfdc;
+  --text:#0c1621; --muted:#566678; --faint:#8794a3;
+  --accent:#1767ad; --accent-soft:rgba(23,103,173,.1); --raw:#7d8896; --raw-soft:rgba(125,136,150,.16);
+  --good:#0d8579; --warn:#b26a00; --bad:#c73a3a; color-scheme:light}}
+:root[data-theme="light"]{
+  --bg:#f4f7fa; --surface:#ffffff; --raise:#eef3f8; --line:#dde5ee; --line-strong:#c3cfdc;
+  --text:#0c1621; --muted:#566678; --faint:#8794a3;
+  --accent:#1767ad; --accent-soft:rgba(23,103,173,.1); --raw:#7d8896; --raw-soft:rgba(125,136,150,.16);
+  --good:#0d8579; --warn:#b26a00; --bad:#c73a3a; color-scheme:light}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font:15px/1.55 var(--f-sans);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1000px;margin:0 auto;padding:48px 20px 72px;display:flex;flex-direction:column;gap:56px}
+a{color:var(--accent);text-underline-offset:3px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+h1,h2{margin:0;font-weight:600;letter-spacing:-.022em;text-wrap:balance}
+h1{font-size:clamp(28px,4.6vw,42px);line-height:1.12;max-width:22ch}
+h2{font-size:22px;line-height:1.25}
+p{margin:0;max-width:68ch}
+.eyebrow{font:500 12px/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.eyebrow b{color:var(--accent);font-weight:500}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+header{display:flex;flex-direction:column;gap:18px}
+.lede{font-size:17px;color:var(--muted);max-width:62ch}
+.lede strong{color:var(--text);font-weight:500}
+
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.stat{padding:18px 20px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.stat+.stat{border-left:1px solid var(--line)}
+.stat .v{font:600 30px/1 var(--f-mono);font-variant-numeric:tabular-nums;letter-spacing:-.03em;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.stat .v s{font-size:17px;font-weight:500;color:var(--raw);text-decoration-thickness:1.5px}
+.stat .v .to{font-size:15px;color:var(--faint)}
+.stat .k{font-size:13px;color:var(--muted);line-height:1.4}
+@media (max-width:760px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.stat:nth-child(3){border-left:0}.stat:nth-child(n+3){border-top:1px solid var(--line)}}
+
+section{display:flex;flex-direction:column;gap:16px}
+.sec-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap}
+.sec-head>div:first-child{display:flex;flex-direction:column;gap:8px;min-width:0}
+.sec-head p{color:var(--muted);font-size:14.5px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px}
+
+.seg{display:inline-flex;padding:3px;border-radius:10px;background:var(--raise);border:1px solid var(--line);gap:2px}
+.seg button{all:unset;cursor:pointer;padding:7px 13px;border-radius:7px;font-size:13.5px;color:var(--muted);display:flex;align-items:center;gap:8px;white-space:nowrap}
+.seg button i{width:9px;height:9px;border-radius:50%}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.18)}
+.seg button:focus-visible{outline:2px solid var(--accent)}
+
+.chart-grid{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:18px;align-items:start}
+@media (max-width:820px){.chart-grid{grid-template-columns:minmax(0,1fr)}}
+.chart-wrap{position:relative;min-width:0}
+svg{display:block;width:100%;height:auto;overflow:visible}
+svg text{font-family:var(--f-mono);font-size:11px;fill:var(--muted)}
+svg .ttl{font-family:var(--f-sans);font-size:12px;fill:var(--muted)}
+.gridline{stroke:var(--line);stroke-width:1}
+.axis{stroke:var(--line-strong);stroke-width:1}
+.band{fill:var(--accent-soft)}
+.diag{stroke:var(--text);stroke-opacity:.45;stroke-width:1;stroke-dasharray:4 4}
+.pt{cursor:pointer}
+#scatter.ready .pt{transition:transform .9s cubic-bezier(.3,.7,.2,1),fill .5s}
+.pt circle{stroke:var(--bg);stroke-width:1.2}
+.pt:hover circle:first-child,.pt.on circle:first-child{stroke:var(--text);stroke-width:2}
+.pt circle.hit{stroke:none}
+@media (prefers-reduced-motion:reduce){#scatter.ready .pt{transition:none}}
+.tip{position:absolute;pointer-events:none;background:var(--raise);border:1px solid var(--line-strong);border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:1.45;width:220px;box-shadow:0 8px 24px rgba(0,0,0,.25);z-index:2}
+.tip b{font-weight:600}
+.tip dl{display:grid;grid-template-columns:auto 1fr;gap:1px 10px;margin:6px 0 0}
+.tip dt{color:var(--muted)}
+.tip dd{margin:0;text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+
+.readout{display:flex;flex-direction:column;gap:14px}
+.readout .big{font:600 34px/1 var(--f-mono);letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.readout .big.sm{font-size:20px;font-weight:500}
+.readout .row{display:flex;flex-direction:column;gap:4px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+.readout .row:last-child{border-bottom:0;padding-bottom:0}
+.readout .lbl{font-size:13px;color:var(--muted)}
+.bar{height:6px;border-radius:3px;background:var(--raise);overflow:hidden}
+.bar>div{height:100%;border-radius:3px;transition:width .8s cubic-bezier(.3,.7,.2,1),background .5s}
+.note{font-size:13px;color:var(--muted);line-height:1.5}
+
+.legend{display:flex;gap:6px 18px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:8px}
+.legend i{width:14px;height:10px;border-radius:2px}
+
+.misses{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+@media (max-width:760px){.misses{grid-template-columns:minmax(0,1fr)}}
+.miss-list{display:flex;flex-direction:column}
+.miss{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.miss:last-child{border-bottom:0}
+.miss .m{font-weight:500}
+.miss .d{font-size:13px;color:var(--muted);grid-column:1}
+.miss .e{grid-row:1 / span 2;grid-column:2;align-self:center}
+.pair{display:flex;flex-direction:column;gap:12px}
+.pair-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:center}
+.pair-row .bar{grid-column:1 / -1}
+
+.factors{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:32px}
+@media (max-width:760px){.factors{grid-template-columns:minmax(0,1fr)}.factors>div+div .f-head{display:none}}
+.f-head,.frow{display:grid;grid-template-columns:52px minmax(0,1fr) 120px 52px;gap:10px;align-items:center}
+.f-head{font-size:11.5px;color:var(--faint);font-family:var(--f-mono);text-transform:uppercase;letter-spacing:.05em;padding:0 0 8px;border-bottom:1px solid var(--line)}
+.frow{padding:5px 0;border-bottom:1px solid var(--line);font-size:13px}
+.frow .c{font-family:var(--f-mono);font-size:12.5px}
+.frow .n{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.frow .x{font-family:var(--f-mono);font-variant-numeric:tabular-nums;text-align:right}
+.frow.borrowed .c,.frow.borrowed .x{color:var(--faint)}
+.fbar{position:relative;height:14px}
+.fbar::before{content:"";position:absolute;left:var(--one);top:-3px;bottom:-3px;width:1px;background:var(--line-strong)}
+.fbar span{position:absolute;top:4px;height:6px;border-radius:3px;background:var(--accent)}
+.frow.borrowed .fbar span{background:var(--faint)}
+.f-axis{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);padding-top:10px;gap:12px}
+
+.controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.controls input[type=search]{height:36px;border-radius:9px;border:1px solid var(--line-strong);background:var(--surface);color:var(--text);padding:0 12px;font:14px var(--f-sans);width:min(280px,100%)}
+.sort-m{display:none!important}
+.controls select{height:32px;border-radius:8px;border:1px solid var(--line-strong);background:var(--surface);color:var(--text);font:13.5px var(--f-sans);padding:0 8px}
+.controls label{font-size:13.5px;color:var(--muted);display:inline-flex;gap:8px;align-items:center;cursor:pointer}
+.controls input[type=checkbox]{accent-color:var(--accent);width:15px;height:15px}
+.count{font-size:13px;color:var(--muted);margin-left:auto}
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--surface);max-height:640px;overflow-y:auto}
+table{border-collapse:collapse;width:100%;min-width:760px;font-size:13.5px}
+th,td{padding:9px 12px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left}
+thead th{position:sticky;top:0;background:var(--raise);z-index:1;font-weight:500;color:var(--muted);font-size:12.5px}
+th button{all:unset;cursor:pointer;display:inline-flex;gap:5px;align-items:center}
+th button:focus-visible{outline:2px solid var(--accent)}
+th button::after{content:"";width:8px;opacity:.6}
+th[aria-sort="ascending"] button::after{content:"↑"}
+th[aria-sort="descending"] button::after{content:"↓"}
+td{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+td:first-child{font-family:var(--f-sans)}
+tbody tr:hover{background:var(--raise)}
+.chip{display:inline-block;min-width:58px;text-align:right;padding:1px 7px;border-radius:6px;font-size:12.5px}
+.chip.g{color:var(--good);background:color-mix(in srgb,var(--good) 13%,transparent)}
+.chip.o{color:var(--text);background:var(--raise)}
+.chip.w{color:var(--warn);background:color-mix(in srgb,var(--warn) 14%,transparent)}
+.chip.b{color:var(--bad);background:color-mix(in srgb,var(--bad) 14%,transparent)}
+.na{color:var(--faint);font-family:var(--f-sans);font-size:12.5px}
+
+.steps{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;counter-reset:s;padding:0;margin:0;list-style:none}
+@media (max-width:760px){.steps{grid-template-columns:minmax(0,1fr)}}
+.steps li{counter-increment:s;display:grid;grid-template-columns:28px minmax(0,1fr);gap:4px 12px;padding:16px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.steps li::before{content:counter(s);grid-row:1 / span 2;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font:500 12.5px var(--f-mono);color:var(--accent);background:var(--accent-soft)}
+.steps b{font-weight:600}
+.steps p{font-size:14px;color:var(--muted)}
+.caveats{display:flex;flex-direction:column;gap:10px;padding:0;margin:0;list-style:none}
+.caveats li{padding-left:18px;position:relative;color:var(--muted);font-size:14.5px;max-width:72ch}
+.caveats li::before{content:"";position:absolute;left:2px;top:.62em;width:6px;height:6px;border-radius:50%;background:var(--warn)}
+.caveats b{color:var(--text);font-weight:500}
+footer{display:flex;flex-direction:column;gap:10px;padding-top:24px;border-top:1px solid var(--line);font-size:13.5px;color:var(--muted)}
+footer p{max-width:80ch}
+@media (max-width:820px){
+  .readout{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 16px}
+  .readout .row{border-bottom:0;padding-bottom:0}
+  .readout .note,.readout .row:has(.bar){grid-column:1 / -1}
+  .readout .big{font-size:28px}
+}
+@media (max-width:600px){
+  .wrap{padding-block:32px 56px;gap:44px}
+  .lede{font-size:16px}
+  .panel{padding:14px}
+  .stat{padding:14px}
+  .stat .v{font-size:24px}
+  .stat .v s{font-size:14px}
+  .seg{display:flex;width:100%}
+  .seg button{flex:1;justify-content:center;padding:8px 6px;font-size:13px}
+  .f-head,.frow{grid-template-columns:44px minmax(0,1fr) 78px 38px;gap:8px}
+  .f-axis{font-size:11.5px}
+  .f-axis .num{display:none}
+  .table-wrap{max-height:70vh}
+  .controls input[type=search]{width:100%}
+  .count{margin-left:0}
+  .steps li{padding:14px}
+  /* table rows become compact cards */
+  .sort-m{display:inline-flex!important}
+  .table-wrap{background:var(--surface)}
+  table{min-width:0}
+  thead{display:none}
+  tbody tr{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px 10px;padding:11px 14px;border-bottom:1px solid var(--line)}
+  tbody td{border:0;padding:0;text-align:left;white-space:normal}
+  tbody td:nth-child(1){grid-column:1 / 3;font-weight:500}
+  tbody td:nth-child(2){grid-column:3;text-align:right;color:var(--muted)}
+  tbody td:nth-child(3),tbody td:nth-child(4){color:var(--muted);font-size:12.5px;grid-row:2}
+  tbody td:nth-child(3){grid-column:1}
+  tbody td:nth-child(4){grid-column:2 / 4}
+  tbody td:nth-child(3)::after{content:" nmi"}
+  tbody td:nth-child(4)::after{content:" seats"}
+  tbody td:nth-child(5){grid-column:1;grid-row:3}
+  tbody td:nth-child(6){grid-column:2;grid-row:3}
+  tbody td:nth-child(7){grid-column:2;grid-row:4}
+  tbody td:nth-child(8){grid-column:3;grid-row:3}
+  tbody td:nth-child(9){grid-column:3;grid-row:4}
+  tbody td[data-l]::before{content:attr(data-l);display:block;font:11.5px var(--f-sans);color:var(--faint);margin-top:6px}
+  .chip{min-width:0}
+}
+</style>
+
+<script type="application/json" id="d">__DATA__</script>
+
+<main class="wrap">
+  <header>
+    <div class="eyebrow"><b>Fuel Horizon</b><span>·</span><span>Fuel model check</span></div>
+    <h1 id="headline">The fuel model lands within 5% of published figures it never saw</h1>
+    <p class="lede">Fuel Horizon estimates how much fuel each plane in the sky has left. This page checks the model behind that estimate against <strong id="nFigs">126</strong> published fuel-burn figures for real airliners on real sector lengths. It compares the raw <strong>OpenAP</strong> performance model with the version Fuel Horizon uses, which is tuned per aircraft type and then tested on figures it wasn't tuned on.</p>
+    <div class="stats" id="stats"></div>
+  </header>
+
+  <section aria-labelledby="h-scatter">
+    <div class="sec-head">
+      <div><h2 id="h-scatter">Predicted vs. published fuel burn</h2>
+        <p>Each dot is one published figure: fuel burned per kilometre for a given aircraft, sector length and seat count. Dots on the dashed line are exact matches.</p></div>
+      <div class="seg" role="group" aria-label="Model version">
+        <button type="button" id="m-raw" aria-pressed="false"><i style="background:var(--raw)"></i>OpenAP as-is</button>
+        <button type="button" id="m-cal" aria-pressed="true"><i style="background:var(--accent)"></i>Calibrated, held out</button>
+      </div>
+    </div>
+    <div class="panel chart-grid">
+      <div class="chart-wrap" id="scatterWrap"><svg id="scatter" viewBox="0 0 640 520" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Scatter plot of predicted against published fuel burn in kilograms per kilometre"></svg><div class="tip" id="tip" hidden></div></div>
+      <div class="readout" id="readout"></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-hist">
+    <div class="sec-head">
+      <div><h2 id="h-hist">How far off each prediction is</h2>
+        <p>The same figures, sorted by signed error. Calibration pulls almost everything into the middle band, where the model is within 5% either way.</p></div>
+      <div class="legend"><span><i style="background:var(--raw)"></i>OpenAP as-is (above)</span><span><i style="background:var(--accent)"></i>Calibrated, held out (below)</span></div>
+    </div>
+    <div class="panel"><svg id="hist" viewBox="0 0 640 330" role="img" aria-label="Histograms of prediction error before and after calibration"></svg></div>
+  </section>
+
+  <section aria-labelledby="h-miss">
+    <div class="sec-head"><div><h2 id="h-miss">Where it still misses</h2>
+      <p>The largest held-out errors mostly come from types whose published figures disagree with each other. A single correction per type can't match two sources that are 20% apart for nearly the same trip.</p></div></div>
+    <div class="misses">
+      <div class="panel"><div class="miss-list" id="missList"></div></div>
+      <div class="panel pair" id="pairs"></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-fac">
+    <div class="sec-head"><div><h2 id="h-fac">Correction per aircraft type</h2>
+      <p>The multiplier applied to OpenAP's fuel flow for each type. Below 1 means raw OpenAP burned more than published figures; above 1 means it burned less. Types without published figures borrow a correction from a close relative.</p></div></div>
+    <div class="panel">
+      <div class="factors" id="factors"></div>
+      <div class="f-axis"><span>← OpenAP burned too much</span><span class="num" id="fRange"></span><span>OpenAP burned too little →</span></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-table">
+    <div class="sec-head"><div><h2 id="h-table">Every figure</h2>
+      <p>All published figures used, with both predictions, sortable. Errors are colour-coded: within 5%, 10%, 20%, and beyond.</p></div></div>
+    <div class="controls">
+      <input type="search" id="q" placeholder="Filter by aircraft or type code" aria-label="Filter by aircraft or type code">
+      <label><input type="checkbox" id="heldOnly">Held-out figures only</label>
+      <label class="sort-m">Sort <select id="sortSel"><option value="calE">Calibrated error</option><option value="rawE">OpenAP error</option><option value="model">Aircraft A–Z</option><option value="nmi">Sector length</option><option value="pub">Published kg/km</option></select></label>
+      <span class="count" id="count"></span>
+    </div>
+    <div class="table-wrap"><table id="tbl"><thead><tr>
+      <th data-k="model" aria-sort="none"><button type="button">Aircraft</button></th>
+      <th data-k="type" aria-sort="none"><button type="button">Type</button></th>
+      <th data-k="nmi" aria-sort="none"><button type="button">Sector (nmi)</button></th>
+      <th data-k="seats" aria-sort="none"><button type="button">Seats</button></th>
+      <th data-k="pub" aria-sort="none"><button type="button">Published kg/km</button></th>
+      <th data-k="raw" aria-sort="none"><button type="button">OpenAP kg/km</button></th>
+      <th data-k="rawE" aria-sort="none"><button type="button">Error</button></th>
+      <th data-k="cal" aria-sort="none"><button type="button">Calibrated kg/km</button></th>
+      <th data-k="calE" aria-sort="descending"><button type="button">Error</button></th>
+    </tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <section aria-labelledby="h-method">
+    <div class="sec-head"><div><h2 id="h-method">How the check works</h2></div></div>
+    <ol class="steps">
+      <li><b>Fly each published trip in OpenAP</b><p>The model climbs at 2,000 ft/min to its cruise height, cruises at its usual Mach number, and descends, getting lighter as it burns fuel. Payload is the published seat count at 82% full, 100 kg per passenger.</p></li>
+      <li><b>Compare fuel per kilometre</b><p>Taxi plus trip fuel, divided by the sector length, is compared with the published figure in kg/km. Raw OpenAP is off by <span class="num" id="mRaw"></span> on average.</p></li>
+      <li><b>Fit one correction per type</b><p>Each aircraft type gets a single multiplier on fuel flow: the geometric mean of the multipliers that would match each of its published figures exactly.</p></li>
+      <li><b>Test on figures it didn't see</b><p>For every figure, the correction is refitted using only that type's other figures, then used to predict the one left out. That leave-one-out error is what this page reports.</p></li>
+    </ol>
+    <ul class="caveats">
+      <li><b><span id="nSingle">19</span> figures can't be tested this way.</b> Their types have only one published figure, so there is nothing left to fit on once it's held out. They are in the table but not in the charts.</li>
+      <li><b>Sources use different assumptions.</b> Seat layouts, load factors and reserve rules vary between the figures, which caps how close any single model can get.</li>
+      <li><b>Live flights add more uncertainty.</b> Real payload, winds and routing aren't known from the broadcast signal, so the globe shows each estimate as a range of at least ±12%, wider than the 5% here.</li>
+      <li><b>Turboprops aren't simulated.</b> The <span id="nRated">9</span> turboprop and utility types use their published figures directly, so they aren't part of this check.</li>
+    </ul>
+  </section>
+
+  <footer>
+    <p>Published figures: <a href="https://en.wikipedia.org/wiki/Fuel_economy_in_aircraft" target="_blank" rel="noopener">Wikipedia, “Fuel economy in aircraft”</a>, per-model tables, which compile manufacturer, airline and analyst figures. Performance model: <a href="https://github.com/TUDelft-CNS-ATM/openap" target="_blank" rel="noopener">OpenAP</a> (Sun, Hoekstra and Ellerbroek, TU Delft, 2020).</p>
+    <p>Part of <a href="https://claude.ai/artifact/BPyUVxays1xfAfQw4hxFaD" target="_blank" rel="noopener">Fuel Horizon</a>, a live globe of every flight with an estimate of the fuel it has left.</p>
+  </footer>
+</main>
+
+<script>
+const D=JSON.parse(document.getElementById('d').textContent);
+const $=id=>document.getElementById(id);
+const NS='http://www.w3.org/2000/svg';
+const el=(tag,attrs,parent)=>{const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e;};
+const f1=v=>v.toFixed(1),f2=v=>v.toFixed(2);
+const pct=v=>(v>0?'+':v<0?'−':'')+Math.abs(v*100).toFixed(1)+'%';
+const NAMES={A318:'Airbus A318',A346:'Airbus A340-600',B734:'Boeing 737-400',B735:'Boeing 737-500',B3XM:'Boeing 737 MAX 10',C550:'Cessna Citation II',GLF6:'Gulfstream G650'};
+
+// figures: [type, model, nmi, seats, published, raw, held-out]
+const figs=D.figs.map(([type,model,nmi,seats,pub,raw,cal],i)=>({i,type,model,nmi,seats,pub,raw,cal,rawE:raw/pub-1,calE:cal==null?null:cal/pub-1}));
+const held=figs.filter(f=>f.cal!=null);
+const mean=a=>a.reduce((s,v)=>s+v,0)/a.length;
+const median=a=>{const b=[...a].sort((x,y)=>x-y),m=b.length>>1;return b.length%2?b[m]:(b[m-1]+b[m])/2;};
+const S={};
+for(const k of ['raw','cal']){const e=held.map(f=>Math.abs(f[k+'E']));
+  S[k]={mape:mean(e),med:median(e),w10:e.filter(v=>v<=.1).length,w5:e.filter(v=>v<=.05).length,max:Math.max(...e)};}
+const nTypes=new Set(figs.map(f=>f.type)).size;
+
+$('nFigs').textContent=figs.length;
+$('nSingle').textContent=figs.length-held.length;
+$('nRated').textContent=D.rated;
+$('mRaw').textContent=(S.raw.mape*100).toFixed(1)+'%';
+$('headline').textContent='The fuel model lands within '+Math.round(S.cal.mape*100)+'% of published figures it never saw';
+$('stats').innerHTML=[
+  ['<s>'+f1(S.raw.mape*100)+'%</s><span class="to">→</span>'+f1(S.cal.mape*100)+'%','Average error, on the same '+held.length+' held-out figures'],
+  [f1(S.cal.med*100)+'%','Median error after calibration (raw OpenAP: '+f1(S.raw.med*100)+'%)'],
+  [S.cal.w10+'<span class="to">/ '+held.length+'</span>','Predictions within ±10% (raw OpenAP: '+S.raw.w10+')'],
+  [nTypes+'<span class="to">types</span>','Airliner types checked against '+figs.length+' published figures']
+].map(([v,k])=>'<div class="stat"><div class="v">'+v+'</div><div class="k">'+k+'</div></div>').join('');
+
+// ---------- scatter ----------
+// charts are drawn at the container's real pixel width, so labels stay readable on phones
+const vals=held.flatMap(f=>[f.pub,f.raw,f.cal]);
+const lo=Math.min(...vals)*.9,hi=Math.max(...vals)*1.08;
+const L=v=>Math.log(v/lo)/Math.log(hi/lo);
+const sv=$('scatter'),tip=$('tip'),wrap=$('scatterWrap');
+let W=640,H=520,M={l:56,r:16,t:14,b:50},pts=[],mode='cal',tipFor=null;
+const sx=v=>M.l+L(v)*(W-M.l-M.r),sy=v=>H-M.b-L(v)*(H-M.t-M.b);
+function drawScatter(){
+  const keep=tipFor&&tipFor._f;tipFor=null;tip.hidden=true;
+  W=Math.max(260,Math.round(wrap.clientWidth));const narrow=W<480;
+  H=Math.round(Math.min(520,Math.max(280,W*(narrow?.92:.8))));
+  M=narrow?{l:40,r:10,t:12,b:44}:{l:56,r:16,t:14,b:50};
+  sv.classList.remove('ready');sv.replaceChildren();sv.setAttribute('viewBox','0 0 '+W+' '+H);
+  const clip=el('clipPath',{id:'plot'},el('defs',{},sv));el('rect',{x:M.l,y:M.t,width:W-M.l-M.r,height:H-M.t-M.b},clip);
+  const ticks=(narrow?[2,3,4,6,8,12,16]:[1,1.5,2,3,4,6,8,12,16,20]).filter(t=>t>=lo&&t<=hi);
+  for(const t of ticks){
+    el('line',{class:'gridline',x1:sx(t),x2:sx(t),y1:M.t,y2:H-M.b},sv);
+    el('line',{class:'gridline',x1:M.l,x2:W-M.r,y1:sy(t),y2:sy(t)},sv);
+    el('text',{x:sx(t),y:H-M.b+17,'text-anchor':'middle'},sv).textContent=t;
+    el('text',{x:M.l-7,y:sy(t)+4,'text-anchor':'end'},sv).textContent=t;
+  }
+  el('line',{class:'axis',x1:M.l,x2:W-M.r,y1:H-M.b,y2:H-M.b},sv);el('line',{class:'axis',x1:M.l,x2:M.l,y1:M.t,y2:H-M.b},sv);
+  el('text',{class:'ttl',x:(M.l+W-M.r)/2,y:H-7,'text-anchor':'middle'},sv).textContent='Published fuel burn (kg/km)';
+  el('text',{class:'ttl',x:-(M.t+H-M.b)/2,y:narrow?11:14,transform:'rotate(-90)','text-anchor':'middle'},sv).textContent=narrow?'Predicted (kg/km)':'Model prediction (kg/km)';
+  const g=el('g',{'clip-path':'url(#plot)'},sv);
+  el('polygon',{class:'band',points:[[lo,lo*.9],[hi,hi*.9],[hi,hi*1.1],[lo,lo*1.1]].map(([x,y])=>sx(x)+','+sy(y)).join(' ')},g);
+  el('line',{class:'diag',x1:sx(lo),y1:sy(lo),x2:sx(hi),y2:sy(hi)},g);
+  const bx=sx(hi/1.5),by=sy(hi/1.5*1.1)-6,ang=-Math.atan2(H-M.t-M.b,W-M.l-M.r)*180/Math.PI;
+  el('text',{x:bx,y:by,'text-anchor':'middle',transform:'rotate('+ang+' '+bx+' '+by+')'},g).textContent='±10%';
+  pts=held.map(f=>{const p=el('g',{class:'pt',tabindex:'0','aria-label':f.model+', '+f.nmi+' nautical miles'},g);
+    el('circle',{r:narrow?4:4.6},p);
+    if(narrow)el('circle',{r:11,fill:'transparent',stroke:'none',class:'hit'},p); // bigger tap target
+    p._f=f;return p;});
+  for(const p of pts){p.addEventListener('pointerenter',e=>{if(e.pointerType==='mouse')showTip(p);});
+    p.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse')hideTip();});
+    p.addEventListener('click',e=>{e.stopPropagation();tipFor===p?hideTip():showTip(p);});
+    p.addEventListener('focus',()=>showTip(p));p.addEventListener('blur',hideTip);}
+  place();
+  if(keep){const p=pts.find(q=>q._f===keep);if(p)showTip(p);}
+  requestAnimationFrame(()=>requestAnimationFrame(()=>sv.classList.add('ready')));
+}
+function place(){
+  const k=mode,col=k==='cal'?'var(--accent)':'var(--raw)';
+  for(const p of pts){const f=p._f;p.style.transform='translate('+sx(f.pub).toFixed(1)+'px,'+sy(f[k]).toFixed(1)+'px)';
+    p.firstChild.style.fill=col;}
+  const s=S[k];
+  $('readout').innerHTML=
+    '<div class="row"><span class="lbl">Average error</span><span class="big" style="color:'+col+'">'+f1(s.mape*100)+'%</span></div>'+
+    '<div class="row"><span class="lbl">Largest miss</span><span class="big sm">'+f1(s.max*100)+'%</span></div>'+
+    '<div class="row"><span class="lbl">Within ±10% · <span class="num">'+s.w10+' of '+held.length+'</span></span><div class="bar"><div style="width:'+(s.w10/held.length*100)+'%;background:'+col+'"></div></div></div>'+
+    '<div class="row"><span class="lbl">Within ±5% · <span class="num">'+s.w5+' of '+held.length+'</span></span><div class="bar"><div style="width:'+(s.w5/held.length*100)+'%;background:'+col+'"></div></div></div>'+
+    '<p class="note">'+(k==='cal'?'Each dot was predicted using a correction fitted only on the other figures for its type.':'OpenAP straight out of the box, with no correction. Widebodies tend to sit above the line and newer narrowbodies below it.')+'</p>';
+  $('m-raw').setAttribute('aria-pressed',k==='raw');$('m-cal').setAttribute('aria-pressed',k==='cal');
+  if(tipFor)showTip(tipFor);
+}
+$('m-raw').onclick=()=>{mode='raw';place();};
+$('m-cal').onclick=()=>{mode='cal';place();};
+
+// tooltip
+function showTip(p){
+  tipFor=p;pts.forEach(q=>q.classList.toggle('on',q===p));const f=p._f;
+  tip.innerHTML='<b>'+f.model+'</b><div class="muted">'+f.type+' · '+f.nmi.toLocaleString()+' nmi · '+f.seats+' seats</div><dl>'+
+    '<dt>Published</dt><dd>'+f2(f.pub)+' kg/km</dd>'+
+    '<dt>OpenAP as-is</dt><dd>'+f2(f.raw)+' <span class="muted">'+pct(f.rawE)+'</span></dd>'+
+    '<dt>Calibrated</dt><dd>'+f2(f.cal)+' <span class="muted">'+pct(f.calE)+'</span></dd></dl>';
+  tip.hidden=false;
+  const wr=wrap.getBoundingClientRect(),scale=wr.width/W;
+  const x=sx(f.pub)*scale,y=sy(f[mode])*scale;
+  const tw=tip.offsetWidth,th=tip.offsetHeight;
+  let left=x+12;if(left+tw>wr.width)left=x-tw-12;left=Math.max(0,Math.min(left,wr.width-tw));
+  let top=y-th-12;if(top<0)top=y+14;
+  tip.style.left=left+'px';tip.style.top=top+'px';
+}
+function hideTip(){tipFor=null;tip.hidden=true;pts.forEach(q=>q.classList.remove('on'));}
+document.addEventListener('click',hideTip);
+
+// ---------- histogram ----------
+const hsv=$('hist'),hwrap=hsv.parentElement;
+const edges=[];for(let e=-50;e<=50;e+=5)edges.push(e);
+const nb=edges.length+1; // overflow bins at each end
+const bin=e=>{const v=e*100;if(v<-50)return 0;if(v>=50)return nb-1;return 1+Math.floor((v+50)/5);};
+const cnt={raw:Array(nb).fill(0),cal:Array(nb).fill(0)};
+for(const f of held){cnt.raw[bin(f.rawE)]++;cnt.cal[bin(f.calE)]++;}
+const mx=Math.max(...cnt.raw,...cnt.cal);
+function drawHist(){
+  const W=Math.max(260,Math.round(hwrap.clientWidth-parseFloat(getComputedStyle(hwrap).paddingLeft)*2)),narrow=W<480;
+  const half=narrow?92:118,mid=half+32,H=mid+half+(narrow?66:62),ml=narrow?28:40,mr=narrow?4:12;
+  hsv.replaceChildren();hsv.setAttribute('viewBox','0 0 '+W+' '+H);
+  const bw=(W-ml-mr)/nb,bx=i=>ml+i*bw,fs=bw<17?'9.5px':'11px';
+  el('rect',{x:bx(10),y:mid-half-6,width:bw*2,height:half*2+12,fill:'var(--accent-soft)',rx:4},hsv);
+  el('text',{x:bx(11),y:mid-half-12,'text-anchor':'middle'},hsv).textContent='±5%';
+  for(const k of ['raw','cal'])cnt[k].forEach((c,i)=>{if(!c)return;const h=c/mx*half;
+    el('rect',{x:bx(i)+1,y:k==='raw'?mid-h:mid+1,width:bw-2,height:Math.max(h,1),rx:2,fill:k==='raw'?'var(--raw)':'var(--accent)'},hsv);
+    if(narrow&&(k==='raw'||c<10))return; // two-digit counts don't fit side by side on phones
+    el('text',{x:bx(i)+bw/2,y:k==='raw'?mid-h-4:mid+h+12,'text-anchor':'middle',style:'font-size:'+fs},hsv).textContent=c;});
+  el('line',{class:'axis',x1:ml,x2:W-mr,y1:mid+.5,y2:mid+.5},hsv);
+  const ex=e=>ml+(1+(e+50)/5)*bw; // x of an error edge, in %
+  const ly=mid+half+30;
+  for(const e of narrow?[-25,0,25]:[-25,-10,0,10,25]){const x=ex(e);
+    el('line',{class:'gridline',x1:x,x2:x,y1:ly-16,y2:ly-11},hsv);
+    el('text',{x,y:ly,'text-anchor':'middle'},hsv).textContent=(e>0?'+':e<0?'−':'')+Math.abs(e)+'%';}
+  el('text',{x:Math.max(bx(0)+bw/2,16),y:ly,'text-anchor':'middle'},hsv).textContent='<−50%';
+  el('text',{x:Math.min(bx(nb-1)+bw/2,W-18),y:ly,'text-anchor':'middle'},hsv).textContent='≥+50%';
+  el('text',{class:'ttl',x:ml,y:H-6},hsv).textContent=narrow?'← less fuel':'← predicts less fuel than published';
+  el('text',{class:'ttl',x:W-mr,y:H-6,'text-anchor':'end'},hsv).textContent=narrow?'more fuel →':'predicts more fuel →';
+  el('text',{class:'ttl','text-anchor':'middle',transform:'translate('+(narrow?10:14)+' '+(mid-half/2)+') rotate(-90)'},hsv).textContent='OpenAP';
+  el('text',{class:'ttl','text-anchor':'middle',transform:'translate('+(narrow?10:14)+' '+(mid+half/2)+') rotate(-90)'},hsv).textContent='Calibrated';
+}
+
+drawScatter();drawHist();
+let lastW=[wrap.clientWidth,hwrap.clientWidth],rq=0;
+new ResizeObserver(()=>{cancelAnimationFrame(rq);rq=requestAnimationFrame(()=>{
+  if(Math.abs(wrap.clientWidth-lastW[0])>2)drawScatter();
+  if(Math.abs(hwrap.clientWidth-lastW[1])>2)drawHist();
+  lastW=[wrap.clientWidth,hwrap.clientWidth];});}).observe(document.body);
+
+// ---------- misses ----------
+const chip=e=>{if(e==null)return '<span class="na">not testable</span>';const a=Math.abs(e);return '<span class="chip num '+(a<=.05?'g':a<=.1?'o':a<=.2?'w':'b')+'">'+pct(e)+'</span>';};
+$('missList').innerHTML='<div class="eyebrow" style="padding-bottom:6px">Largest held-out errors</div>'+
+  [...held].sort((a,b)=>Math.abs(b.calE)-Math.abs(a.calE)).slice(0,6).map(f=>
+  '<div class="miss"><span class="m">'+f.model+'</span><span class="d num">'+f.nmi.toLocaleString()+' nmi · '+f.seats+' seats · published '+f2(f.pub)+', predicted '+f2(f.cal)+'</span><span class="e">'+chip(f.calE)+'</span></div>').join('');
+// pairs of published figures for the same type at similar distances that disagree most
+const pairs=[];
+for(let a=0;a<figs.length;a++)for(let b=a+1;b<figs.length;b++){const A=figs[a],B=figs[b];
+  if(A.type!==B.type||Math.abs(A.nmi-B.nmi)>120)continue;const gap=Math.max(A.pub,B.pub)/Math.min(A.pub,B.pub)-1;pairs.push({A,B,gap});}
+pairs.sort((x,y)=>y.gap-x.gap);
+const seen=new Set(),topPairs=[];for(const p of pairs){if(seen.has(p.A.type))continue;seen.add(p.A.type);topPairs.push(p);if(topPairs.length===3)break;}
+const pmax=Math.max(...topPairs.flatMap(p=>[p.A.pub,p.B.pub]));
+$('pairs').innerHTML='<div class="eyebrow">Sources that disagree</div>'+topPairs.map(p=>
+  '<div class="pair-row"><b>'+p.A.model+'</b><span class="chip num w">'+f1(p.gap*100)+'% apart</span></div>'+
+  [p.A,p.B].map(f=>'<div class="pair-row"><span class="note num">'+f.nmi+' nmi · '+f.seats+' seats</span><span class="num">'+f2(f.pub)+' kg/km</span><div class="bar"><div style="width:'+(f.pub/pmax*100)+'%;background:var(--warn)"></div></div></div>').join('')
+).join('<div style="height:4px"></div>')+'<p class="note">Same aircraft, almost the same trip, published fuel burn far apart. The model can sit between them, but not on both.</p>';
+
+// ---------- factors ----------
+(function(){
+  const rows=Object.entries(D.types).map(([c,[name,base,fac,n]])=>({c,name:name||NAMES[c]||base,fac,n})).sort((a,b)=>a.fac-b.fac);
+  const fl=0.5,fh=1.6,P=v=>Math.log(v/fl)/Math.log(fh/fl)*100,one=P(1);
+  const half=Math.ceil(rows.length/2);
+  const head='<div class="f-head"><span>Type</span><span>Aircraft</span><span>Correction</span><span style="text-align:right">×</span></div>';
+  const row=r=>{const a=Math.min(P(r.fac),one),b=Math.max(P(r.fac),one);
+    return '<div class="frow'+(r.n?'':' borrowed')+'" title="'+(r.n?r.n+' published figure'+(r.n>1?'s':''):'No published figures; correction borrowed from a similar type')+'"><span class="c">'+r.c+'</span><span class="n">'+r.name+(r.n?'':' · borrowed')+'</span>'+
+      '<span class="fbar" style="--one:'+one+'%"><span style="left:'+a+'%;width:'+Math.max(b-a,1.2)+'%"></span></span><span class="x">'+r.fac.toFixed(2)+'</span></div>';};
+  $('factors').innerHTML='<div>'+head+rows.slice(0,half).map(row).join('')+'</div><div>'+head+rows.slice(half).map(row).join('')+'</div>';
+  $('fRange').textContent='×'+rows[0].fac.toFixed(2)+' to ×'+rows[rows.length-1].fac.toFixed(2);
+})();
+
+// ---------- table ----------
+(function(){
+  const tb=document.querySelector('#tbl tbody');let key='calE',dir=-1;
+  const val=(f,k)=>k==='calE'||k==='rawE'?(f[k]==null?-1:Math.abs(f[k])):f[k]==null?-1:f[k];
+  function render(){
+    const q=$('q').value.trim().toLowerCase(),only=$('heldOnly').checked;
+    const rows=figs.filter(f=>(!only||f.cal!=null)&&(!q||f.model.toLowerCase().includes(q)||f.type.toLowerCase().includes(q)))
+      .sort((a,b)=>{const x=val(a,key),y=val(b,key);return (typeof x==='string'?x.localeCompare(y):x-y)*dir;});
+    tb.innerHTML=rows.map(f=>'<tr><td>'+f.model+'</td><td>'+f.type+'</td><td>'+f.nmi.toLocaleString()+'</td><td>'+f.seats+'</td><td data-l="Published">'+f2(f.pub)+'</td><td data-l="OpenAP">'+f2(f.raw)+'</td><td>'+chip(f.rawE)+'</td><td data-l="Calibrated">'+(f.cal==null?'<span class="na">—</span>':f2(f.cal))+'</td><td>'+chip(f.calE)+'</td></tr>').join('');
+    $('count').textContent=rows.length+' of '+figs.length+' figures';
+    $('sortSel').value=[...$('sortSel').options].some(o=>o.value===key)?key:'calE';
+    document.querySelectorAll('#tbl th').forEach(th=>th.setAttribute('aria-sort',th.dataset.k===key?(dir>0?'ascending':'descending'):'none'));
+  }
+  document.querySelectorAll('#tbl th button').forEach(b=>b.onclick=()=>{const k=b.parentElement.dataset.k;
+    if(k===key)dir=-dir;else{key=k;dir=(k==='model'||k==='type')?1:-1;}render();});
+  $('q').oninput=render;$('heldOnly').onchange=render;
+  $('sortSel').onchange=e=>{key=e.target.value;dir=(key==='model'||key==='type')?1:-1;render();};render();
+})();
+</script>

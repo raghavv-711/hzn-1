@@ -1,0 +1,592 @@
+<title>Inside HZN-1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: the chip fills the screen as a 3D object; one glass panel on the right explains whatever you're looking at; three view tabs at the bottom. Single committed dark look (matches Fuel Horizon). */
+:root{
+  --bg:#05080d;
+  --panel:rgba(12,17,25,.82);
+  --line:rgba(255,255,255,.08);
+  --line-2:rgba(255,255,255,.15);
+  --text:#e9eef3;
+  --muted:#8b97a5;
+  --accent:#7cc4ff;
+  --good:#4fd1c5;
+  --warn:#f5b041;
+  --bad:#ff6b6b;
+  --f-sans:"Geist",ui-sans-serif,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;
+  --f-mono:"Geist Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:radial-gradient(120% 90% at 40% 40%,#0c1420 0%,var(--bg) 62%);color:var(--text);font:14px/1.5 var(--f-sans);overflow:hidden;-webkit-font-smoothing:antialiased}
+#stage{position:fixed;inset:0;display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+#stage:active{cursor:grabbing}
+.glass{background:var(--panel);border:1px solid var(--line);border-radius:14px;backdrop-filter:blur(14px) saturate(1.2);-webkit-backdrop-filter:blur(14px) saturate(1.2)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+
+.top{position:fixed;top:calc(16px + env(safe-area-inset-top,0px));left:16px;right:16px;display:flex;align-items:flex-start;gap:12px;pointer-events:none}
+.brand{display:flex;gap:10px;align-items:center}
+.brand svg{width:28px;height:28px;color:var(--accent);flex-shrink:0}
+.brand h1{margin:0;font-size:17px;font-weight:600;letter-spacing:-.01em;line-height:1.2;text-shadow:0 1px 8px rgba(0,0,0,.9)}
+.brand p{text-shadow:0 1px 6px rgba(0,0,0,.9)}
+.brand p{margin:0;font-size:12.5px;color:var(--muted)}
+.top a{pointer-events:auto;margin-left:auto;font-size:12.5px;color:var(--accent);text-decoration:none;padding:7px 12px;border-radius:999px}
+.top a:hover{text-decoration:underline}
+
+.tabs{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:flex;gap:2px;padding:4px;border-radius:12px}
+.tabs button{all:unset;cursor:pointer;padding:8px 16px;border-radius:9px;font-size:13.5px;color:var(--muted);white-space:nowrap}
+.tabs button[aria-selected="true"]{background:rgba(255,255,255,.1);color:var(--text)}
+.tabs button:hover{color:var(--text)}
+.tabs button:focus-visible{outline:2px solid var(--accent)}
+
+.panel{position:fixed;right:16px;top:calc(72px + env(safe-area-inset-top,0px));bottom:calc(80px + env(safe-area-inset-bottom,0px));width:372px;max-width:calc(100vw - 32px);padding:18px 20px;overflow-y:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:14px}
+.panel h2{margin:0;font-size:18px;font-weight:600;letter-spacing:-.01em;text-wrap:balance}
+.panel p{margin:0;color:var(--muted);font-size:13.5px;max-width:62ch}
+.panel p strong{color:var(--text);font-weight:500}
+.eyebrow{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.list{display:flex;flex-direction:column;gap:2px;margin:0;padding:0;list-style:none}
+.list button{all:unset;box-sizing:border-box;width:100%;cursor:pointer;display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:9px;font-size:13.5px}
+.list button:hover{background:rgba(255,255,255,.05)}
+.list button[aria-pressed="true"]{background:rgba(124,196,255,.12)}
+.list button:focus-visible{outline:2px solid var(--accent)}
+.list .sw{width:12px;height:12px;border-radius:3px;flex-shrink:0;box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)}
+.list .r{margin-left:auto;font:12px var(--f-mono);color:var(--muted);white-space:nowrap}
+.detail{border-top:1px solid var(--line);padding-top:14px;display:flex;flex-direction:column;gap:10px}
+.detail h3{margin:0;font-size:15px;font-weight:600}
+.dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0;font-size:13px}
+.dl dt{color:var(--muted)}
+.dl dd{margin:0;text-align:right}
+.slider{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--muted)}
+.slider input{flex:1;-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;background:rgba(255,255,255,.14);outline:none}
+.slider input::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--text);cursor:pointer}
+.slider input::-moz-range-thumb{width:16px;height:16px;border:0;border-radius:50%;background:var(--text);cursor:pointer}
+.note{font-size:12px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px}
+
+/* signal path */
+.sig-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.ctrl{display:flex;gap:4px}
+.ctrl button{all:unset;cursor:pointer;width:34px;height:34px;border-radius:9px;display:grid;place-items:center;background:rgba(255,255,255,.06)}
+.ctrl button:hover{background:rgba(255,255,255,.12)}
+.ctrl button:focus-visible{outline:2px solid var(--accent)}
+.ctrl svg{width:15px;height:15px}
+.dots{display:flex;gap:6px}
+.dots button{all:unset;cursor:pointer;width:22px;height:4px;border-radius:2px;background:rgba(255,255,255,.14)}
+.dots button[aria-current="step"]{background:var(--accent)}
+.dots button.done{background:rgba(124,196,255,.45)}
+.viz{display:flex;flex-direction:column;gap:10px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:10px;padding:12px}
+.viz svg{width:100%;height:auto;display:block}
+.bits{display:grid;grid-template-columns:repeat(28,1fr);gap:2px}
+.bits span{aspect-ratio:1;border-radius:2px;display:grid;place-items:center;font:8px var(--f-mono);color:rgba(0,0,0,.65)}
+.bits span.flip{outline:2px solid var(--bad);outline-offset:-1px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.mono{font:12.5px/1.6 var(--f-mono);color:var(--text);overflow-wrap:anywhere}
+.ok{color:var(--good)}.bad{color:var(--bad)}
+.chars{display:grid;grid-template-columns:repeat(8,1fr);gap:4px}
+.chars div{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;border-radius:6px;background:rgba(255,255,255,.04)}
+.chars b{font:600 16px var(--f-mono)}
+.chars small{font:9.5px var(--f-mono);color:var(--muted)}
+.btn{all:unset;cursor:pointer;align-self:flex-start;font-size:12.5px;padding:6px 12px;border-radius:8px;border:1px solid var(--line-2)}
+.btn:hover{background:rgba(255,255,255,.06)}
+.btn:focus-visible{outline:2px solid var(--accent)}
+table.tt{width:100%;border-collapse:collapse;font:12px var(--f-mono)}
+table.tt th{font:500 11px var(--f-sans);color:var(--muted);text-align:left;padding:4px 6px;border-bottom:1px solid var(--line)}
+table.tt td{padding:5px 6px;border-bottom:1px solid var(--line)}
+table.tt tr.new td{color:var(--accent)}
+table.tt td.ex{color:var(--muted)}
+
+#labels{position:fixed;inset:0;pointer-events:none}
+.lbl{position:absolute;transform:translate(10px,-50%);white-space:nowrap;font-size:12px;color:var(--text);pointer-events:auto;cursor:pointer;padding:2px 8px;border-radius:6px;background:rgba(12,17,25,.7);border:1px solid var(--line)}
+.lbl small{color:var(--muted);font-family:var(--f-mono);margin-left:6px}
+.lbl.on{border-color:var(--accent);color:var(--accent)}
+.blbl{position:absolute;transform:translate(-50%,-50%);font-size:12px;font-weight:600;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.85);white-space:nowrap;pointer-events:none;text-align:center;line-height:1.2}
+.blbl small{display:block;font-weight:400;font-size:10.5px;color:rgba(255,255,255,.75)}
+.blbl.dim{opacity:.35}
+#tip{position:fixed;pointer-events:none;padding:6px 10px;border-radius:9px;font-size:12.5px;transform:translate(14px,-50%);white-space:nowrap}
+.hint{position:fixed;left:16px;bottom:calc(22px + env(safe-area-inset-bottom,0px));font-size:12px;color:var(--muted)}
+
+@media (max-width:760px){
+  .brand p{display:none}
+  .panel{top:auto;left:16px;right:16px;width:auto;max-width:none;bottom:calc(74px + env(safe-area-inset-bottom,0px));max-height:46vh;padding:14px 16px}
+  .tabs{left:16px;right:16px;transform:none;justify-content:center}
+  .tabs button{padding:8px 12px}
+  .hint{display:none}
+  .lbl small{display:none}
+  .blbl{font-size:10.5px}
+}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+
+<canvas id="stage" aria-label="3D model of the HZN-1 chip"></canvas>
+<div id="labels"></div>
+
+<header class="top">
+  <div class="brand">
+    <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="8" y="8" width="16" height="16" rx="2"/><rect x="12" y="12" width="8" height="8" rx="1"/><path d="M12 8V4M16 8V4M20 8V4M12 28v-4M16 28v-4M20 28v-4M8 12H4M8 16H4M8 20H4M28 12h-4M28 16h-4M28 20h-4"/></svg>
+    <div><h1>Inside HZN-1</h1><p>A look inside the chip behind Fuel Horizon</p></div>
+  </div>
+  <a href="https://claude.ai/artifact/BPyUVxays1xfAfQw4hxFaD" target="_blank" rel="noopener" class="glass">Fuel Horizon ↗</a>
+</header>
+
+<aside class="panel glass" id="panel" aria-live="polite"></aside>
+
+<nav class="tabs glass" role="tablist" aria-label="View">
+  <button role="tab" id="tLayers" aria-selected="true">Layers</button>
+  <button role="tab" id="tFloor" aria-selected="false">Floorplan</button>
+  <button role="tab" id="tSignal" aria-selected="false">Follow a message</button>
+</nav>
+<div class="hint">Drag to rotate · scroll to zoom · click a part</div>
+<div id="tip" class="glass" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const lerp=(a,b,t)=>a+(b-a)*t;
+const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const fmt=(n,d=0)=>n.toLocaleString('en-US',{maximumFractionDigits:d,minimumFractionDigits:d});
+function rng(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const rand=rng(1090);
+
+// ------------------------------------------------------------ data
+const D=8, P=12, GAP=0.95, IN=3.75; // die size, package size, exploded spacing, die interior half-width
+// bottom → top. h = drawn thickness (exaggerated); real = actual SKY130 / package figure
+const LAYERS=[
+  {id:'balls',name:'Solder balls',real:'0.3 mm',scale:'about 3 sheets of paper',h:.3,color:'#c9ced6',foot:P,
+    what:'Tiny metal bumps on the bottom. They\'re how the chip plugs into a circuit board, like the prongs on a plug.',material:'Solder, a metal that melts to make a connection',hzn:'About 64 of them: power in, the antenna signal in, results out.'},
+  {id:'pkg',name:'Package base',real:'≈0.4 mm',scale:'about 4 sheets of paper',h:.45,color:'#12221e',foot:P,
+    what:'A tiny circuit board the chip sits on. It connects the chip\'s microscopic contacts to the much bigger solder balls underneath.',material:'Circuit-board material with gold contacts',hzn:'Hair-thin gold wires connect the chip to it.'},
+  {id:'sub',name:'Silicon base',real:'≈300 µm',scale:'about 4 hairs thick',h:.55,color:'#4a5566',foot:D,
+    what:'The slice of silicon everything is built on. It\'s the thickest part, but it\'s only the foundation: no wiring runs through it.',material:'Silicon, the element in sand, purified into a crystal',hzn:'About 3 × 3 mm, smaller than a fingernail.'},
+  {id:'fe',name:'Transistors',real:'0.15 µm wide',scale:'about 1/450 of a hair',h:.07,color:'#d25a5a',foot:D,
+    what:'Microscopic on/off switches. Every spot where a red line crosses a green strip is one switch. Thousands of switches working together can do math and remember things.',material:'Silicon with added elements that let it switch',hzn:'About a million switches, most of them used for memory.'},
+  {id:'li1',name:'Local wiring',real:'0.1 µm',scale:'about 1/700 of a hair',h:.035,color:'#a184ec',foot:D,
+    what:'Very short wires that join neighboring switches into small building blocks, like a block that adds two numbers.',material:'Metal',hzn:'Used inside every one of those tiny building blocks.'},
+  {id:'met1',name:'Metal 1',real:'0.36 µm',scale:'about 1/190 of a hair',h:.045,color:'#4f8df5',foot:D,
+    what:'The thinnest wires. They connect building blocks that sit right next to each other.',material:'Aluminum',hzn:'Short hops inside each part of the chip.'},
+  {id:'met2',name:'Metal 2',real:'0.36 µm',scale:'about 1/190 of a hair',h:.045,color:'#e070c8',foot:D,
+    what:'Wires that run the other way from Metal 1, so connections can cross without touching, like streets and avenues on a city map.',material:'Aluminum',hzn:'Most of the wiring inside the decoder and the fuel calculator.'},
+  {id:'met3',name:'Metal 3',real:'0.845 µm',scale:'about 1/80 of a hair',h:.06,color:'#3ccfb0',foot:D,
+    what:'Thicker wires for longer trips, like highways between neighborhoods.',material:'Aluminum',hzn:'Carries decoded messages from the decoder to the memory.'},
+  {id:'met4',name:'Metal 4',real:'0.845 µm',scale:'about 1/80 of a hair',h:.06,color:'#f0a24a',foot:D,
+    what:'More long-distance wires, plus wide ones that bring electricity to every part of the chip.',material:'Aluminum',hzn:'Carries the clock, the chip\'s heartbeat, to every part.'},
+  {id:'met5',name:'Metal 5',real:'1.26 µm',scale:'about 1/55 of a hair',h:.1,color:'#e8cf6a',foot:D,
+    what:'The thickest wires, on top. They spread electricity across the whole chip, like the main power lines in a city.',material:'Aluminum',hzn:'Also holds the contact pads around the edge, where the gold wires attach.'},
+  {id:'lid',name:'Lid',real:'≈0.3 mm',scale:'about 3 sheets of paper',h:.28,color:'#9aa3ad',foot:P*.84,
+    what:'A metal cover that protects the chip and helps it stay cool.',material:'Metal (nickel-coated copper)',hzn:'Printed with the name HZN-1.'}
+];
+const BLOCKS=[
+  {id:'radio',name:'Antenna input',x:[-3.55,-2.55],z:[-3.55,.6],color:'#a78bfa',size:'5k gates',gates:'about 5,000',
+    does:'Listens to the radio signal from the antenna. Planes constantly broadcast who and where they are, and this part measures that signal 2 million times a second.',
+    input:'Radio signal from the antenna',output:'A stream of signal-strength readings',
+    replaces:'Downloading plane data from websites. The chip hears planes itself, up to about 250 miles away.'},
+  {id:'dec',name:'Message decoder',x:[-2.4,.4],z:[-3.55,-.4],color:'#7cc4ff',size:'40k gates',gates:'about 40,000',
+    does:'Finds where each plane\'s message starts amid the radio noise, turns the signal into 1s and 0s, and checks the message wasn\'t garbled on the way.',
+    input:'Signal-strength readings',output:'Clean, checked messages',
+    replaces:'The decoding done by the volunteer radio stations behind adsb.lol.'},
+  {id:'pos',name:'Location calculator',x:[.55,3.55],z:[-3.55,-1.6],color:'#4fd1c5',size:'30k gates',gates:'about 30,000',
+    does:'Planes send their location in a compressed form to save space. This part unpacks it into a latitude and longitude.',
+    input:'Location messages',output:'Where each plane is',
+    replaces:'The plane locations the app downloads from OpenSky.'},
+  {id:'track',name:'Aircraft memory',x:[.55,3.55],z:[-1.45,1],color:'#94a3b8',size:'128 kbit',gates:'128,000 bits of memory',
+    does:'Remembers the latest details about every nearby plane, up to 1,024 of them: its ID, flight number, location, height, speed and fuel estimate.',
+    input:'Decoded details',output:'A record for each plane',
+    replaces:'The list of planes the app keeps, which is also what draws the trails.'},
+  {id:'fuel',name:'Fuel calculator',x:[-2.4,.4],z:[-.25,3.55],color:'#f5b041',size:'25k gates',gates:'about 25,000',
+    does:'Keeps a running estimate of how much fuel each plane has burned, using fuel figures for its exact aircraft type, and how long it could fly if it ran on batteries instead.',
+    input:'Each plane\'s record',output:'Fuel and battery estimates',
+    replaces:'The fuel and battery math the app does today. <a href="https://claude.ai/artifact/QikibNNyAbzssymtuLyMsT" target="_blank" rel="noopener" style="color:var(--accent)">See how accurate the fuel estimates are ↗</a>'},
+  {id:'area',name:'Area filter',x:[.55,2.3],z:[1.15,3.55],color:'#f472b6',size:'10k gates',gates:'about 10,000',
+    does:'Checks whether each plane is inside the place you picked, like a city or a state. It checks many planes at the same moment.',
+    input:'Plane locations and the place you picked',output:'Inside or outside, for each plane',
+    replaces:'The app\'s “isolate a place” feature.'},
+  {id:'out',name:'Output',x:[2.45,3.55],z:[1.15,3.55],color:'#34d399',size:'3k gates',gates:'about 3,000',
+    does:'Sends the results to the computer running Fuel Horizon, one short line of text per plane.',
+    input:'Each plane\'s record',output:'Data for the computer',
+    replaces:'The app fetching plane data from the internet.'},
+  {id:'clk',name:'Clock & control',x:[-3.55,-2.55],z:[.75,3.55],color:'#cbd5e1',size:'4k gates',gates:'about 4,000',
+    does:'The chip\'s heartbeat and manager. It ticks 50 million times a second to keep every part in step, and tells each part when to do its job.',
+    input:'Power and a timing signal',output:'Timing for every part',
+    replaces:'The app\'s timers that decide when to update.'}
+];
+
+// the real example message: DF17 identification from aircraft 4840D6, callsign KLM1023
+const MSG='8D4840D6202CC371C32CE0576098';
+const BITS=[...MSG].flatMap(h=>[...parseInt(h,16).toString(2).padStart(4,'0')].map(Number));
+const FIELDS=[{name:'Message kind',n:5,c:'#a78bfa',val:'17 · plane broadcast'},{name:'Radio info',n:3,c:'#cbd5e1',val:'5'},{name:'Plane ID',n:24,c:'#7cc4ff',val:'4840D6'},
+  {name:'Content',n:56,c:'#f5b041',val:'flight number'},{name:'Check code',n:24,c:'#4fd1c5',val:'576098'}];
+const fieldOf=i=>{let s=0;for(const f of FIELDS){if(i<s+f.n)return f;s+=f.n;}};
+const CHARSET='#ABCDEFGHIJKLMNOPQRSTUVWXYZ##### ###############0123456789######';
+const G=[...'1111111111111010000001001'].map(Number); // 0x1FFF409, the Mode S checksum polynomial
+function crcRemainder(bits){const b=bits.slice();for(let i=0;i<88;i++)if(b[i])for(let j=0;j<25;j++)b[i+j]^=G[j];return b.slice(88);}
+const toHex=bits=>{let s='';for(let i=0;i<bits.length;i+=4)s+=parseInt(bits.slice(i,i+4).join(''),2).toString(16).toUpperCase();return s;};
+
+// ------------------------------------------------------------ renderer + scene
+const canvas=$('stage');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.outputEncoding=THREE.sRGBEncoding;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.92;
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(36,1,.1,200);
+camera.position.set(13,9,14);
+const controls=new THREE.OrbitControls(camera,canvas);
+controls.enableDamping=true;controls.dampingFactor=.08;controls.minDistance=5;controls.maxDistance=60;controls.target.set(0,3,0);
+controls.autoRotate=!reduce;controls.autoRotateSpeed=.45;
+let camTween=null;
+controls.addEventListener('start',()=>{controls.autoRotate=false;camTween=null;});
+
+// studio lighting: a reflection map renders black on some GPUs, so the metals use lights and moderate metalness instead
+scene.add(new THREE.HemisphereLight(0xc4dcff,0x0a0f16,.42));
+const key=new THREE.DirectionalLight(0xffffff,1.0);key.position.set(6,14,8);scene.add(key);
+const fill=new THREE.DirectionalLight(0x9fc2ff,.5);fill.position.set(-9,6,-5);scene.add(fill);
+const rim=new THREE.DirectionalLight(0xffe2c0,.35);rim.position.set(2,-4,-10);scene.add(rim);
+
+// ------------------------------------------------------------ geometry helpers
+const unitBox=new THREE.BoxGeometry(1,1,1);
+const m4=new THREE.Matrix4(),q0=new THREE.Quaternion(),v3=new THREE.Vector3(),s3=new THREE.Vector3();
+function boxes(list,material){ // list of [x,y,z,w,h,d] (center + size)
+  const mesh=new THREE.InstancedMesh(unitBox,material,list.length);
+  list.forEach((b,i)=>{m4.compose(v3.set(b[0],b[1],b[2]),q0,s3.set(b[3],b[4],b[5]));mesh.setMatrixAt(i,m4);});
+  mesh.instanceMatrix.needsUpdate=true;return mesh;
+}
+const atY=(mesh,y)=>{mesh.position.y=y;return mesh;};
+const metal=(c,r=.38,m=.45)=>new THREE.MeshStandardMaterial({color:c,metalness:Math.min(m,.5),roughness:Math.max(r,.3)});
+function segs(dir,count,minL,maxL,width,h,pitch){ // random wire segments on routing tracks
+  const out=[];const tracks=Math.floor(2*IN/pitch);
+  for(let t=0;t<tracks;t++){const c=-IN+pitch*(t+.5);let s=-IN+rand()*.6;
+    while(s<IN&&out.length<count){const L=Math.min(lerp(minL,maxL,rand()),IN-s);if(L>.05)
+      out.push(dir==='x'?[s+L/2,h/2,c,L,h,width]:[c,h/2,s+L/2,width,h,L]);s+=L+lerp(.05,.5,rand());}}
+  return out;
+}
+
+// ------------------------------------------------------------ build the stack
+const layerObjs=[];
+LAYERS.forEach(L=>{
+  const g=new THREE.Group();const h=L.h;
+  if(L.id==='balls'){const n=12,sp=.9;const mesh=new THREE.InstancedMesh(new THREE.SphereGeometry(.17,18,12),metal(L.color,.22,1),n*n);let i=0;
+    for(let a=0;a<n;a++)for(let b=0;b<n;b++){m4.makeTranslation((a-(n-1)/2)*sp,h/2,(b-(n-1)/2)*sp);mesh.setMatrixAt(i++,m4);}g.add(mesh);}
+  if(L.id==='pkg'){g.add(atY(new THREE.Mesh(new THREE.BoxGeometry(P,h,P),new THREE.MeshStandardMaterial({color:L.color,roughness:.75,metalness:.1})),h/2));
+    const pads=[],gold=metal('#d4a94c',.25,1);
+    for(let i=0;i<14;i++){const t=-4.2+i*.65;pads.push([t,h+.01,-5,.28,.02,.16],[t,h+.01,5,.28,.02,.16],[-5,h+.01,t,.16,.02,.28],[5,h+.01,t,.16,.02,.28]);}
+    g.add(boxes(pads,gold));}
+  if(L.id==='sub'){g.add(atY(new THREE.Mesh(new THREE.BoxGeometry(D,h,D),new THREE.MeshStandardMaterial({color:L.color,roughness:.4,metalness:.4})),h/2));}
+  if(L.id==='fe'){g.add(atY(new THREE.Mesh(new THREE.BoxGeometry(D-.1,.012,D-.1),new THREE.MeshStandardMaterial({color:'#1b2028',roughness:.6})),.006));
+    const diff=[],poly=[],rowH=.16;
+    for(let z=-IN+rowH/2;z<IN;z+=rowH){
+      let x=-IN;while(x<IN){const w=lerp(.25,.9,rand());diff.push([x+w/2,.02,z-.035,w,.02,.03],[x+w/2,.02,z+.035,w,.02,.03]);
+        for(let px=x+.04;px<x+w-.02;px+=lerp(.06,.11,rand()))poly.push([px,.045,z,.018,.025,.12]);x+=w+.04;}}
+    g.add(boxes(diff,new THREE.MeshStandardMaterial({color:'#3f9c66',roughness:.5,metalness:.2})));g.add(boxes(poly,metal(L.color,.4,.3)));}
+  if(L.id==='li1'){const list=[];for(let i=0;i<900;i++){const along=rand()<.5,l=lerp(.05,.16,rand());const x=lerp(-IN,IN,rand()),z=lerp(-IN,IN,rand());
+    list.push(along?[x,h/2,z,l,h,.025]:[x,h/2,z,.025,h,l]);}g.add(boxes(list,metal(L.color,.35,.6)));}
+  if(L.id==='met1')g.add(boxes(segs('x',1100,.2,1.1,.03,h,.055),metal(L.color)));
+  if(L.id==='met2')g.add(boxes(segs('z',900,.3,1.8,.03,h,.07),metal(L.color)));
+  if(L.id==='met3')g.add(boxes(segs('x',260,.8,3.6,.06,h,.2),metal(L.color)));
+  if(L.id==='met4'){const l=segs('z',140,1.4,6,.07,h,.32);for(let x=-IN+.5;x<IN;x+=1)l.push([x,h/2,0,.16,h,2*IN]);g.add(boxes(l,metal(L.color)));}
+  if(L.id==='met5'){const l=[];for(let z=-IN+.45;z<IN;z+=.9)l.push([0,h/2,z,2*IN,h,.3]);
+    for(let i=0;i<12;i++){const t=-3.5+i*(7/11);l.push([t,h/2,-3.88,.3,h,.22],[t,h/2,3.88,.3,h,.22],[-3.88,h/2,t,.22,h,.3],[3.88,h/2,t,.22,h,.3]);}
+    g.add(boxes(l,metal(L.color,.28,.9)));}
+  if(L.id==='lid'){const c=document.createElement('canvas');c.width=c.height=1024;const x=c.getContext('2d');
+    x.fillStyle='#9aa3ad';x.fillRect(0,0,1024,1024);for(let i=0;i<4000;i++){x.fillStyle='rgba(255,255,255,'+(rand()*.05)+')';x.fillRect(rand()*1024,rand()*1024,rand()*80,1);}
+    x.fillStyle='#5d6670';x.textAlign='center';x.font='600 150px Geist, Helvetica, sans-serif';x.fillText('HZN-1',512,470);
+    x.font='500 46px Geist Mono, Menlo, monospace';x.fillText('FUEL HORIZON · SKY130',512,570);x.fillText('ADS-B EDGE PROCESSOR',512,630);
+    x.beginPath();x.arc(120,120,34,0,7);x.fill();
+    const tex=new THREE.CanvasTexture(c);tex.encoding=THREE.sRGBEncoding;tex.anisotropy=8;
+    const side=new THREE.MeshStandardMaterial({color:L.color,metalness:.45,roughness:.42});
+    const top=new THREE.MeshStandardMaterial({map:tex,metalness:.4,roughness:.5});
+    const mesh=new THREE.Mesh(new THREE.BoxGeometry(L.foot,h,L.foot),[side,side,top,side,side,side]);mesh.position.y=h/2;g.add(mesh);
+    L.mats=[side,top];}
+  // invisible slab for hovering/clicking; shows a tint when highlighted
+  const sheet=new THREE.Mesh(new THREE.BoxGeometry(L.foot+.06,h+.04,L.foot+.06),new THREE.MeshBasicMaterial({color:'#7cc4ff',transparent:true,opacity:0,depthWrite:false}));
+  sheet.position.y=h/2;sheet.userData.layer=L;g.add(sheet);
+  scene.add(g);layerObjs.push({L,g,sheet});
+});
+// collapsed heights
+let acc=0;LAYERS.forEach(L=>{L.base=acc;acc+=L.h;});
+const idx=id=>LAYERS.findIndex(L=>L.id===id);
+
+// vias between routing layers: they stretch into pillars when the stack is pulled apart
+const viaGaps=[];
+['fe','li1','met1','met2','met3','met4'].forEach(id=>{
+  const n=110,mesh=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1).translate(0,.5,0),metal('#b7bec8',.3,1),n);
+  for(let i=0;i<n;i++){m4.compose(v3.set(lerp(-IN,IN,rand()),0,lerp(-IN,IN,rand())),q0,s3.set(.03,1,.03));mesh.setMatrixAt(i,m4);}
+  scene.add(mesh);viaGaps.push({lower:idx(id),mesh});});
+
+// bond wires (only when the package is assembled)
+const wires=new THREE.Group();scene.add(wires);
+{const gold=metal('#e0b65a',.25,1);
+  // wires run from the die's top pads down to the package pads, measured in the assembled stack
+  const drop=(LAYERS[idx('pkg')].base+LAYERS[idx('pkg')].h)-(LAYERS[idx('met5')].base+LAYERS[idx('met5')].h);
+  for(let i=0;i<12;i++){const t=-3.5+i*(7/11);
+    [[t,-3.88,t*1.18,-5],[t,3.88,t*1.18,5],[-3.88,t,-5,t*1.18],[3.88,t,5,t*1.18]].forEach(([x0,z0,x1,z1])=>{
+      const c=new THREE.CubicBezierCurve3(new THREE.Vector3(x0,0,z0),new THREE.Vector3(x0+(x1-x0)*.2,.9,z0+(z1-z0)*.2),new THREE.Vector3(x1-(x1-x0)*.2,.6,z1-(z1-z0)*.2),new THREE.Vector3(x1,drop+.02,z1));
+      wires.add(new THREE.Mesh(new THREE.TubeGeometry(c,24,.012,5,false),gold));});}}
+
+// ------------------------------------------------------------ floorplan blocks
+const blockObjs=[];const blockGroup=new THREE.Group();scene.add(blockGroup);const DARK=new THREE.Color('#070b11');
+BLOCKS.forEach(B=>{
+  const w=B.x[1]-B.x[0],d=B.z[1]-B.z[0],cx=(B.x[0]+B.x[1])/2,cz=(B.z[0]+B.z[1])/2;
+  // unlit, nearly solid tiles: overhead light would wash flat colors out, and the power grid shouldn't show through
+  const mat=new THREE.MeshBasicMaterial({color:B.color,transparent:true,opacity:.92});
+  const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,.14,d),mat);mesh.position.set(cx,.07,cz);mesh.userData.block=B;
+  const edge=new THREE.LineSegments(new THREE.EdgesGeometry(mesh.geometry),new THREE.LineBasicMaterial({color:B.color,transparent:true,opacity:.95}));edge.position.copy(mesh.position);
+  blockGroup.add(mesh,edge);
+  if(B.id==='track'){const cells=[];for(let a=0;a<20;a++)for(let b=0;b<16;b++)cells.push([B.x[0]+.12+a*(w-.24)/19,.15,B.z[0]+.12+b*(d-.24)/15,.09,.02,.09]);
+    blockGroup.add(boxes(cells,new THREE.MeshStandardMaterial({color:'#dfe6ee',roughness:.4,metalness:.4})));}
+  blockObjs.push({B,mesh,mat,edge,base:new THREE.Color(B.color),center:new THREE.Vector3(cx,0,cz)});
+});
+
+// ------------------------------------------------------------ signal path
+const WP={padIn:[-4.35,-1.5],radio:[-3.05,-1.5],dec:[-1,-2],track:[2.05,-.2],fuel:[-1,1.6],area:[1.42,2.35],out:[3,2.35],padOut:[4.35,2.35]};
+const PATH_ORDER=['padIn','radio','dec','track','fuel','area','out','padOut'];
+function manhattan(a,b){return a[0]===b[0]||a[1]===b[1]?[a,b]:[a,[b[0],a[1]],b];}
+const routeGroup=new THREE.Group();scene.add(routeGroup);
+const routeMat=new THREE.LineBasicMaterial({color:'#7cc4ff',transparent:true,opacity:.35});
+for(let i=0;i<PATH_ORDER.length-1;i++){const pts=manhattan(WP[PATH_ORDER[i]],WP[PATH_ORDER[i+1]]).map(p=>new THREE.Vector3(p[0],.32,p[1]));
+  routeGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),routeMat));}
+const glowTex=(()=>{const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d');const g=x.createRadialGradient(64,64,0,64,64,64);
+  g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(.25,'rgba(124,196,255,.9)');g.addColorStop(1,'rgba(124,196,255,0)');x.fillStyle=g;x.fillRect(0,0,128,128);return new THREE.CanvasTexture(c);})();
+const pulse=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending}));pulse.scale.set(.9,.9,.9);routeGroup.add(pulse);
+const TRAIL=36;const trailPos=new Float32Array(TRAIL*3),trailCol=new Float32Array(TRAIL*3);
+const trailGeo=new THREE.BufferGeometry();trailGeo.setAttribute('position',new THREE.BufferAttribute(trailPos,3));trailGeo.setAttribute('color',new THREE.BufferAttribute(trailCol,3));
+const trail=new THREE.Line(trailGeo,new THREE.LineBasicMaterial({vertexColors:true,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}));routeGroup.add(trail);
+for(let i=0;i<TRAIL;i++){const k=1-i/TRAIL;trailCol.set([.49*k,.77*k,k],i*3);}
+
+const STEPS=[
+  {from:'padIn',to:'radio',block:'radio',title:'A plane broadcasts',viz:'wave',
+    text:'Every plane sends out a short radio message about six times a second, saying who it is and where it is. The antenna picks it up and the <strong>antenna input</strong> starts measuring it.'},
+  {from:'radio',to:'dec',block:'dec',title:'Spotting the start',viz:'preamble',
+    text:'Radio is noisy, so the <strong>message decoder</strong> watches for a special pattern of four bursts that every message begins with. When it sees that pattern, it knows a message is coming.'},
+  {at:'dec',block:'dec',title:'Turning bursts into 1s and 0s',viz:'bits',
+    text:'Each burst stands for one digit: a burst early in its time slot means 1, late means 0. The whole message is 112 digits, shown below grouped by what they describe.'},
+  {at:'dec',block:'dec',title:'Checking for mistakes',viz:'crc',
+    text:'The last 24 digits are a check code calculated from the rest. The chip redoes that calculation; if the results match, the message arrived undamaged. Try damaging one digit to see it get caught.'},
+  {at:'dec',block:'dec',title:'Reading the message',viz:'decode',
+    text:'This message is the plane introducing itself. It gives the plane\'s permanent ID, <strong>4840D6</strong>, and its flight number. Each letter is stored as 6 digits.'},
+  {from:'dec',to:'track',block:'track',title:'Saving it to memory',viz:'track',
+    text:'The chip writes what it learned into the <strong>aircraft memory</strong>, in this plane\'s row. Its location and speed fill in when those messages arrive.'},
+  {from:'track',to:'fuel',block:'fuel',title:'Estimating fuel',viz:'fuel',
+    text:'Once a second, the <strong>fuel calculator</strong> adds up how much fuel the plane has burned, using fuel figures for its exact aircraft type that were checked against published numbers. It also works out how long a battery-powered version would last.'},
+  {from:'fuel',to:'area',block:'area',title:'Is it in your area?',viz:'area',
+    text:'If you\'ve picked a place to focus on, the <strong>area filter</strong> checks whether the plane is inside it. It uses a math shortcut that skips slow steps, so it can check many planes at once.'},
+  {from:'area',to:'padOut',block:'out',title:'Sending it to the app',viz:'out',
+    text:'The <strong>output</strong> sends a short line of text about the plane to the computer running Fuel Horizon, which draws it on the globe.'}
+];
+
+// ------------------------------------------------------------ state
+const state={mode:'layers',explode:.62,e:.62,eTarget:.62,lidAlpha:1,blocksAlpha:0,routeAlpha:0,sel:null,selBlock:null,hover:null,
+  step:0,playing:false,stepT:1,stepFrom:null,stepTo:null,flip:-1};
+
+// ------------------------------------------------------------ panels
+const panel=$('panel');
+const sw=c=>'<span class="sw" style="background:'+c+'"></span>';
+function layersPanel(){
+  const L=state.sel;
+  let h='<div><span class="eyebrow">The physical stack</span><h2>What a chip is made of</h2></div>'+
+    '<p>A chip is like a tiny building with many floors. The ground floor is silicon covered in microscopic switches. The floors above are wiring that connects those switches. Drag the slider to pull the floors apart.</p>'+
+    '<label class="slider" for="explode">Pull apart<input id="explode" type="range" min="0" max="100" value="'+Math.round(state.explode*100)+'"></label>'+
+    '<ul class="list">'+LAYERS.slice().reverse().map(x=>'<li><button data-layer="'+x.id+'" aria-pressed="'+(L===x)+'">'+sw(x.color)+x.name+'<span class="r">'+x.real+'</span></button></li>').join('')+'</ul>';
+  if(L)h+='<div class="detail"><h3>'+L.name+'</h3><p>'+L.what+'</p><dl class="dl"><dt>Thickness</dt><dd><span class="num">'+L.real+'</span>, '+L.scale+'</dd><dt>Made of</dt><dd>'+L.material+'</dd><dt>In HZN-1</dt><dd>'+L.hzn+'</dd></dl></div>';
+  else h+='<p class="note">Click a layer, in the list or on the chip, to learn what it does. The colors are only there to tell layers apart; the real wires are silver.</p>';
+  h+='<p class="note">Thicknesses come from SKY130, a free chipmaking process that students can use. The model stretches the thinnest layers so you can see them. A human hair is about 70 µm (micrometers) across.</p>';
+  panel.innerHTML=h;
+  $('explode').addEventListener('input',e=>{state.explode=e.target.value/100;state.eTarget=state.explode;});
+  panel.querySelectorAll('[data-layer]').forEach(b=>b.addEventListener('click',()=>selectLayer(LAYERS.find(x=>x.id===b.dataset.layer))));
+}
+function floorPanel(){
+  const B=state.selBlock;
+  let h='<div><span class="eyebrow">Floorplan</span><h2>What each part does</h2></div>'+
+    '<p>From above, the chip is divided into areas that each have one job, like rooms in a house. Together they listen to planes, work out where they are, and estimate how much fuel they have.</p>'+
+    '<ul class="list">'+BLOCKS.map(x=>'<li><button data-block="'+x.id+'" aria-pressed="'+(B===x)+'">'+sw(x.color)+x.name+'<span class="r">'+x.size+'</span></button></li>').join('')+'</ul>';
+  if(B)h+='<div class="detail"><h3>'+B.name+'</h3><p>'+B.does+'</p><dl class="dl"><dt>Takes in</dt><dd>'+B.input+'</dd><dt>Gives back</dt><dd>'+B.output+'</dd><dt>Size</dt><dd>'+B.gates+(B.id==='track'?'':' logic gates')+'</dd></dl>'+
+    '<p><strong>What it replaces in Fuel Horizon:</strong> '+B.replaces+'</p></div>';
+  else h+='<p class="note">Click an area on the chip, or in the list, to learn what it does.</p>';
+  h+='<p class="note">Sizes are counted in logic gates: tiny groups of switches that each make one simple yes-or-no decision. This is a planned design, so the sizes are estimates until the chip is built.</p>';
+  panel.innerHTML=h;
+  panel.querySelectorAll('[data-block]').forEach(b=>b.addEventListener('click',()=>selectBlock(BLOCKS.find(x=>x.id===b.dataset.block))));
+}
+const ICON={prev:'<path d="M15 18l-6-6 6-6"/>',next:'<path d="M9 6l6 6-6 6"/>',play:'<path d="M7 5l12 7-12 7z" fill="currentColor"/>',pause:'<path d="M8 5v14M16 5v14"/>'};
+const icon=n=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+ICON[n]+'</svg>';
+function waveSVG(showPre){
+  // 0–16 µs: the start pattern (bursts at 0, 1, 3.5, 4.5) then the first 8 digits, each a burst early (1) or late (0) in its slot
+  const W=320,H=96,x=t=>14+t/16*(W-28),base=70,top=24;let d='';const pulses=[0,1,3.5,4.5];
+  for(let i=0;i<8;i++)pulses.push(8+i+(BITS[i]?0:.5));
+  pulses.forEach(t=>{d+='<rect x="'+x(t)+'" y="'+top+'" width="'+(x(t+.5)-x(t))+'" height="'+(base-top)+'" rx="1" fill="'+(t<8?(showPre?'#7cc4ff':'#8b97a5'):'#f5b041')+'"/>';});
+  let lab='';for(let i=0;i<8;i++)lab+='<text x="'+(x(8+i)+x(9+i))/2+'" y="16" fill="#e9eef3" font-size="10" text-anchor="middle" font-family="Geist Mono, monospace">'+BITS[i]+'</text>';
+  return '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Timing of the radio bursts at the start of the message"><line x1="14" x2="'+(W-14)+'" y1="'+base+'" y2="'+base+'" stroke="rgba(255,255,255,.25)"/>'+d+lab+
+    [0,4,8,12,16].map(t=>'<text x="'+x(t)+'" y="'+(base+16)+'" fill="#8b97a5" font-size="9.5" text-anchor="middle" font-family="Geist Mono, monospace">'+t+' µs</text>').join('')+
+    (showPre?'<text x="'+x(4)+'" y="16" fill="#7cc4ff" font-size="10" text-anchor="middle">start pattern</text>':'')+'</svg>';
+}
+function bitsGrid(bits,flip){return '<div class="bits" aria-label="The 112 digits of the message">'+bits.map((b,i)=>'<span class="'+(i===flip?'flip':'')+'" style="background:'+fieldOf(i).c+';opacity:'+(b?1:.38)+'">'+b+'</span>').join('')+'</div>'+
+  '<div class="legend">'+FIELDS.map(f=>'<span><i style="background:'+f.c+'"></i>'+f.name+' · '+f.n+' digits</span>').join('')+'</div>';}
+function vizHTML(kind){
+  if(kind==='wave')return waveSVG(false)+'<p>Each bar is a short burst of radio, a millionth of a second long. The orange bars are the start of the actual message.</p>';
+  if(kind==='preamble')return waveSVG(true)+'<p>The four blue bursts are the start pattern. Their spacing never changes, which is what makes them easy to spot.</p>';
+  if(kind==='bits')return bitsGrid(BITS,-1)+'<dl class="dl">'+FIELDS.map(f=>'<dt>'+f.name+'</dt><dd class="num">'+f.val+'</dd>').join('')+'</dl>';
+  if(kind==='crc'){const bits=BITS.slice();if(state.flip>=0)bits[state.flip]^=1;const rem=crcRemainder(bits),pass=rem.every(b=>!b);
+    return bitsGrid(bits,state.flip)+'<dl class="dl"><dt>Check code received</dt><dd class="num">'+toHex(bits.slice(88))+'</dd><dt>Result</dt><dd class="'+(pass?'ok':'bad')+'">'+(pass?'Matches ✓ undamaged':'Doesn\'t match ✗ thrown away')+'</dd></dl>'+
+      (state.flip>=0?'<p>Digit '+(state.flip+1)+' was flipped (outlined in red), so the check fails and the chip ignores this message. The plane will send another a fraction of a second later.</p><button class="btn" id="unflip">Undo the damage</button>':'<button class="btn" id="flip">Damage one digit</button>');}
+  if(kind==='decode'){const me=BITS.slice(32,88);let cells='';let cs='';
+    for(let i=0;i<8;i++){const b=me.slice(8+6*i,14+6*i),ch=CHARSET[parseInt(b.join(''),2)];cs+=ch;cells+='<div><b>'+(ch===' '?'␣':ch)+'</b><small>'+b.join('')+'</small></div>';}
+    return '<div class="chars">'+cells+'</div><dl class="dl"><dt>Flight number</dt><dd class="num">'+cs.trim()+'</dd><dt>Plane ID</dt><dd class="num">4840D6</dd><dt>Message type</dt><dd>Introduction</dd></dl>'+
+      '<p>The same plane also sends messages with its location and speed. The chip reads those the same way.</p>';}
+  if(kind==='track')return '<table class="tt"><thead><tr><th>Plane ID</th><th>Flight</th><th>Height</th><th>Updated</th></tr></thead><tbody>'+
+    '<tr class="new"><td>4840D6</td><td>KLM1023</td><td>—</td><td>now</td></tr>'+
+    '<tr><td class="ex">40621D</td><td class="ex">—</td><td class="ex">38,000 ft</td><td class="ex">0.4 s ago</td></tr>'+
+    '<tr><td class="ex">485020</td><td class="ex">—</td><td class="ex">—</td><td class="ex">1.1 s ago</td></tr></tbody></table><p>The gray rows are made-up examples of other planes. KLM1023\'s height arrives with its next location message.</p>';
+  if(kind==='fuel'){const burn=2450,perS=burn/3600,tank=21000,dens=300,usefulPerKg=4190,eb=tank*dens*.9,mins=eb/(perS*usefulPerKg)/60;
+    return '<div class="mono">Every second: fuel burned so far + '+fmt(perS,2)+' kg</div>'+
+      '<dl class="dl"><dt>Typical cruise burn for an A320</dt><dd class="num">'+fmt(burn)+' kg an hour</dd><dt>Battery weighing the same as a full tank</dt><dd class="num">'+fmt(eb/1e6,1)+' MWh</dd><dt>A battery version would run out after</dt><dd class="num">about '+fmt(mins)+' minutes</dd></dl>'+
+      '<p>Example numbers for a plane the size of an Airbus A320, using today\'s best batteries. That gap is why most planes still burn fuel.</p><p><a href="https://claude.ai/artifact/QikibNNyAbzssymtuLyMsT" target="_blank" rel="noopener" style="color:var(--accent)">See how the fuel model was checked ↗</a></p>';}
+  if(kind==='area'){const lat=52.1,lon=4.3,clat=52.31,clon=4.76,R=6371,dphi=(lat-clat)*Math.PI/180,dl=(lon-clon)*Math.PI/180*Math.cos(clat*Math.PI/180),dk=Math.sqrt(dphi*dphi+dl*dl)*R;
+    return '<dl class="dl"><dt>Your area</dt><dd>100 km around Amsterdam</dd><dt>Plane\'s location</dt><dd class="num">52.10°N 4.30°E</dd><dt>Distance from center</dt><dd class="num">'+fmt(dk)+' km</dd><dt>Result</dt><dd class="ok">Inside ✓</dd></dl>'+
+      '<p>This introduction message has no location, so the location here is an example.</p>';}
+  if(kind==='out')return '<div class="mono">$HZN,4840D6,KLM1023,,,FUEL=?,IN=1*4F</div><p>One line like this per plane (the exact format is an example). Open <a href="https://claude.ai/artifact/BPyUVxays1xfAfQw4hxFaD" target="_blank" rel="noopener" style="color:var(--accent)">Fuel Horizon ↗</a> to see what the globe does with it.</p>';
+  return '';
+}
+function signalPanel(){
+  const S=STEPS[state.step];
+  panel.innerHTML='<div class="sig-head"><div><span class="eyebrow">One message, step '+(state.step+1)+' of '+STEPS.length+'</span></div>'+
+    '<div class="ctrl"><button id="sPrev" aria-label="Previous step">'+icon('prev')+'</button><button id="sPlay" aria-label="'+(state.playing?'Pause':'Play')+'">'+icon(state.playing?'pause':'play')+'</button><button id="sNext" aria-label="Next step">'+icon('next')+'</button></div></div>'+
+    '<div class="dots">'+STEPS.map((_,i)=>'<button aria-label="Step '+(i+1)+'"'+(i===state.step?' aria-current="step"':'')+(i<state.step?' class="done"':'')+' data-step="'+i+'"></button>').join('')+'</div>'+
+    '<h2>'+S.title+'</h2><p>'+S.text+'</p><div class="viz">'+vizHTML(S.viz)+'</div>'+
+    '<p class="note">This follows a real message from a well-known textbook on aircraft radio, <em>The 1090 MHz Riddle</em>. The digits and the mistake check are calculated live as you watch.</p>';
+  $('sPrev').addEventListener('click',()=>goStep(state.step-1,true));
+  $('sNext').addEventListener('click',()=>goStep(state.step+1,true));
+  $('sPlay').addEventListener('click',()=>{state.playing=!state.playing;state.playAt=performance.now();if(state.playing&&state.step===STEPS.length-1)goStep(0);else signalPanel();});
+  panel.querySelectorAll('[data-step]').forEach(b=>b.addEventListener('click',()=>goStep(+b.dataset.step,true)));
+  const f=$('flip'),u=$('unflip');
+  if(f)f.addEventListener('click',()=>{state.flip=Math.floor(Math.random()*112);signalPanel();});
+  if(u)u.addEventListener('click',()=>{state.flip=-1;signalPanel();});
+}
+function renderPanel(){const st=panel.scrollTop;if(state.mode==='layers')layersPanel();else if(state.mode==='floor')floorPanel();else signalPanel();panel.scrollTop=st;}
+
+// ------------------------------------------------------------ interactions
+function selectLayer(L){state.sel=state.sel===L?null:L;renderPanel();}
+function selectBlock(B){state.selBlock=state.selBlock===B?null:B;renderPanel();}
+function goStep(i,manual){
+  i=clamp(i,0,STEPS.length-1);const S=STEPS[i];
+  state.stepFrom=S.at||S.from;state.stepTo=S.at||S.to;state.stepT=reduce?1:0;state.step=i;state.flip=-1;
+  if(manual)state.playing=false;state.playAt=performance.now();
+  state.selBlock=BLOCKS.find(b=>b.id===S.block);
+  signalPanel();
+}
+const VIEWS={layers:{pos:[15.5,10.5,16.5],tgt:[0,3.2,0]},floor:{pos:[.01,17.5,9.5],tgt:[0,0,.5]},signal:{pos:[.01,17,10],tgt:[0,0,.5]}};
+// tall, narrow screens see less width, so the camera backs off to keep the whole chip in view
+const fitScale=()=>{const a=innerWidth/innerHeight;return a<1.1?Math.min(2.3,1.05/a):1;};
+function viewPos(v){const t=new THREE.Vector3(...v.tgt);return new THREE.Vector3(...v.pos).sub(t).multiplyScalar(fitScale()).add(t);}
+function setMode(m){
+  state.mode=m;['tLayers','tFloor','tSignal'].forEach((id,i)=>$(id).setAttribute('aria-selected',String(['layers','floor','signal'][i]===m)));
+  state.eTarget=m==='layers'?state.explode:0;
+  const v=VIEWS[m];camTween={from:camera.position.clone(),to:viewPos(v),tf:controls.target.clone(),tt:new THREE.Vector3(...v.tgt),t0:performance.now(),dur:reduce?1:1300};
+  controls.autoRotate=m==='layers'&&!reduce&&!state.userMoved;
+  if(m==='signal'){state.playing=false;goStep(state.step);}else{if(m==='floor')state.selBlock=null;renderPanel();}
+  try{localStorage.setItem('hzn-mode',m);}catch(e){}
+}
+$('tLayers').addEventListener('click',()=>setMode('layers'));
+$('tFloor').addEventListener('click',()=>setMode('floor'));
+$('tSignal').addEventListener('click',()=>setMode('signal'));
+controls.addEventListener('start',()=>{state.userMoved=true;});
+
+const ray=new THREE.Raycaster(),ndc=new THREE.Vector2(),tip=$('tip');
+let ptr=null,downAt=null;
+function pickAt(x,y){
+  const r=canvas.getBoundingClientRect();ndc.set((x-r.left)/r.width*2-1,-(y-r.top)/r.height*2+1);ray.setFromCamera(ndc,camera);
+  if(state.mode==='layers'){const hits=ray.intersectObjects(layerObjs.map(o=>o.sheet));return hits.length?{layer:hits[0].object.userData.layer}:null;}
+  const hits=ray.intersectObjects(blockObjs.map(o=>o.mesh));return hits.length?{block:hits[0].object.userData.block}:null;
+}
+canvas.addEventListener('pointermove',e=>{ptr=[e.clientX,e.clientY];});
+canvas.addEventListener('pointerleave',()=>{ptr=null;tip.hidden=true;state.hover=null;});
+canvas.addEventListener('pointerdown',e=>{downAt=[e.clientX,e.clientY];});
+canvas.addEventListener('pointerup',e=>{if(!downAt||Math.hypot(e.clientX-downAt[0],e.clientY-downAt[1])>5){downAt=null;return;}downAt=null;
+  const h=pickAt(e.clientX,e.clientY);if(!h)return;
+  if(h.layer)selectLayer(h.layer);
+  else if(h.block){if(state.mode==='signal'){const i=STEPS.findIndex(s=>s.block===h.block.id);if(i>=0)goStep(i,true);}else selectBlock(h.block);}});
+addEventListener('keydown',e=>{if(state.mode!=='signal'||e.target.tagName==='INPUT')return;
+  if(e.key==='ArrowRight')goStep(state.step+1,true);if(e.key==='ArrowLeft')goStep(state.step-1,true);});
+
+// ------------------------------------------------------------ labels (HTML, so text stays crisp)
+const labelsEl=$('labels');
+const layerLabels=LAYERS.map(L=>{const el=document.createElement('div');el.className='lbl';el.innerHTML=L.name+'<small>'+L.real+'</small>';
+  el.addEventListener('click',()=>selectLayer(L));labelsEl.appendChild(el);return el;});
+const blockLabels=BLOCKS.map(B=>{const el=document.createElement('div');el.className='blbl';el.textContent=B.name;labelsEl.appendChild(el);return el;});
+const pv=new THREE.Vector3();
+function toScreen(v){pv.copy(v).project(camera);const r=canvas.getBoundingClientRect();return [r.left+(pv.x+1)/2*r.width,r.top+(1-pv.y)/2*r.height,pv.z];}
+
+// ------------------------------------------------------------ frame
+function resize(){const w=innerWidth,h=innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;
+  const pr=panel.getBoundingClientRect(),narrow=w<=760;
+  const dx=narrow?0:Math.round((pr.width+16)/2),dy=narrow?Math.round(h*.2):0; // phone: the panel covers the bottom ~46%
+  if(dx||dy)camera.setViewOffset(w,h,dx,dy,w,h);else camera.clearViewOffset();
+  camera.updateProjectionMatrix();}
+addEventListener('resize',resize);
+let last=performance.now();
+function pointOn(name){const p=WP[name];return new THREE.Vector3(p[0],0,p[1]);}
+function pathPts(a,b){return a===b?[pointOn(a)]:manhattan(WP[a],WP[b]).map(p=>new THREE.Vector3(p[0],0,p[1]));}
+function along(pts,t){if(pts.length===1)return pts[0].clone();let L=0;const seg=[];for(let i=0;i<pts.length-1;i++){const l=pts[i].distanceTo(pts[i+1]);seg.push(l);L+=l;}
+  let d=t*L;for(let i=0;i<seg.length;i++){if(d<=seg[i])return pts[i].clone().lerp(pts[i+1],seg[i]?d/seg[i]:0);d-=seg[i];}return pts[pts.length-1].clone();}
+function frame(now){
+  const dt=Math.min(.05,(now-last)/1000);last=now;
+  // camera tween
+  if(camTween){const k=clamp((now-camTween.t0)/camTween.dur,0,1),e=ease(k);camera.position.lerpVectors(camTween.from,camTween.to,e);controls.target.lerpVectors(camTween.tf,camTween.tt,e);if(k>=1)camTween=null;}
+  // stack
+  state.e=lerp(state.e,state.eTarget,1-Math.pow(.001,dt));
+  const wantLid=state.mode==='layers'?1:0,wantBlocks=state.mode==='layers'?0:1;
+  state.lidAlpha=lerp(state.lidAlpha,wantLid,1-Math.pow(.002,dt));state.blocksAlpha=lerp(state.blocksAlpha,wantBlocks,1-Math.pow(.002,dt));
+  layerObjs.forEach(({L,g,sheet},i)=>{g.position.y=L.base+state.e*GAP*i;
+    const on=state.sel===L&&state.mode==='layers',hov=state.hover===L;sheet.material.opacity=on?.16:hov?.08:0;});
+  const lid=LAYERS[LAYERS.length-1];lid.mats.forEach(m=>{m.transparent=state.lidAlpha<.99;m.opacity=state.lidAlpha;});layerObjs[layerObjs.length-1].g.visible=state.lidAlpha>.02;
+  viaGaps.forEach(({lower,mesh})=>{const lo=layerObjs[lower].g.position.y+LAYERS[lower].h,hi=layerObjs[lower+1].g.position.y;mesh.position.y=lo;mesh.scale.y=Math.max(.0001,hi-lo);mesh.visible=hi-lo>.03;});
+  const met5=LAYERS[idx('met5')],dieTop=layerObjs[idx('met5')].g.position.y+met5.h;
+  wires.position.y=dieTop;wires.visible=state.e<.03;
+  blockGroup.position.y=dieTop+.01;blockGroup.visible=state.blocksAlpha>.02;
+  routeGroup.position.y=dieTop+.01;routeGroup.visible=state.mode==='signal'&&state.blocksAlpha>.3;
+  blockObjs.forEach(o=>{const sel=state.selBlock===o.B,hov=state.hover===o.B,act=state.mode==='signal'?sel:true;
+    o.mat.opacity=state.blocksAlpha*.94;
+    const k=sel?.12-(state.mode==='signal'?.1*Math.sin(now/220):0):hov?.38:state.mode==='signal'?.78:.55; // how far toward the background color
+    o.mat.color.copy(o.base).lerp(DARK,clamp(k,0,1));
+    o.edge.material.opacity=state.blocksAlpha*(act?.95:.35);});
+  // signal pulse
+  if(state.mode==='signal'){
+    if(state.playing&&now-state.playAt>5600){if(state.step<STEPS.length-1){goStep(state.step+1);state.playing=true;}else{state.playing=false;signalPanel();}}
+    state.stepT=Math.min(1,state.stepT+dt/1.4);
+    const pts=pathPts(state.stepFrom||'padIn',state.stepTo||'radio');const p=along(pts,ease(state.stepT));p.y=.32;pulse.position.copy(p);
+    const s=state.stepT>=1?.75+.18*Math.sin(now/180):.9;pulse.scale.set(s,s,s);
+    trailPos.copyWithin(3,0,(TRAIL-1)*3);trailPos[0]=p.x;trailPos[1]=p.y;trailPos[2]=p.z;trailGeo.attributes.position.needsUpdate=true;
+  }
+  // hover
+  if(ptr){const h=pickAt(ptr[0],ptr[1]);state.hover=h?(h.layer||h.block):null;
+    if(h){tip.hidden=false;tip.style.left=ptr[0]+'px';tip.style.top=ptr[1]+'px';tip.textContent=(h.layer?h.layer.name+' · '+h.layer.real:h.block.name)+' · click for details';canvas.style.cursor='pointer';}
+    else{tip.hidden=true;canvas.style.cursor='';}}
+  controls.update();
+  camera.updateMatrixWorld(); // place labels with this frame's camera so they don't trail the model
+  // labels
+  const showL=state.mode==='layers'&&state.e>.28;
+  const narrow=innerWidth<=760; // tags would pile up on a phone; the panel's list names every layer
+  layerObjs.forEach(({L,g},i)=>{const el=layerLabels[i];if(!showL||(narrow&&state.sel!==L)){el.hidden=true;return;}
+    const s=toScreen(new THREE.Vector3(L.foot/2,g.position.y+L.h/2,L.foot/2));el.hidden=s[2]>1;el.style.left=s[0]+'px';el.style.top=s[1]+'px';el.classList.toggle('on',state.sel===L);});
+  blockObjs.forEach((o,i)=>{const el=blockLabels[i];if(state.blocksAlpha<.5){el.hidden=true;return;}
+    const s=toScreen(new THREE.Vector3(o.center.x,dieTop+.2,o.center.z));el.hidden=false;el.style.left=s[0]+'px';el.style.top=s[1]+'px';
+    el.classList.toggle('dim',state.mode==='signal'&&state.selBlock!==o.B);});
+  renderer.render(scene,camera);
+  requestAnimationFrame(frame);
+}
+
+// ------------------------------------------------------------ boot
+resize();
+let start='layers';try{const m=localStorage.getItem('hzn-mode');if(m==='floor'||m==='signal')start=m;}catch(e){}
+const hashMode={'#layers':'layers','#floorplan':'floor','#signal':'signal'}[location.hash];if(hashMode)start=hashMode;
+if(start!=='layers'){state.e=0;state.eTarget=0;state.lidAlpha=0;state.blocksAlpha=1;}
+camera.position.copy(viewPos(VIEWS[start]));controls.target.set(...VIEWS[start].tgt);
+state.mode=start;setMode(start);camTween=null;
+requestAnimationFrame(frame);
+})();
+</script>

@@ -1,0 +1,759 @@
+<title>Fuel Horizon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: the globe fills the screen; one top bar, one flight card, one key, one bottom control strip. Single committed dark look. */
+:root{
+  --bg:#060a10;
+  --panel:rgba(13,19,27,.82);
+  --line:rgba(255,255,255,.08);
+  --line-2:rgba(255,255,255,.15);
+  --text:#e9eef3;
+  --muted:#8b97a5;
+  --accent:#7cc4ff;
+  --good:#4fd1c5;
+  --warn:#f5b041;
+  --bad:#ff6b6b;
+  --f-sans:"Geist",ui-sans-serif,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;
+  --f-mono:"Geist Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:radial-gradient(120% 90% at 50% 45%,#0c1420 0%,var(--bg) 62%);color:var(--text);font:14px/1.45 var(--f-sans);overflow:hidden;-webkit-font-smoothing:antialiased}
+#globe{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+#globe:active{cursor:grabbing}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.glass{background:var(--panel);border:1px solid var(--line);border-radius:14px;backdrop-filter:blur(14px) saturate(1.2);-webkit-backdrop-filter:blur(14px) saturate(1.2)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.top{position:fixed;top:calc(16px + env(safe-area-inset-top,0px));left:16px;right:16px;display:flex;align-items:center;gap:10px;pointer-events:none}
+.top>*{pointer-events:auto}
+.brand{font-weight:600;font-size:15px;letter-spacing:-.01em;display:flex;align-items:center;gap:8px;margin-right:4px;pointer-events:none;text-shadow:0 1px 6px rgba(0,0,0,.7)}
+.brand svg{width:18px;height:18px}
+.pill{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 12px;border-radius:999px;font-size:12.5px;color:var(--muted);white-space:nowrap;flex-shrink:0}
+.pill i{width:7px;height:7px;border-radius:50%;background:var(--warn)}
+.pill b{color:var(--text);font-weight:500}
+.area{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 4px 0 12px;border-radius:999px;font-size:13px;min-width:0;max-width:min(440px,50vw);border-color:rgba(124,196,255,.45)}
+.area>svg{width:15px;height:15px;color:var(--accent);flex-shrink:0}
+.area-text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.area-text b{font-weight:600}
+.area-text span{color:var(--muted)}
+.area-radius{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12.5px;white-space:nowrap}
+.area-radius select{background:rgba(255,255,255,.06);color:var(--text);border:1px solid var(--line-2);border-radius:8px;font:12.5px var(--f-mono);padding:3px 4px}
+.spacer{flex:1}
+.search{position:relative}
+.search input{width:220px;height:34px;border-radius:999px;border:1px solid var(--line);background:var(--panel);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);color:var(--text);padding:0 14px 0 34px;font:13px var(--f-sans);outline:none}
+.search input:focus{border-color:var(--line-2)}
+.search input::placeholder{color:var(--muted)}
+.search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:var(--muted);pointer-events:none}
+.results{position:absolute;top:calc(100% + 6px);right:0;width:300px;max-width:calc(100vw - 32px);padding:4px;display:flex;flex-direction:column;z-index:3}
+.results .sec{padding:8px 10px 4px;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.results button{all:unset;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;font:13px var(--f-mono)}
+.results button span{color:var(--muted)}
+.results button .kind{font:11px var(--f-sans);color:var(--muted);border:1px solid var(--line-2);border-radius:999px;padding:1px 7px;flex-shrink:0}
+.results button .pl{display:flex;flex-direction:column;min-width:0;font-family:var(--f-sans)}
+.results button .pl b{font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.results button .pl small{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.results button:hover,.results button:focus-visible{background:rgba(255,255,255,.06)}
+.icon-btn{all:unset;pointer-events:auto;cursor:pointer;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:var(--muted);flex-shrink:0}
+.icon-btn:hover{color:var(--text)}
+.icon-btn svg{width:16px;height:16px}
+
+.about-btn{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 14px 0 11px;border-radius:999px;font:500 13px var(--f-sans);color:var(--text);cursor:pointer;flex-shrink:0;pointer-events:auto}
+.about-btn svg{width:15px;height:15px;color:var(--accent)}
+.about-btn:hover{border-color:var(--line-2)}
+.info{position:fixed;inset:0;z-index:20;display:grid;place-items:center;padding:24px 16px;background:rgba(3,6,10,.55);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+.about{position:relative;width:min(580px,100%);max-height:100%;overflow-y:auto;overscroll-behavior:contain;padding:26px 28px;display:flex;flex-direction:column;gap:18px;font-size:14px;color:var(--muted);background:rgba(13,19,27,.94)}
+.about .kicker{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.about h2{margin:2px 0 0;font-size:26px;font-weight:600;color:var(--text);letter-spacing:-.02em;text-wrap:balance}
+.about .lede{margin:0;font-size:15.5px;line-height:1.5;color:var(--text);max-width:52ch}
+.about h3{margin:0 0 10px;font-size:11.5px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.about ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px}
+.about li{display:flex;gap:12px;line-height:1.45}
+.about li>i{flex-shrink:0;width:26px;height:26px;border-radius:8px;display:grid;place-items:center;background:rgba(124,196,255,.1);color:var(--accent)}
+.about li>i svg{width:15px;height:15px}
+.about li b{color:var(--text);font-weight:500}
+.about p{margin:0;line-height:1.5}
+.about a{color:var(--accent);text-decoration:none}
+.about a:hover{text-decoration:underline}
+.about .actions{position:sticky;bottom:-26px;margin:0 -28px -26px;padding:14px 28px 18px;display:flex;background:linear-gradient(rgba(13,19,27,0),rgba(13,19,27,.98) 40%)}
+.about .go{all:unset;cursor:pointer;padding:10px 20px;border-radius:10px;background:var(--accent);color:#06121c;font-weight:600;font-size:14px}
+.about .go:hover{filter:brightness(1.08)}
+.about .go:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.about .x{position:absolute;top:14px;right:14px}
+.about .src,.about .feed{font-size:12px;border-top:1px solid var(--line);padding-top:14px}
+@media (max-width:760px){.about{padding:22px 18px}.about h2{font-size:22px}.about .actions{bottom:-22px;margin:0 -18px -22px;padding:14px 18px 16px}}
+
+.card{position:fixed;left:16px;bottom:calc(86px + env(safe-area-inset-bottom,0px));width:340px;max-height:calc(100vh - 170px);overflow-y:auto;overscroll-behavior:contain;padding:16px 18px;display:flex;flex-direction:column;gap:14px}
+.card-head{display:flex;align-items:flex-start;gap:10px}
+.card-head .cs{font-size:20px;font-weight:600;letter-spacing:-.01em;line-height:1.1}
+.card .airline{font-size:13px;margin-top:4px}
+.card-head .sub{color:var(--muted);font-size:12.5px;margin-top:3px}
+.card-head .icon-btn{margin:-6px -8px 0 auto;width:30px;height:30px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:11.5px;padding:2px 8px;border-radius:999px;border:1px solid var(--line-2);color:var(--muted)}
+.chip.bad{color:var(--bad);border-color:rgba(255,107,107,.45);background:rgba(255,107,107,.08)}
+.chip.warn{color:var(--warn);border-color:rgba(245,176,65,.4)}
+.route{display:flex;flex-direction:column;gap:8px}
+.route-ends{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.route-ends b{font:500 15px var(--f-mono)}
+.route-ends span{color:var(--muted);font-size:12px;display:block;max-width:14ch;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.route-ends>div:last-child{text-align:right}
+.route-ends>div:last-child span{margin-left:auto}
+.track{position:relative;height:4px;border-radius:2px;background:rgba(255,255,255,.08)}
+.track .done{position:absolute;left:0;top:0;bottom:0;border-radius:2px;background:var(--accent)}
+.track .me{position:absolute;top:50%;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:var(--text);box-shadow:0 0 0 3px rgba(124,196,255,.3)}
+.track .dead{position:absolute;top:-3px;bottom:-3px;width:2px;margin-left:-1px;background:var(--bad);border-radius:1px}
+.eta{font-size:12.5px;color:var(--muted)}
+.eta strong{color:var(--text);font-weight:500}
+.metric{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line);padding-top:14px}
+.metric .label{font-size:12px;color:var(--muted)}
+.metric .big{font:500 28px/1 var(--f-mono);letter-spacing:-.02em}
+.metric .big small{font-size:14px;color:var(--muted);margin-left:3px}
+.metric .note{font-size:12.5px;color:var(--muted)}
+.metric .note strong{color:var(--text);font-weight:500}
+.meter{position:relative;height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
+.meter .fill{position:absolute;inset:0 auto 0 0;border-radius:3px}
+.meter .tick{position:absolute;top:0;bottom:0;width:2px;background:var(--text);opacity:.6}
+.sect{border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:8px}
+.sect h3{margin:0;font-size:11.5px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.dl{display:grid;grid-template-columns:auto 1fr;gap:5px 14px;margin:0;font-size:12.5px}
+.dl dt{color:var(--muted)}
+.dl dd{margin:0;text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.links{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px}
+.links a{color:var(--accent);text-decoration:none}
+.links a:hover{text-decoration:underline}
+.foot{font-size:12px;color:var(--muted)}
+
+.key{position:fixed;top:calc(64px + env(safe-area-inset-top,0px));right:16px;width:236px;padding:12px 14px;display:flex;flex-direction:column;gap:10px;font-size:12.5px}
+.key-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.key-head b{font-weight:600;font-size:13px}
+.key-head span{color:var(--muted);font-weight:400}
+.key-head button{all:unset;cursor:pointer;color:var(--muted);display:grid;place-items:center;width:24px;height:24px;border-radius:6px}
+.key-head button:hover{color:var(--text);background:rgba(255,255,255,.06)}
+.key-head svg{width:14px;height:14px;transition:transform .2s}
+.key[data-collapsed="true"] .key-body{display:none}
+.key[data-collapsed="true"] .key-head svg{transform:rotate(180deg)}
+.key-body{display:flex;flex-direction:column;gap:10px}
+.key-desc{margin:0;color:var(--muted);line-height:1.4}
+.key-ramp{height:8px;border-radius:4px}
+.key-ticks{display:flex;justify-content:space-between;margin-top:-4px;color:var(--muted);font:11px var(--f-mono)}
+.key-list{list-style:none;margin:0;padding:10px 0 0;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:7px}
+.key-list li{display:flex;align-items:center;gap:9px;color:var(--muted);line-height:1.3}
+.key-note{margin:0;padding-top:10px;border-top:1px solid var(--line);color:var(--muted);font-size:12px;line-height:1.4}
+.sw{width:12px;height:12px;flex-shrink:0;clip-path:polygon(50% 0,100% 100%,50% 76%,0 100%)}
+.sw.ring{clip-path:none;border:1.5px solid var(--accent);border-radius:50%}
+.sw.trail{clip-path:none;height:2px;border-radius:1px;background:linear-gradient(90deg,transparent,var(--muted))}
+
+.bar{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:flex;align-items:center;gap:14px;padding:8px 10px 8px 8px;width:max-content;max-width:calc(100vw - 32px);flex-wrap:wrap;justify-content:center}
+.seg{display:flex;background:rgba(255,255,255,.05);border-radius:10px;padding:3px}
+.seg button{all:unset;cursor:pointer;padding:6px 12px;border-radius:8px;font-size:13px;color:var(--muted);white-space:nowrap}
+.seg button[aria-pressed="true"]{background:rgba(255,255,255,.1);color:var(--text)}
+.slider{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--muted)}
+.slider output{font:500 13px var(--f-mono);color:var(--text);min-width:8.5ch}
+input[type=range]{-webkit-appearance:none;appearance:none;width:150px;height:4px;border-radius:2px;background:rgba(255,255,255,.14);outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--text);cursor:pointer}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border:0;border-radius:50%;background:var(--text);cursor:pointer}
+.summary{font-size:12.5px;color:var(--muted);padding-right:6px;white-space:nowrap}
+.summary b{color:var(--text);font-weight:500}
+
+.zoom{position:fixed;right:16px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:2px;padding:4px;border-radius:12px}
+.zoom button{all:unset;cursor:pointer;width:32px;height:32px;display:grid;place-items:center;border-radius:8px}
+.zoom button:hover{background:rgba(255,255,255,.08)}
+.zoom svg{width:16px;height:16px}
+#attrib{position:fixed;right:16px;bottom:calc(18px + env(safe-area-inset-bottom,0px));max-width:220px;text-align:right;font-size:10.5px;line-height:1.3;color:var(--muted);text-shadow:0 1px 3px rgba(0,0,0,.8)}
+
+#labels{position:fixed;inset:0;pointer-events:none;overflow:hidden}
+.city{position:absolute;left:0;top:0;display:flex;align-items:center;gap:5px;font-size:12.5px;font-weight:500;color:#fff;white-space:nowrap;text-shadow:0 0 2px #000,0 1px 2px rgba(0,0,0,.85)}
+.country{position:absolute;left:0;top:0;font-size:11px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.7);white-space:nowrap;text-shadow:0 0 2px #000,0 1px 3px rgba(0,0,0,.8)}
+.country.big{font-size:13px;letter-spacing:.22em}
+.city i{width:5px;height:5px;border-radius:50%;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.6)}
+.city.big{font-weight:600}
+.lbl{position:absolute;left:0;top:0;font:500 11px var(--f-mono);color:var(--text);background:rgba(13,19,27,.8);border:1px solid var(--line);padding:2px 6px;border-radius:6px;white-space:nowrap}
+.lbl.dead{color:var(--bad)}
+#tip{position:fixed;pointer-events:none;padding:6px 10px;border-radius:9px;font:12px var(--f-mono);white-space:nowrap;transform:translate(14px,-50%);z-index:5}
+#tip span{color:var(--muted)}
+
+@media (max-width:1320px){#attrib{bottom:calc(76px + env(safe-area-inset-bottom,0px))}}
+@media (max-width:760px){
+  .brand span{display:none}
+  .top{flex-wrap:wrap}
+  .area{max-width:none;flex:1 1 100%}
+  .spacer{display:none}
+  #infoBtn{margin-left:auto}
+  .search{order:6;flex:1 1 100%;min-width:0}
+  .search input{width:100%}
+  .area{order:7}
+  .key{top:calc(104px + env(safe-area-inset-top,0px))}
+  body:has(#areaChip:not([hidden])) .key{top:calc(148px + env(safe-area-inset-top,0px))}
+  .card{left:16px;right:16px;width:auto;bottom:calc(132px + env(safe-area-inset-bottom,0px));max-height:45vh}
+  .bar{left:16px;right:16px;transform:none;width:auto;max-width:none;gap:10px}
+  .summary{white-space:normal;text-align:center}
+  .key{width:auto;max-width:calc(100vw - 32px)}
+  .zoom{display:none}
+  #attrib{top:auto;bottom:calc(132px + env(safe-area-inset-bottom,0px));left:16px;right:16px;max-width:none;text-align:left}
+  body.card-open #attrib{display:none}
+}
+@media (prefers-reduced-motion:reduce){.key-head svg{transition:none}}
+[hidden]{display:none!important}
+</style>
+
+<canvas id="globe" aria-label="Globe of aircraft in flight"></canvas>
+<div id="labels"></div>
+
+<header class="top">
+  <div class="brand"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.8 3 2.8 15 0 18M12 3c-2.8 3-2.8 15 0 18"/></svg><span>Fuel Horizon</span></div>
+  <div class="pill glass" id="snap" title="A recorded moment of real air traffic. The live version runs on your own computer."><i></i><span id="snapTxt">Snapshot</span></div>
+  <div class="area glass" id="areaChip" hidden>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+    <span class="area-text"><b id="areaName"></b> <span id="areaKind"></span></span>
+    <label class="area-radius" id="areaRadiusWrap" hidden><span>within</span>
+      <select id="areaRadius" aria-label="Radius"><option value="25">25 km</option><option value="50">50 km</option><option value="100">100 km</option><option value="200">200 km</option><option value="400">400 km</option></select></label>
+    <button class="icon-btn" id="areaClear" aria-label="Show all traffic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </div>
+  <div class="spacer"></div>
+  <div class="search">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input id="q" placeholder="Search flights or places" autocomplete="off" spellcheck="false" aria-label="Search for a flight, country, state, city or airport">
+    <div class="results glass" id="results" hidden></div>
+  </div>
+  <button class="about-btn glass" id="infoBtn" aria-expanded="false" aria-controls="info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/></svg>About</button>
+</header>
+
+<div class="info" id="info" hidden>
+<section class="about glass" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
+  <button class="icon-btn x" id="aboutClose" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  <div><span class="kicker">About</span><h2 id="aboutTitle">Fuel Horizon</h2></div>
+  <p class="lede">Thousands of real flights, recorded at <b id="snapWhen" style="color:var(--text);font-weight:500"></b>, with an estimate of how much fuel each one has left and how far it could get on batteries instead.</p>
+  <div><h3>What you're seeing</h3><ul><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 17-7-4-7 4z"/></svg></i><span><b>Each arrow is a real plane</b>, pointing the way it's flying. Up close, they turn into airplane shapes.</span></li><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="12" r="3"/><circle cx="17" cy="12" r="3"/></svg></i><span><b>Its color</b> shows fuel left, battery left, or height, depending on the mode you pick at the bottom. The key explains the colors.</span></li><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18c5-1 8-6 16-12"/></svg></i><span><b>The line behind it</b> is where it actually flew over the previous two hours.</span></li></ul></div>
+  <div><h3>Try this</h3><ul><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 9l10 4-4 2-2 4z"/><path d="M5 3v3M3 5h3"/></svg></i><span><b>Click a plane</b> to see its airline, route, fuel estimate and more.</span></li><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"/><path d="m20 20-4-4"/></svg></i><span><b>Search</b> for a flight number, or for a country, state, city or airport to see only the traffic there.</span></li><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="16" height="10" rx="2"/><path d="M22 11v2M7 10v4"/></svg></i><span><b>Switch to Electric</b> and drag the battery slider to see how many flights batteries could handle.</span></li><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 12h18M8 7l4-4 4 4M8 17l4 4 4-4"/></svg></i><span><b>Drag</b> to spin the globe. <b>Scroll or pinch</b> to zoom.</span></li></ul></div>
+  <div><h3>Good to know</h3><ul><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v5l3 2"/><circle cx="12" cy="12" r="8"/></svg></i><span><b>Fuel is an estimate.</b> Planes don't broadcast it, so it's worked out from the route and a performance model of each exact aircraft type (OpenAP, from TU Delft), tuned to match 126 published fuel figures. On flights it hadn't seen, it was off by about 5% on average. It plans fuel the way airlines do, with extra for a backup airport and 30 minutes of holding, so expect a range of about ±12%. Types it doesn't know get a rougher size-class estimate. <a href="https://claude.ai/artifact/QikibNNyAbzssymtuLyMsT" target="_blank" rel="noopener" style="color:var(--accent)">See how the model was checked ↗</a></span></li><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3L5 14h6l-1 7 8-11h-6z"/></svg></i><span><b>“Electric” is a thought experiment:</b> each plane carries a battery weighing the same as a full tank of fuel. With today's batteries, almost no airliner could finish its trip.</span></li><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8" stroke-dasharray="3 3"/></svg></i><span><b>Empty areas usually mean no receivers nearby, not no planes.</b> Positions come from volunteers' ground stations, which each hear planes within about 400 km. There are thousands across North America and Europe but very few across Africa, much of Asia and the oceans.</span></li><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 7v5h4"/></svg></i><span><b>This is a snapshot.</b> Each plane keeps moving along its route for up to 30 minutes after it was recorded. The live version runs on a computer with the Fuel Horizon server.</span></li></ul></div>
+  <p>Fuel Horizon is one half of a project. The other half is <a href="https://claude.ai/artifact/FZrd6xYcEQB9wsWajUwTsp" target="_blank" rel="noopener">HZN-1 ↗</a>, a chip designed to pick up planes' radio signals directly.</p>
+  <div class="src">Flights: OpenSky Network, adsb.lol, VRS standing data. Aircraft and airlines: ADS-B Exchange, OpenFlights. Map: NASA Visible Earth, Natural Earth.</div>
+  <div class="actions"><button class="go" id="aboutGo">Start exploring</button></div>
+</section>
+</div>
+
+<aside class="card glass" id="card" hidden aria-live="polite"></aside>
+
+<aside class="key glass" id="key" data-collapsed="false" aria-label="Color key">
+  <div class="key-head"><b>Key <span id="keyMode">· Fuel</span></b>
+    <button id="keyToggle" aria-expanded="true" aria-controls="keyBody" aria-label="Hide key"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg></button></div>
+  <div class="key-body" id="keyBody"></div>
+</aside>
+
+<footer class="bar glass">
+  <div class="seg" role="group" aria-label="Color planes by">
+    <button id="mFuel" aria-pressed="true">Fuel</button>
+    <button id="mElec" aria-pressed="false">Electric</button>
+    <button id="mAlt" aria-pressed="false">Altitude</button>
+  </div>
+  <div class="seg" role="group" aria-label="Trails"><button id="trailBtn" aria-pressed="true">Trails</button></div>
+  <div class="slider" id="sliderWrap" hidden>
+    <label for="dens">Battery</label>
+    <input id="dens" type="range" min="0" max="1000" value="318">
+    <output id="densOut" for="dens">300 Wh/kg</output>
+  </div>
+  <div class="summary" id="summary"></div>
+</footer>
+<div class="zoom glass" role="group" aria-label="Zoom">
+  <button id="zIn" aria-label="Zoom in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+  <button id="zOut" aria-label="Zoom out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+</div>
+<div id="attrib">Earth imagery: NASA Visible Earth<br>Made by Raghav Vijayapal</div>
+<div id="tip" class="glass" hidden></div>
+
+<script type="application/json" id="fh">__DATA__</script>
+<script>const EARTH_WEST="data:image/jpeg;base64,__EARTH0__";</script>
+<script>const EARTH_EAST="data:image/jpeg;base64,__EARTH1__";</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/lines/LineSegmentsGeometry.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/lines/LineMaterial.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/lines/LineSegments2.js"></script>
+<script>
+(function(){
+const DATA=JSON.parse(document.getElementById('fh').textContent);
+const R_E=6371, D2R=Math.PI/180;
+const FUEL_WH=4190, ETA=0.9, RES_H=0.75, OVH_TO=0.25, OVH_TRIP=0.4, MAX_EXTRAP_H=0.5;
+const CLS={0:'Heavy widebody',1:'Widebody',2:'Narrowbody',3:'Regional jet',4:'Turboprop',5:'Business jet',6:'Piston',7:'Helicopter'};
+const PERF={0:[150000,7600,490],1:[100000,5600,485],2:[21000,2450,450],3:[9500,1600,430],4:[5000,650,280],5:[7000,850,450],6:[150,30,120],7:[600,250,120]};
+const SIZE=[1.25,1.15,1,.95,.85,.85,.75,.75];
+const AP=DATA.ap;
+const $=id=>document.getElementById(id);
+const fmt=(n,d=0)=>n.toLocaleString('en-US',{maximumFractionDigits:d,minimumFractionDigits:d});
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const lerp=(a,b,t)=>a+(b-a)*t;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const utc=t=>new Date(t).toISOString().slice(11,16)+' UTC';
+const SNAP=DATA.t*1000, LOADED=Date.now();
+const simNow=()=>SNAP+(Date.now()-LOADED);
+$('snapWhen').textContent=new Date(SNAP).toLocaleString('en-US',{dateStyle:'medium',timeStyle:'short',timeZone:'UTC'})+' UTC';
+
+// ---------- geometry (y = polar axis, matches three.js sphere UVs) ----------
+function vec(lat,lon,out){const phi=(90-lat)*D2R,th=(lon+180)*D2R;out=out||new THREE.Vector3();
+  return out.set(-Math.sin(phi)*Math.cos(th),Math.cos(phi),Math.sin(phi)*Math.sin(th));}
+function toLatLon(v){const l=v.length()||1;const lat=90-Math.acos(clamp(v.y/l,-1,1))/D2R;let lon=Math.atan2(v.z,-v.x)/D2R-180;if(lon<-180)lon+=360;return [lat,lon];}
+const ang=(a,b)=>Math.acos(clamp(a.dot(b),-1,1));
+function slerp(a,b,f,out){const w=ang(a,b);if(w<1e-9)return out.copy(a);const s=Math.sin(w);
+  const ka=Math.sin((1-f)*w)/s,kb=Math.sin(f*w)/s;return out.set(a.x*ka+b.x*kb,a.y*ka+b.y*kb,a.z*ka+b.z*kb);}
+const UP=new THREE.Vector3(0,1,0);
+// heights are exaggerated only ~3x (40,000 ft ≈ 38 km) so planes stay over the ground they're really above when seen at an angle
+const altR=ft=>1.0015+clamp(ft,0,45000)/45000*0.006;
+function frameAt(P){const east=new THREE.Vector3().crossVectors(UP,P);if(east.lengthSq()<1e-9)east.set(1,0,0);east.normalize();return {east,north:new THREE.Vector3().crossVectors(P,east)};}
+
+// ---------- the recorded aircraft ----------
+const planes=DATA.p.map((r,idx)=>{
+  const [hex,cs,type,lat,lon,alt,gs,trk,vr,cls,inf,o,d,country,tpos,squawk,fuel]=r;
+  const pf=PERF[cls];
+  const p={idx,hex,cs,type,alt,gs,trk,vr,cls,inf:!!inf,country,sq:squawk,t0:tpos,fm:Array.isArray(fuel)&&fuel[8]?fuel:null,cap:Array.isArray(fuel)&&fuel[8]?fuel[6]:pf[0],burn:pf[1],ck:pf[2]*1.852,
+    P0:vec(lat,lon),pos:vec(lat,lon),T:new THREE.Vector3(),landed:false,o,d,info:DATA.info[hex]||null};
+  const f=frameAt(p.P0);p.T0=f.north.multiplyScalar(Math.cos(trk*D2R)).add(f.east.multiplyScalar(Math.sin(trk*D2R)));
+  if(o&&d&&AP[o]&&AP[d]){
+    p.A=vec(AP[o][2],AP[o][3]);p.B=vec(AP[d][2],AP[d][3]);p.Dk=ang(p.A,p.B)*R_E;p.rem0=ang(p.P0,p.B)*R_E;
+    if(p.fm&&p.fm[0]){p.planned=p.fm[0];p.burnEff=p.fm[7];p.needDens=usedAt(p,p.Dk)*FUEL_WH/(p.cap*ETA);}
+    else{const tripH=p.Dk/p.ck+OVH_TRIP;p.burnEff=Math.min(p.burn,p.cap/(tripH+RES_H));p.planned=p.burnEff*(tripH+RES_H);
+      p.needDens=p.burnEff*(p.Dk/p.ck+OVH_TO)*FUEL_WH/(p.cap*ETA);}
+  }else{p.A=p.B=null;p.burnEff=p.fm?p.fm[7]:p.burn;}
+  const tr=DATA.trails[hex];
+  if(tr){p.hist=[];let t=0,la=0,lo=0,al=0;for(let i=0;i+3<tr.length;i+=4){t+=tr[i];la+=tr[i+1];lo+=tr[i+2];al+=tr[i+3];p.hist.push([la/1000,lo/1000,al*100,t*1000]);}}
+  return p;
+});
+const byHex=new Map(planes.map(p=>[p.hex,p]));
+function predict(p,now){
+  const hrs=clamp((now-p.t0)/3.6e6,0,MAX_EXTRAP_H);const dist=p.gs*1.852*hrs/R_E;
+  if(p.B){const tot=p.rem0/R_E;
+    if(dist>=tot){p.pos.copy(p.B);p.landed=true;p.rem=0;}else{slerp(p.P0,p.B,tot>0?dist/tot:1,p.pos);p.landed=false;p.rem=(tot-dist)*R_E;}
+    p.T.copy(p.B).addScaledVector(p.pos,-p.pos.dot(p.B));if(p.T.lengthSq()<1e-12)p.T.copy(p.T0);p.T.normalize();
+  }else{const c=Math.cos(dist),s=Math.sin(dist);p.pos.copy(p.P0).multiplyScalar(c).addScaledVector(p.T0,s);p.T.copy(p.T0).multiplyScalar(c).addScaledVector(p.P0,-s);p.landed=false;}
+}
+// per-aircraft model: [takeoff, trip, reserve, toc km, toc fuel, cruise kg/km, tank, burn now kg/h, label, ±]
+function usedAt(p,flown){const f=p.fm;const taxi=Math.max(0,f[0]-f[1]-f[2]);
+  const x=flown<f[3]?f[4]*flown/Math.max(f[3],1e-6):f[4]+(flown-f[3])*f[5];return taxi+Math.min(x,f[1]);}
+function fuelState(p){const flown=Math.max(0,p.Dk-p.rem);
+  if(p.fm&&p.fm[0]){const f=p.fm;const used=Math.min(f[0],usedAt(p,flown));const rem=f[0]-used;const u=f[9]*f[0];
+    return {flown,used,rem,frac:rem/f[0],tank:rem/f[6],reserve:f[2],lo:Math.max(0,rem-u),hi:Math.min(f[6],rem+u)};}
+  const used=Math.min(p.planned,p.burnEff*(flown/p.ck+OVH_TO));const rem=p.planned-used;
+  return {flown,used,rem,frac:rem/p.planned,tank:rem/p.cap,reserve:p.burnEff*RES_H};}
+function elecState(p,dens){const Eb=p.cap*dens*ETA;let xdead;
+  if(p.fm&&p.fm[0]){const f=p.fm;const budget=Eb/FUEL_WH-Math.max(0,f[0]-f[1]-f[2]);
+    xdead=budget<=0?0:budget<=f[4]?f[3]*budget/Math.max(f[4],1e-6):f[3]+(budget-f[4])/f[5];}
+  else xdead=(Eb/FUEL_WH/p.burnEff-OVH_TO)*p.ck;
+  if(!p.B)return {endH:Eb/FUEL_WH/p.burnEff,xdead};const fs=fuelState(p);return {batt:1-fs.used*FUEL_WH/Eb,xdead,feasible:xdead>=p.Dk};}
+
+// ---------- state ----------
+const state={mode:'fuel',dens:300,sel:null,hover:null,trails:true};
+try{state.trails=localStorage.getItem('fh-trails')!=='off';}catch(e){}
+
+// ---------- scene ----------
+const canvas=$('globe');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setClearColor(0x000000,0);
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(38,1,0.005,100);
+camera.position.set(0,0.9,3.3);
+const controls=new THREE.OrbitControls(camera,canvas);
+controls.enablePan=false;controls.enableDamping=true;controls.dampingFactor=0.08;controls.minDistance=1.04;controls.maxDistance=6;controls.zoomSpeed=0.8;
+let fly=null;controls.addEventListener('start',()=>{fly=null;});
+
+const earthDim={value:.7};
+const earthMat=new THREE.ShaderMaterial({uniforms:{map:{value:null},hasMap:{value:0},dim:earthDim},
+  vertexShader:`varying vec2 vUv;varying vec3 vN;varying vec3 vV;void main(){vUv=uv;vN=normalize(normalMatrix*normal);vec4 mv=modelViewMatrix*vec4(position,1.);vV=normalize(-mv.xyz);gl_Position=projectionMatrix*mv;}`,
+  fragmentShader:`uniform sampler2D map;uniform float hasMap;uniform float dim;varying vec2 vUv;varying vec3 vN;varying vec3 vV;
+  void main(){vec3 base=hasMap>.5?texture2D(map,vUv).rgb:vec3(.04,.08,.13);float ndv=max(dot(vN,vV),0.);
+  vec3 col=base*dim*(.72+.32*ndv);col+=vec3(.30,.55,.85)*pow(1.-ndv,4.)*.35;gl_FragColor=vec4(col,1.);}`});
+// the globe is two halves (west and east of 0°), each with its own 6,144-pixel image, for twice the detail one texture allows
+const earthMats=[earthMat,earthMat.clone()];earthMats[1].uniforms.dim=earthDim;
+earthMats.forEach((m,i)=>scene.add(new THREE.Mesh(new THREE.SphereGeometry(1,96,160,i*Math.PI,Math.PI),m)));
+scene.add(new THREE.Mesh(new THREE.SphereGeometry(1.08,64,64),new THREE.ShaderMaterial({side:THREE.BackSide,blending:THREE.AdditiveBlending,transparent:true,depthWrite:false,
+  vertexShader:`varying vec3 vN;void main(){vN=normalize(normalMatrix*normal);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+  fragmentShader:`varying vec3 vN;void main(){float i=pow(clamp(.62-dot(vN,vec3(0.,0.,1.)),0.,1.),4.);gl_FragColor=vec4(vec3(.35,.6,1.)*i*.9,i);}`})));
+
+// earth texture: NASA imagery, plus country borders and names drawn on top
+const countryIds=Object.keys(DATA.areas.shapes).filter(k=>k.startsWith('country:'));
+function buildEarth(){
+  [EARTH_WEST,EARTH_EAST].forEach((src,i)=>{const img=new Image();img.onload=()=>{
+    const max=renderer.capabilities.maxTextureSize;let source=img;
+    if(img.width>max){const c=document.createElement('canvas');c.width=c.height=max;c.getContext('2d').drawImage(img,0,0,max,max);source=c;} // smaller GPUs
+    const tex=new THREE.Texture(source);tex.anisotropy=renderer.capabilities.getMaxAnisotropy();tex.minFilter=THREE.LinearMipmapLinearFilter;tex.needsUpdate=true;
+    earthMats[i].uniforms.map.value=tex;earthMats[i].uniforms.hasMap.value=1;};img.src=src;});
+}
+
+// country borders as real lines (not painted into the image) so they stay sharp at any zoom; width is in screen pixels
+const borderMat=new THREE.LineMaterial({color:0xe8f2ff,linewidth:1.4,transparent:true,opacity:.6,depthWrite:false});
+{const pts=[],a=new THREE.Vector3(),b=new THREE.Vector3();
+  for(const id of countryIds)for(const poly of DATA.areas.shapes[id].p)for(const r of poly){
+    if(Math.min(...r.map(q=>q[1]))<-85)continue; // Antarctica's ring runs along the map edge
+    for(let j=0;j<r.length;j++){const q0=r[j],q1=r[(j+1)%r.length];vec(q0[1],q0[0],a).multiplyScalar(1.0008);vec(q1[1],q1[0],b).multiplyScalar(1.0008);pts.push(a.x,a.y,a.z,b.x,b.y,b.z);}}
+  const g=new THREE.LineSegmentsGeometry().setPositions(pts);
+  const borders=new THREE.LineSegments2(g,borderMat);borders.renderOrder=1;borders.frustumCulled=false;scene.add(borders);}
+// state and province borders (US, Canada, Brazil, India, China, Russia, Australia, Indonesia, South Africa):
+// thinner and fainter than country borders, fading in as you zoom in
+const stateMat=new THREE.LineMaterial({color:0xe8f2ff,linewidth:1,transparent:true,opacity:0,depthWrite:false,dashed:false});
+const stateLines=(()=>{const pts=[],a=new THREE.Vector3(),b=new THREE.Vector3();
+  for(const id of Object.keys(DATA.areas.shapes))if(id.startsWith('state:'))for(const poly of DATA.areas.shapes[id].p)for(const r of poly)
+    for(let j=0;j<r.length;j++){const q0=r[j],q1=r[(j+1)%r.length];vec(q0[1],q0[0],a).multiplyScalar(1.0007);vec(q1[1],q1[0],b).multiplyScalar(1.0007);pts.push(a.x,a.y,a.z,b.x,b.y,b.z);}
+  const l=new THREE.LineSegments2(new THREE.LineSegmentsGeometry().setPositions(pts),stateMat);l.renderOrder=1;l.frustumCulled=false;scene.add(l);return l;})();
+
+// ---------- aircraft: arrows far away, airplane silhouettes up close ----------
+function icon(draw){const c=document.createElement('canvas');c.width=c.height=128;const g=c.getContext('2d');
+  g.beginPath();draw(g);g.closePath();g.lineJoin='round';g.lineWidth=10;g.strokeStyle='rgba(0,0,0,.6)';g.stroke();g.fillStyle='#fff';g.fill();return new THREE.CanvasTexture(c);}
+const ARROW=icon(g=>{g.moveTo(64,10);g.lineTo(110,114);g.lineTo(64,90);g.lineTo(18,114);});
+const PLANE=icon(g=>{g.moveTo(64,6);g.bezierCurveTo(71,6,72,16,72,26);g.lineTo(72,46);g.lineTo(120,76);g.lineTo(120,86);g.lineTo(72,72);
+  g.lineTo(72,100);g.lineTo(90,113);g.lineTo(90,121);g.lineTo(64,114);g.lineTo(38,121);g.lineTo(38,113);g.lineTo(56,100);
+  g.lineTo(56,72);g.lineTo(8,86);g.lineTo(8,76);g.lineTo(56,46);g.lineTo(56,26);g.bezierCurveTo(56,16,57,6,64,6);});
+const N=planes.length;
+const aPos=new Float32Array(N*3),aDir=new Float32Array(N*3),aCol=new Float32Array(N*3),aSize=new Float32Array(N);
+const gP=new THREE.BufferGeometry();
+gP.setAttribute('position',new THREE.BufferAttribute(aPos,3).setUsage(THREE.DynamicDrawUsage));
+gP.setAttribute('dir',new THREE.BufferAttribute(aDir,3).setUsage(THREE.DynamicDrawUsage));
+gP.setAttribute('color',new THREE.BufferAttribute(aCol,3).setUsage(THREE.DynamicDrawUsage));
+gP.setAttribute('size',new THREE.BufferAttribute(aSize,1).setUsage(THREE.DynamicDrawUsage));
+const U={uScale:{value:20},uAspect:{value:1},uMax:{value:60},uIcon:{value:ARROW}};
+const planeMat=new THREE.ShaderMaterial({uniforms:U,transparent:true,depthWrite:false,
+  vertexShader:`attribute vec3 color;attribute float size;attribute vec3 dir;uniform float uScale;uniform float uAspect;uniform float uMax;
+  varying vec3 vC;varying float vAng;
+  void main(){vC=color;vec4 mv=modelViewMatrix*vec4(position,1.);vec4 c0=projectionMatrix*mv;
+    vec4 c1=projectionMatrix*modelViewMatrix*vec4(position+dir*.002,1.);vec2 s=c1.xy/c1.w-c0.xy/c0.w;s.x*=uAspect;vAng=atan(s.y,s.x);
+    gl_PointSize=min(size*uScale*pow(-mv.z,-.55),uMax*size);gl_Position=c0;}`,
+  fragmentShader:`uniform sampler2D uIcon;varying vec3 vC;varying float vAng;
+  void main(){vec2 q=gl_PointCoord-.5;q.y=-q.y;float a=-(vAng-1.5707963);float c=cos(a),s=sin(a);vec2 r=vec2(c*q.x-s*q.y,s*q.x+c*q.y);
+    if(abs(r.x)>.5||abs(r.y)>.5)discard;vec4 t=texture2D(uIcon,r+.5);if(t.a<.05)discard;gl_FragColor=vec4(vC*t.r,t.a);}`});
+const ptsObj=new THREE.Points(gP,planeMat);ptsObj.frustumCulled=false;ptsObj.renderOrder=3;scene.add(ptsObj);
+
+// ---------- trails: one draw call for every recorded path ----------
+let trailSegs=0;const trailInfo=[];
+for(const p of planes){if(!p.hist||p.hist.length<2)continue;trailInfo.push(p);trailSegs+=p.hist.length;} // (n-1) history segments + 1 to the plane
+const tPos=new Float32Array(trailSegs*6),tCol=new Float32Array(trailSegs*6);
+{let s=0;const v=new THREE.Vector3();
+  for(const p of trailInfo){p.tStart=s;const h=p.hist;
+    for(let i=0;i<h.length-1;i++){const a=h[i],b=h[i+1];vec(a[0],a[1],v).multiplyScalar(altR(a[2]));tPos.set([v.x,v.y,v.z],s*6);vec(b[0],b[1],v).multiplyScalar(altR(b[2]));tPos.set([v.x,v.y,v.z],s*6+3);s++;}
+    const last=h[h.length-1];vec(last[0],last[1],v).multiplyScalar(altR(last[2]));tPos.set([v.x,v.y,v.z],s*6);p.tHead=s;s++;}}
+const gT=new THREE.BufferGeometry();
+gT.setAttribute('position',new THREE.BufferAttribute(tPos,3).setUsage(THREE.DynamicDrawUsage));
+gT.setAttribute('color',new THREE.BufferAttribute(tCol,3).setUsage(THREE.DynamicDrawUsage));
+const trails=new THREE.LineSegments(gT,new THREE.LineBasicMaterial({vertexColors:true,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}));
+trails.frustumCulled=false;trails.renderOrder=2;scene.add(trails);
+function updateTrailHeads(){for(const p of trailInfo){const i=p.tHead*6+3;tPos[i]=aPos[p.idx*3];tPos[i+1]=aPos[p.idx*3+1];tPos[i+2]=aPos[p.idx*3+2];}gT.attributes.position.needsUpdate=true;}
+function recolorTrails(){
+  for(const p of trailInfo){const n=p.hist.length,show=!p.landed&&(!area.on||p.inA||p===state.sel);const c=p.col||C_DIM;
+    for(let i=0;i<n;i++){const f0=show?(i/n)*.8:0,f1=show?((i+1)/n)*.8:0,j=(p.tStart+i)*6;
+      tCol[j]=c[0]*f0;tCol[j+1]=c[1]*f0;tCol[j+2]=c[2]*f0;tCol[j+3]=c[0]*f1;tCol[j+4]=c[1]*f1;tCol[j+5]=c[2]*f1;}}
+  gT.attributes.color.needsUpdate=true;
+}
+
+// ---------- selected route, airport and battery labels ----------
+const routeGroup=new THREE.Group();scene.add(routeGroup);
+const labelsEl=$('labels');const labels=[];
+function clearRoute(){while(routeGroup.children.length){const c=routeGroup.children.pop();c.geometry.dispose();c.material.dispose();}labels.forEach(l=>l.el.remove());labels.length=0;}
+function addLabel(text,v,cls){const el=document.createElement('div');el.className='lbl'+(cls?' '+cls:'');el.textContent=text;labelsEl.appendChild(el);labels.push({el,v});}
+function arcPoints(a,b,f0,f1,n){const out=[];const w=ang(a,b);const t=new THREE.Vector3();
+  for(let i=0;i<=n;i++){const f=f0+(f1-f0)*(n?i/n:0);slerp(a,b,f,t);const h=Math.min(1,Math.sin(Math.PI*f)*5);out.push(t.clone().multiplyScalar(1.0025+0.018*h*Math.min(1,w*4)));}return out;}
+const progress=p=>p.Dk>0?clamp(1-p.rem/p.Dk,0,1):0;
+function buildRoute(){
+  clearRoute();const p=state.sel;if(!p||!p.B)return;
+  if(!p.hist)routeGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(arcPoints(p.A,p.B,0,progress(p),96)),new THREE.LineBasicMaterial({color:0x7cc4ff,transparent:true,opacity:.95,depthWrite:false})));
+  const rest=[],v=new THREE.Vector3(),r=altR(p.alt);
+  for(let i=0;i<=64;i++){const f=i/64;slerp(p.pos,p.B,f,v);rest.push(v.clone().multiplyScalar(1.0025+(r-1.0025)*Math.min(1,(1-f)*6)));}
+  const todo=new THREE.Line(new THREE.BufferGeometry().setFromPoints(rest),new THREE.LineDashedMaterial({color:0xe9eef3,dashSize:.008,gapSize:.006,transparent:true,opacity:.55,depthWrite:false}));
+  todo.computeLineDistances();routeGroup.add(todo);
+  addLabel(AP[p.o][0],p.A.clone().multiplyScalar(1.004));addLabel(AP[p.d][0],p.B.clone().multiplyScalar(1.004));
+  if(state.mode==='elec'){const e=elecState(p,state.dens);
+    if(!e.feasible){const f=clamp(e.xdead/p.Dk,0,1);const pt=arcPoints(p.A,p.B,f,f,0)[0];
+      const g=new THREE.BufferGeometry().setFromPoints([pt]);routeGroup.add(new THREE.Points(g,new THREE.PointsMaterial({color:0xff6b6b,size:9,sizeAttenuation:false,depthWrite:false})));
+      addLabel(e.xdead<=0?'Battery empty while climbing':'Battery empty · '+fmt(e.xdead)+' km',pt,'dead');}}
+}
+
+// ---------- isolate an area: country, state, city or airport ----------
+const area={on:false,rings:[],circle:null,name:'',lines:new THREE.Group()};scene.add(area.lines);
+function pip(r,x,y){let c=false;for(let i=0,j=r.length-1;i<r.length;j=i++){const xi=r[i][0],yi=r[i][1],xj=r[j][0],yj=r[j][1];if((yi>y)!==(yj>y)&&x<(xj-xi)*(y-yi)/(yj-yi)+xi)c=!c;}return c;}
+function inArea(p){
+  if(!area.on)return true;
+  if(area.circle)return ang(p.pos,area.circle.v)*R_E<=area.circle.km;
+  const ll=toLatLon(p.pos),lat=ll[0];let inside=false;
+  for(const r of area.rings){if(lat<r.minY||lat>r.maxY)continue;for(const L of [ll[1],ll[1]+360,ll[1]-360])if(L>=r.minX&&L<=r.maxX){if(pip(r.pts,L,lat))inside=!inside;break;}}
+  return inside;
+}
+function refreshArea(){for(const p of planes)p.inA=inArea(p);}
+function drawArea(){
+  while(area.lines.children.length){const c=area.lines.children.pop();c.geometry.dispose();}
+  if(!area.on)return;const mat=new THREE.LineBasicMaterial({color:0xa8dcff,depthWrite:false});
+  const loops=[];
+  if(area.circle){const c=area.circle.v,f=frameAt(c),a=area.circle.km/R_E,pts=[];
+    for(let i=0;i<=180;i++){const t=i/180*Math.PI*2;pts.push(c.clone().multiplyScalar(Math.cos(a)).addScaledVector(f.north.clone().multiplyScalar(Math.cos(t)).addScaledVector(f.east,Math.sin(t)),Math.sin(a)).multiplyScalar(1.0025));}
+    loops.push(pts);}
+  else for(const r of area.rings)loops.push(r.pts.map(q=>vec(q[1],q[0]).multiplyScalar(1.0025)));
+  for(const pts of loops)for(const s of [1,1.0012]){const l=new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts.map(v=>v.clone().multiplyScalar(s))),mat);l.renderOrder=4;area.lines.add(l);}
+}
+function setArea(id){
+  const sh=DATA.areas.shapes[id],ci=DATA.areas.circles[id],meta=DATA.areas.index.find(x=>x[0]===id);if(!meta)return;
+  const [,kind,name,detail]=meta;
+  area.on=true;area.name=kind==='Airport'?name.split(' · ')[0]:name;
+  area.circle=ci?{v:vec(ci[0],ci[1]),km:ci[2]}:null;area.rings=[];
+  if(sh)for(const poly of sh.p)for(const r of poly){let a=1e9,b=-1e9,c=1e9,d=-1e9;for(const [x,y] of r){if(x<a)a=x;if(x>b)b=x;if(y<c)c=y;if(y>d)d=y;}area.rings.push({pts:r,minX:a,maxX:b,minY:c,maxY:d});}
+  $('areaName').textContent=name;$('areaKind').textContent=ci?'':'· '+(detail?detail.split(',')[0]:kind);
+  $('areaRadiusWrap').hidden=!ci;if(ci)$('areaRadius').value=String(ci[2]);
+  $('areaChip').hidden=false;refreshArea();drawArea();
+  if(state.sel&&!state.sel.inA)select(null);else{recolor();summary();}
+  const center=ci?[ci[0],ci[1]]:sh.c,ext=ci?ci[2]:sh.e;flyTo(vec(center[0],center[1]),1+clamp(ext*2.6*fitScale()/R_E,.05,2.5));
+}
+function clearArea(){area.on=false;area.circle=null;area.rings=[];$('areaChip').hidden=true;drawArea();refreshArea();recolor();summary();}
+$('areaClear').addEventListener('click',clearArea);
+$('areaRadius').addEventListener('change',()=>{if(!area.circle)return;area.circle.km=+$('areaRadius').value;refreshArea();drawArea();recolor();summary();
+  flyTo(area.circle.v.clone(),1+clamp(area.circle.km*2.6*fitScale()/R_E,.05,2.5));});
+
+// ---------- colors ----------
+const C_HI=[.31,.82,.77],C_MID=[.96,.69,.25],C_LO=[1,.42,.42],C_DIM=[.66,.71,.77],C_DEAD=[.62,.27,.29];
+function ramp(t,out){t=clamp(t,0,1);let a,b,f;if(t<.5){a=C_LO;b=C_MID;f=t/.5;}else{a=C_MID;b=C_HI;f=(t-.5)/.5;}
+  out[0]=a[0]+(b[0]-a[0])*f;out[1]=a[1]+(b[1]-a[1])*f;out[2]=a[2]+(b[2]-a[2])*f;return out;}
+const A_LO=[.98,.80,.08],A_MID=[.20,.83,.60],A_HI=[.38,.65,.98]; // yellow near the ground → green → blue at cruise; white is the selected flight
+function altRamp(ft,out){const t=clamp(ft/40000,0,1);let a,b,f;if(t<.5){a=A_LO;b=A_MID;f=t/.5;}else{a=A_MID;b=A_HI;f=(t-.5)/.5;}
+  out[0]=a[0]+(b[0]-a[0])*f;out[1]=a[1]+(b[1]-a[1])*f;out[2]=a[2]+(b[2]-a[2])*f;return out;}
+const rgb=c=>'rgb('+c.map(v=>Math.round(v*255)).join(',')+')';
+const rgba=(c,a)=>'rgba('+c.map(v=>Math.round(v*255)).join(',')+','+a+')';
+function recolor(){
+  for(const p of planes){const i=p.idx;let s=SIZE[p.cls],c=[0,0,0];
+    if(p.landed||(area.on&&!p.inA&&p!==state.sel)){aSize[i]=0;p.col=C_DIM;continue;}
+    if(state.mode==='alt')altRamp(p.alt,c);
+    else if(!p.B){c=C_DIM.map(v=>v*.65);s*=.85;}
+    else if(state.mode==='fuel')ramp(fuelState(p).frac,c);
+    else{const e=elecState(p,state.dens);if(e.batt>0)ramp(e.batt,c);else c=C_DEAD.slice();}
+    if(p===state.sel){s=1.7;c=[1,1,1];}else if(p===state.hover)s*=1.4;
+    aCol[i*3]=c[0];aCol[i*3+1]=c[1];aCol[i*3+2]=c[2];aSize[i]=s;p.col=c;}
+  gP.attributes.color.needsUpdate=true;gP.attributes.size.needsUpdate=true;recolorTrails();
+}
+
+// ---------- motion ----------
+function step(){
+  const now=simNow();
+  for(const p of planes){predict(p,now);const r=altR(p.alt),i=p.idx*3;
+    aPos[i]=p.pos.x*r;aPos[i+1]=p.pos.y*r;aPos[i+2]=p.pos.z*r;aDir[i]=p.T.x;aDir[i+1]=p.T.y;aDir[i+2]=p.T.z;}
+  gP.attributes.position.needsUpdate=true;gP.attributes.dir.needsUpdate=true;updateTrailHeads();
+}
+
+// ---------- city names (crisp HTML; more appear as you zoom in) ----------
+const CITIES=DATA.places.map(c=>({name:c[0],v:vec(c[1],c[2]),rank:c[3],big:c[3]<=1||c[5]}));
+const FAR_KM=[26000,19000,9000,5000,3000];
+// country names: big countries show from far away, smaller ones as you zoom in
+const COUNTRIES=countryIds.map(id=>({name:id.slice(8),v:vec(DATA.areas.shapes[id].c[0],DATA.areas.shapes[id].c[1]),e:DATA.areas.shapes[id].e}))
+  .filter(c=>c.name!=='Antarctica'&&c.e>=60).sort((a,b)=>b.e-a.e);
+const countryEls=[];for(let i=0;i<40;i++){const el=document.createElement('div');el.className='country';el.hidden=true;labelsEl.appendChild(el);countryEls.push(el);}
+const cityEls=[];for(let i=0;i<80;i++){const el=document.createElement('div');el.className='city';el.innerHTML='<i></i><span></span>';el.hidden=true;labelsEl.appendChild(el);cityEls.push(el);}
+const pv=new THREE.Vector3();
+function project(v){pv.copy(v).project(camera);return [(pv.x+1)/2*innerWidth,(1-pv.y)/2*innerHeight];}
+function updateCities(){
+  const cam=camera.position,cl=cam.length(),altKm=(cl-1)*R_E,horizon=1/cl+.02;let n=0;const camDir=cam.clone().normalize();
+  for(const c of CITIES){if(n>=cityEls.length)break;if(altKm>(FAR_KM[c.rank]||1800))continue;if(c.v.dot(camDir)<horizon)continue;
+    const s=project(c.v);if(s[0]<-50||s[0]>innerWidth+50||s[1]<-20||s[1]>innerHeight+20)continue;
+    const el=cityEls[n++];el._c=c;if(el.lastChild.textContent!==c.name){el.lastChild.textContent=c.name;el.classList.toggle('big',!!c.big);el._w=null;}}
+  for(;n<cityEls.length;n++){cityEls[n]._c=null;cityEls[n].hidden=true;}
+  n=0;
+  for(const c of COUNTRIES){if(n>=countryEls.length)break;if(altKm>c.e*28||altKm<c.e*.12)continue;if(c.v.dot(camDir)<horizon+.05)continue;
+    const s=project(c.v);if(s[0]<-80||s[0]>innerWidth+80||s[1]<-20||s[1]>innerHeight+20)continue;
+    const el=countryEls[n++];el._c=c;if(el.textContent!==c.name){el.textContent=c.name;el.classList.toggle('big',c.e>1500);el._w=null;}}
+  for(;n<countryEls.length;n++){countryEls[n]._c=null;countryEls[n].hidden=true;}
+}
+// a label's size is measured once when its text changes, not every frame
+const size=el=>{if(el._w==null){el._w=el.offsetWidth;el._h=el.offsetHeight;}return el;};
+// every frame, after the camera has moved: pin each shown name to its place, on whole pixels so text stays sharp
+function placeLabels(){
+  const cam=camera.position,cl=cam.length(),camDir=cam.clone().normalize(),horizon=1/cl+.02;
+  for(const el of cityEls){const c=el._c;if(!c)continue;
+    if(c.v.dot(camDir)<horizon){el.hidden=true;continue;}
+    const s=project(c.v);el.hidden=false;size(el);el.style.transform='translate('+Math.round(s[0]-3)+'px,'+Math.round(s[1]-el._h/2)+'px)';}
+  for(const el of countryEls){const c=el._c;if(!c)continue;
+    if(c.v.dot(camDir)<horizon+.05){el.hidden=true;continue;}
+    const s=project(c.v);el.hidden=false;size(el);el.style.transform='translate('+Math.round(s[0]-el._w/2)+'px,'+Math.round(s[1]-el._h/2)+'px)';}
+  for(const l of labels){const vis=l.v.clone().normalize().dot(camDir)>1/cl;l.el.hidden=!vis;if(!vis)continue;
+    const s=project(l.v);size(l.el);l.el.style.transform='translate('+Math.round(s[0]-l.el._w/2)+'px,'+Math.round(s[1]-l.el._h*1.4)+'px)';}
+}
+
+// ---------- summary ----------
+function summary(){
+  let all=0,air=0,burn=0,rt=0,feas=0;
+  for(const p of planes){if(p.landed)continue;all++;if(area.on&&!p.inA)continue;air++;burn+=p.burnEff;if(p.B){rt++;if(elecState(p,state.dens).feasible)feas++;}}
+  const mins=Math.round((Date.now()-LOADED)/60000);
+  $('snapTxt').innerHTML='Snapshot · <b class="num">'+utc(SNAP)+'</b>'+(mins>=1?' <span class="num">+'+Math.min(mins,30)+' min</span>':'');
+  const where=!area.on?'':area.circle?' within '+fmt(area.circle.km)+' km of '+esc(area.name):' over '+esc(area.name);
+  const el=$('summary');
+  if(state.mode==='fuel')el.innerHTML='<b class="num">'+fmt(air)+'</b> planes'+where+' · about <b class="num">'+fmt(burn/1000,burn<1e4?1:0)+' t</b> of fuel burned per hour';
+  else if(state.mode==='elec')el.innerHTML='<b class="num">'+fmt(feas)+'</b> of '+fmt(rt)+' flights'+where+' ('+fmt(rt?feas/rt*100:0,1)+'%) could finish on batteries';
+  else el.innerHTML='<b class="num">'+fmt(air)+'</b> planes'+(where||' in the air');
+}
+
+// ---------- flight card ----------
+const card=$('card');
+const dur=h=>{const m=Math.max(0,Math.round(h*60));return m<60?m+' min':Math.floor(m/60)+' h '+String(m%60).padStart(2,'0')+' min';};
+const EMERGENCY={'7500':'Hijack code 7500','7600':'Radio failure 7600','7700':'Emergency 7700'};
+const row=(k,v)=>v===''||v==null?'':'<dt>'+esc(k)+'</dt><dd>'+v+'</dd>';
+function cardHTML(){
+  const p=state.sel;const ac=p.info?{reg:p.info[0],model:p.info[1],operator:p.info[2],year:p.info[3],mil:p.info[4]==='1'}:{};
+  const al=/^[A-Z]{3}\d/.test(p.cs)?DATA.airlines[p.cs.slice(0,3)]:null;
+  const chips=[];
+  if(EMERGENCY[p.sq])chips.push('<span class="chip bad">'+EMERGENCY[p.sq]+'</span>');
+  if(ac.mil)chips.push('<span class="chip">Military</span>');
+  if(p.inf)chips.push('<span class="chip warn">Plane size guessed</span>');
+  if(p.landed)chips.push('<span class="chip">Arrived</span>');
+  let h='<div class="card-head"><div><div class="cs">'+esc(p.cs)+'</div>'+(al?'<div class="airline">'+esc(al[0])+'</div>':'')+
+    '<div class="sub">'+esc([ac.model||p.type,CLS[p.cls]].filter(Boolean).join(' · '))+'</div></div>'+
+    '<button class="icon-btn" id="closeCard" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>';
+  if(chips.length)h+='<div class="chips">'+chips.join('')+'</div>';
+  if(p.B){const fs=fuelState(p);const prog=clamp(fs.flown/p.Dk,0,1);const e=elecState(p,state.dens);const etaH=p.rem/(Math.max(p.gs,150)*1.852);
+    h+='<div class="route"><div class="route-ends"><div><b>'+esc(AP[p.o][0])+'</b><span>'+esc(AP[p.o][1])+'</span></div><div><b>'+esc(AP[p.d][0])+'</b><span>'+esc(AP[p.d][1])+'</span></div></div>'+
+      '<div class="track"><div class="done" style="width:'+prog*100+'%"></div>'+(state.mode==='elec'&&!e.feasible?'<div class="dead" style="left:'+clamp(e.xdead/p.Dk,0,1)*100+'%"></div>':'')+
+      '<div class="me" style="left:'+prog*100+'%"></div></div>'+
+      '<div class="eta">'+(p.landed?'Arrived':'Due in about <strong>'+dur(etaH)+'</strong> from this moment')+'</div></div>';}
+  h+='<div class="metric">';
+  if(state.mode==='alt')h+='<span class="label">Height</span><div class="big">'+fmt(p.alt)+'<small>ft</small></div><div class="note"><strong class="num">'+fmt(p.gs)+' kt</strong> over the ground · '+(p.vr>300?'climbing':p.vr<-300?'descending':'level')+'</div>';
+  else if(!p.B)h+='<span class="label">'+(state.mode==='fuel'?'Fuel on board':'Electric version')+'</span><div class="note">There\'s no route on file for this flight number, so there\'s nothing to estimate from. '+
+      (state.mode==='fuel'?(p.fm?'It was burning about <strong class="num">'+fmt(p.burnEff)+' kg an hour</strong>.':'Planes this size typically burn <strong class="num">'+fmt(p.burn)+' kg an hour</strong>.'):'With '+fmt(state.dens)+' Wh/kg batteries it could fly about <strong class="num">'+fmt(elecState(p,state.dens).endH*60)+' min</strong>.')+'</div>';
+  else if(state.mode==='fuel'){const fs=fuelState(p);const toRes=(fs.rem-fs.reserve)/p.burnEff;
+    h+='<span class="label">Estimated fuel on board</span><div class="big">'+fmt(fs.rem)+'<small>kg</small></div>'+
+      '<div class="meter"><div class="fill" style="width:'+clamp(fs.tank,0,1)*100+'%;background:'+rgb(ramp(fs.frac,[0,0,0]))+'"></div><div class="tick" style="left:'+clamp(fs.reserve/p.cap,0,1)*100+'%"></div></div>'+
+      '<div class="note"><strong>'+fmt(fs.tank*100)+'%</strong> of a full tank · '+(toRes>0?'<strong>'+fmt(toRes,1)+' h</strong> before it reaches its safety reserve':'flying on its safety reserve')+'</div>'+
+      (fs.hi!==undefined?'<div class="note">Likely between <strong class="num">'+fmt(Math.round(fs.lo/100)*100)+' and '+fmt(Math.round(fs.hi/100)*100)+' kg</strong>, from a model of this exact aircraft type</div>':'<div class="note">Rough estimate for a plane of this size</div>');}
+  else{const e=elecState(p,state.dens);const col=e.batt>0?rgb(ramp(e.batt,[0,0,0])):'var(--bad)';
+    h+='<span class="label">Battery left with '+fmt(state.dens)+' Wh/kg cells</span><div class="big" style="color:'+col+'">'+(e.batt>0?fmt(e.batt*100):'0')+'<small>%</small></div>'+
+      '<div class="meter"><div class="fill" style="width:'+clamp(e.batt,0,1)*100+'%;background:'+col+'"></div></div>'+
+      '<div class="note">'+(e.feasible?'<strong>It would make it.</strong> ':'<strong>It would run out '+(e.xdead>0?'after '+fmt(e.xdead)+' km':'before reaching cruising height')+'.</strong> ')+'This trip needs batteries of at least <strong class="num">'+fmt(p.needDens)+' Wh/kg</strong>.</div>';}
+  h+='</div>';
+  const ll=toLatLon(p.pos);const vr=p.vr>300?'▲ '+fmt(p.vr)+' ft/min':p.vr<-300?'▼ '+fmt(-p.vr)+' ft/min':'Level';
+  h+='<div class="sect"><h3>At this moment</h3><dl class="dl">'+row('Height',fmt(p.alt)+' ft')+row('Speed',fmt(p.gs)+' kt · '+fmt(p.gs*1.852)+' km/h')+
+    row('Climbing / descending',vr)+row('Heading',fmt(p.trk)+'°')+row('Squawk code',p.sq?esc(p.sq):'')+
+    row('Position',fmt(Math.abs(ll[0]),2)+'°'+(ll[0]>=0?'N':'S')+' '+fmt(Math.abs(ll[1]),2)+'°'+(ll[1]>=0?'E':'W'))+row('Reported at',utc(p.t0))+'</dl></div>';
+  if(p.B){const fs=fuelState(p);
+    h+='<div class="sect"><h3>Trip <span style="text-transform:none;letter-spacing:0">(estimated)</span></h3><dl class="dl">'+
+      row('Distance',fmt(fs.flown)+' of '+fmt(p.Dk)+' km')+row('Fuel burned so far',fmt(fs.used)+' kg')+row('CO₂ released so far',fmt(fs.used*3.16/1000,1)+' t')+
+      row('Fuel at takeoff',fmt(p.planned)+' kg')+row('Fuel model',p.fm?esc(p.fm[8])+' · ±'+fmt(p.fm[9]*100)+'%':'Size-class average')+'</dl></div>';}
+  h+='<div class="sect"><h3>The plane</h3><dl class="dl">'+row('Model',esc(ac.model||p.type||'Unknown'))+row('Registration',esc(ac.reg||''))+row('Operator',esc(ac.operator||''))+
+    row('Built',esc(ac.year||''))+row('Registered in',esc(p.country||''))+row('Plane ID',p.hex.toUpperCase())+(al&&al[1]?row('Airline country',esc(al[1])):'')+'</dl></div>';
+  h+='<div class="links"><a href="https://adsb.lol/?icao='+p.hex+'" target="_blank" rel="noopener">Where is it now? (adsb.lol) ↗</a>'+
+    (/^[A-Z]{3}\d/.test(p.cs)?'<a href="https://www.flightaware.com/live/flight/'+encodeURIComponent(p.cs)+'" target="_blank" rel="noopener">FlightAware ↗</a>':'')+'</div>'+
+    '<div class="foot">'+(p.hist?'The bright line behind it is where it actually flew.':p.B?'The line behind it is estimated from its route.':'No route on file.')+'</div>';
+  return h;
+}
+function renderCard(){
+  document.body.classList.toggle('card-open',!!state.sel);
+  if(!state.sel){card.hidden=true;return;}
+  const st=card.scrollTop;card.hidden=false;card.innerHTML=cardHTML();card.scrollTop=st;
+  $('closeCard').addEventListener('click',()=>select(null));
+}
+
+// ---------- key ----------
+function renderKey(){
+  const grad=fn=>'linear-gradient(90deg,'+Array.from({length:24},(_,i)=>rgb(fn(i/23))).join(',')+')';
+  const fuelGrad=grad(t=>ramp(t,[0,0,0])),noRoute=[rgba(C_DIM.map(v=>v*.65),1),'No route on file, so it can\'t be estimated'];
+  const K={fuel:{name:'Fuel',desc:'Estimated fuel left, compared with what the plane took off with.',g:fuelGrad,ticks:['Reserve','Half','Full'],items:[noRoute]},
+    elec:{name:'Electric',desc:'Battery left if the plane ran on batteries weighing the same as its fuel, with '+fmt(state.dens)+' Wh/kg cells.',g:fuelGrad,ticks:['Empty','Half','Full'],items:[[rgb(C_DEAD),'Battery would already be empty'],noRoute]},
+    alt:{name:'Altitude',desc:'How high the plane is flying.',g:grad(t=>altRamp(t*40000,[0,0,0])),ticks:['0 ft','20,000','40,000+'],items:[]}}[state.mode];
+  $('keyMode').textContent='· '+K.name;
+  const li=(sw,text)=>'<li><span class="sw'+(sw.startsWith('.')?' '+sw.slice(1)+'"':'" style="background:'+sw+'"')+'></span>'+esc(text)+'</li>';
+  $('keyBody').innerHTML='<p class="key-desc">'+esc(K.desc)+'</p><div class="key-ramp" style="background:'+K.g+'"></div><div class="key-ticks">'+K.ticks.map(t=>'<span>'+t+'</span>').join('')+'</div>'+
+    '<ul class="key-list">'+K.items.map(i=>li(i[0],i[1])).join('')+li('#ffffff','Selected flight')+li('.trail','Where it flew in the last 2 hours')+li('.ring','Area you picked')+'</ul>'+
+    '<p class="key-note">Few planes over Africa or the oceans? That usually means no receivers nearby, not no flights.</p>';
+}
+$('keyToggle').addEventListener('click',()=>{const k=$('key'),open=k.dataset.collapsed==='true';k.dataset.collapsed=String(!open);$('keyToggle').setAttribute('aria-expanded',String(open));$('keyToggle').setAttribute('aria-label',open?'Hide key':'Show key');});
+if(innerWidth<=760){$('key').dataset.collapsed='true';$('keyToggle').setAttribute('aria-expanded','false');$('keyToggle').setAttribute('aria-label','Show key');}
+
+// ---------- interaction ----------
+const fitScale=()=>{const a=innerWidth/innerHeight;return a<1.1?Math.min(2.3,1.05/a):1;};
+function flyTo(dirV,dist){const from=camera.position.clone();fly={from:from.clone().normalize(),to:dirV.clone().normalize(),d0:from.length(),d1:dist,t0:performance.now()};}
+function select(p,doFly){state.sel=p||null;buildRoute();recolor();renderCard();if(p&&doFly)flyTo(p.pos,Math.min(camera.position.length(),2.6));}
+function pick(x,y){
+  const cam=camera.position,cl=cam.length();let best=null,bd=16*16;
+  for(const p of planes){if(aSize[p.idx]===0)continue;const i=p.idx*3;pv.set(aPos[i],aPos[i+1],aPos[i+2]);
+    if(pv.clone().normalize().dot(cam.clone().normalize())<1/cl)continue; // behind the globe
+    pv.project(camera);const sx=(pv.x+1)/2*innerWidth,sy=(1-pv.y)/2*innerHeight;const d=(sx-x)**2+(sy-y)**2;if(d<bd){bd=d;best=p;}}
+  return best;
+}
+const tip=$('tip');let ptr=null,downAt=null;
+canvas.addEventListener('pointermove',e=>{ptr=[e.clientX,e.clientY,e.pointerType];});
+canvas.addEventListener('pointerleave',()=>{ptr=null;tip.hidden=true;if(state.hover){state.hover=null;recolor();}});
+canvas.addEventListener('pointerdown',e=>{downAt=[e.clientX,e.clientY];});
+canvas.addEventListener('pointerup',e=>{if(!downAt)return;const moved=Math.hypot(e.clientX-downAt[0],e.clientY-downAt[1]);downAt=null;if(moved>6)return;select(pick(e.clientX,e.clientY));});
+// trackpad pinch arrives as Ctrl + wheel: zoom in proportion to the pinch
+canvas.addEventListener('wheel',e=>{if(!e.ctrlKey)return;e.preventDefault();e.stopImmediatePropagation();
+  const d=camera.position.length(),nd=clamp(1+(d-1)*Math.exp(e.deltaY*.012),controls.minDistance,controls.maxDistance);camera.position.multiplyScalar(nd/d);},{passive:false,capture:true});
+function zoomBy(f){const d=camera.position.length();flyTo(camera.position,clamp(1+(d-1)*f,controls.minDistance,controls.maxDistance));}
+$('zIn').addEventListener('click',()=>zoomBy(.45));$('zOut').addEventListener('click',()=>zoomBy(2.2));
+addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'||e.metaKey||e.ctrlKey)return;if(e.key==='+'||e.key==='=')zoomBy(.45);else if(e.key==='-'||e.key==='_')zoomBy(2.2);});
+
+const MODES={mFuel:'fuel',mElec:'elec',mAlt:'alt'};
+Object.keys(MODES).forEach(id=>$(id).addEventListener('click',()=>{state.mode=MODES[id];Object.keys(MODES).forEach(k=>$(k).setAttribute('aria-pressed',k===id?'true':'false'));
+  $('sliderWrap').hidden=state.mode!=='elec';renderKey();recolor();buildRoute();renderCard();summary();}));
+const trailBtn=$('trailBtn');
+function applyTrails(){trails.visible=state.trails;trailBtn.setAttribute('aria-pressed',String(state.trails));}
+trailBtn.addEventListener('click',()=>{state.trails=!state.trails;applyTrails();try{localStorage.setItem('fh-trails',state.trails?'on':'off');}catch(e){}});
+const dens=$('dens');const sliderToDens=v=>Math.round(Math.pow(10,2+v/1000*1.5)/10)*10;
+function onDens(){state.dens=sliderToDens(+dens.value);$('densOut').textContent=fmt(state.dens)+' Wh/kg';recolor();summary();renderCard();buildRoute();renderKey();}
+dens.addEventListener('input',onDens);
+const infoBtn=$('infoBtn'),info=$('info');
+function setAbout(open){info.hidden=!open;infoBtn.setAttribute('aria-expanded',String(open));if(open)$('aboutGo').focus({preventScroll:true});}
+infoBtn.addEventListener('click',()=>setAbout(info.hidden));
+$('aboutClose').addEventListener('click',()=>setAbout(false));$('aboutGo').addEventListener('click',()=>setAbout(false));
+info.addEventListener('click',e=>{if(e.target===info)setAbout(false);});
+// first visit: open the About window once, then it's one click away
+{let seen=false;try{seen=localStorage.getItem('fh-about-seen')==='1';localStorage.setItem('fh-about-seen','1');}catch(e){}if(!seen)setAbout(true);}
+
+// search: flights in this snapshot, plus countries, states, cities and airports
+const PLACE_RANK={Country:0,State:1,City:2,Airport:3};
+function searchPlaces(q){q=q.trim().toLowerCase();if(q.length<2)return [];const hits=[];
+  for(const [id,kind,name,detail,pop,alt] of DATA.areas.index){const low=name.toLowerCase();let score;
+    if(alt&&alt===q||low===q)score=0;else if(low.startsWith(q))score=1;else if(low.split(/[\s,·()-]+/).some(w=>w.startsWith(q)))score=2;else continue;
+    hits.push([score,PLACE_RANK[kind],-pop,name.length,id,kind,name,detail]);}
+  hits.sort((a,b)=>{for(let i=0;i<4;i++)if(a[i]!==b[i])return a[i]-b[i];return 0;});return hits.slice(0,7);}
+const q=$('q'),res=$('results');
+q.addEventListener('input',()=>{const raw=q.value.trim(),s=raw.toUpperCase();res.textContent='';if(s.length<2){res.hidden=true;return;}
+  const sec=t=>{const d=document.createElement('div');d.className='sec';d.textContent=t;res.appendChild(d);};
+  const places=searchPlaces(raw);
+  if(places.length){sec('Places');places.forEach(h=>{const b=document.createElement('button');
+    b.innerHTML='<span class="pl"><b>'+esc(h[6])+'</b>'+(h[7]?'<small>'+esc(h[7])+'</small>':'')+'</span><span class="kind">'+esc(h[5])+'</span>';
+    b.addEventListener('click',()=>{setArea(h[4]);res.hidden=true;q.value='';q.blur();});res.appendChild(b);});}
+  const flights=[];for(const p of planes){if(!p.landed&&p.cs.startsWith(s)){flights.push(p);if(flights.length>=5)break;}}
+  if(flights.length){sec('Flights');flights.forEach(p=>{const b=document.createElement('button');b.innerHTML=esc(p.cs)+'<span>'+esc(p.B?AP[p.o][0]+' → '+AP[p.d][0]:(p.type||CLS[p.cls]))+'</span>';
+    b.addEventListener('click',()=>{select(p,true);res.hidden=true;q.value='';q.blur();});res.appendChild(b);});}
+  res.hidden=!res.children.length;});
+q.addEventListener('keydown',e=>{if(e.key==='Enter'){const b=res.querySelector('button');if(b)b.click();}});
+addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(!res.hidden)res.hidden=true;else if(!info.hidden){info.hidden=true;infoBtn.setAttribute('aria-expanded','false');}else if(state.sel)select(null);else if(area.on)clearArea();});
+
+// ---------- resize + loop ----------
+function resize(){const w=innerWidth,h=innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
+  borderMat.resolution.set(w,h);stateMat.resolution.set(w,h);
+  const dpr=Math.min(devicePixelRatio,2);U.uAspect.value=w/h;U.uScale.value=dpr*12.5*clamp(h/800,.7,1.3);U.uMax.value=30*dpr;}
+addEventListener('resize',resize);
+let lastSlow=0,lastCity=0,lastStep=0;
+function frame(t){
+  if(t-lastStep>=50){lastStep=t;step();}
+  if(fly){const k=clamp((t-fly.t0)/1300,0,1),e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
+    const dir=slerp(fly.from,fly.to,e,new THREE.Vector3()).normalize();camera.position.copy(dir.multiplyScalar(fly.d0+(fly.d1-fly.d0)*e));camera.lookAt(0,0,0);if(k>=1)fly=null;}
+  const d=camera.position.length();controls.rotateSpeed=clamp((d-1)*.6,.04,.45);controls.zoomSpeed=clamp((d-1)*1.2,.25,.8);
+  controls.update();
+  camera.updateMatrixWorld(); // labels must use this frame's camera, not the last one, or they trail behind the globe
+  earthDim.value=lerp(1.0,.68,clamp((d-1.25)/2,0,1));
+  stateMat.opacity=clamp((2.4-d)/.6,0,1)*.55;stateLines.visible=stateMat.opacity>.01;
+  borderMat.opacity=lerp(.8,.4,clamp((d-1.1)/1.6,0,1));borderMat.linewidth=lerp(1.6,1.1,clamp((d-1.1)/1.6,0,1));
+  U.uIcon.value=d<1.16?PLANE:ARROW;
+  if(ptr&&ptr[2]==='mouse'){const p=pick(ptr[0],ptr[1]);if(p!==state.hover){state.hover=p;recolor();}
+    canvas.style.cursor=p?'pointer':'';
+    if(p){tip.hidden=false;tip.style.left=ptr[0]+'px';tip.style.top=ptr[1]+'px';tip.innerHTML=esc(p.cs)+' <span>'+esc(p.B?AP[p.o][0]+' → '+AP[p.d][0]:(p.type||CLS[p.cls]))+' · tap for details</span>';}else tip.hidden=true;}
+  if(t-lastCity>200){lastCity=t;updateCities();}
+  placeLabels();
+  if(t-lastSlow>1000){lastSlow=t;if(area.on)refreshArea();recolor();summary();if(state.sel){renderCard();if(state.sel.B)buildRoute();}}
+  renderer.render(scene,camera);
+  requestAnimationFrame(frame);
+}
+
+// ---------- boot ----------
+resize();buildEarth();applyTrails();renderKey();
+dens.value=String(Math.round(1000*(Math.log10(300)-2)/1.5));
+step();refreshArea();onDens();
+const cand=planes.filter(p=>p.B&&p.cls<=1&&p.Dk>5000&&p.hist).map(p=>({p,f:1-p.rem0/p.Dk})).filter(x=>x.f>.3&&x.f<.7).sort((a,b)=>b.p.Dk-a.p.Dk);
+const start=(cand[0]&&cand[0].p)||planes.find(p=>p.B);
+if(start){camera.position.copy(start.pos.clone().normalize().multiplyScalar(1+2*Math.min(fitScale(),1.6)));select(start,false);}
+requestAnimationFrame(frame);
+})();
+</script>
