@@ -209,17 +209,25 @@ class Live:
         self.saved_at = time.time()
         self.wake = threading.Event()  # set to pull the whole globe right away
         self.token, self.token_exp = None, 0
+        self.auth_off = False   # set when OpenSky rejects the account, so pulls carry on anonymously
 
     # OpenSky ----------------------------------------------------------
     def auth_header(self):
-        cid, sec = os.environ.get("OPENSKY_CLIENT_ID"), os.environ.get("OPENSKY_CLIENT_SECRET")
-        if not (cid and sec):
+        cid, sec = (os.environ.get("OPENSKY_CLIENT_ID") or "").strip(), (os.environ.get("OPENSKY_CLIENT_SECRET") or "").strip()
+        if not (cid and sec) or self.auth_off:
             return {}
         if time.time() > self.token_exp - 60:
             body = urllib.parse.urlencode({"grant_type": "client_credentials", "client_id": cid, "client_secret": sec}).encode()
-            with fetch(OPENSKY_TOKEN_URL, data=body, headers={"Content-Type": "application/x-www-form-urlencoded"}) as r:
-                tok = json.load(r)
+            try:
+                with fetch(OPENSKY_TOKEN_URL, data=body, headers={"Content-Type": "application/x-www-form-urlencoded"}) as r:
+                    tok = json.load(r)
+            except urllib.error.HTTPError as e:
+                detail = e.read(300).decode("utf-8", "replace") if e.fp else ""
+                print(f"[opensky] sign-in with the API client was rejected (HTTP {e.code}) {detail.strip()}; continuing anonymously", flush=True)
+                self.auth_off = True
+                return {}
             self.token, self.token_exp = tok["access_token"], time.time() + tok.get("expires_in", 1800)
+            print("[opensky] signed in with the API client", flush=True)
         return {"Authorization": "Bearer " + self.token}
 
     def next_interval(self):
@@ -271,6 +279,10 @@ class Live:
             wait = self.next_interval()
             print(f"[opensky] {len(rows)} airborne · credits left {self.credits} · next pull in {wait:.0f}s", flush=True)
         except urllib.error.HTTPError as e:
+            if e.code in (401, 403) and self.token and not self.auth_off:
+                print(f"[opensky] the API client was refused (HTTP {e.code}); retrying anonymously", flush=True)
+                self.auth_off = True
+                return self.pull_global()
             if e.code == 429:
                 retry = e.headers.get("X-Rate-Limit-Retry-After-Seconds")
                 wait = float(retry) if retry and retry.isdigit() else 1800.0
