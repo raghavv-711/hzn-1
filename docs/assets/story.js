@@ -315,7 +315,7 @@ $('steps').innerHTML = STEPS.map(s => '<li><b>' + s.title + '</b><span>' + s.tex
 const stepEls = [...$('steps').children];
 let shownStep = -1;
 function showStep(i) {
-  if (i === shownStep) return; shownStep = i;
+  if (i === shownStep) return; if (shownStep >= 0 && window.HZNSound) HZNSound.play('blip', i); shownStep = i;
   stepEls.forEach((el, j) => el.classList.toggle('on', j === i));
   const h = i >= 0 ? STEPS[i].hex : null; let s = '';
   for (let k = 0; k < HEX.length; k++) { const on = h && k >= h[0] && k < h[1]; if (k === 2 || k === 8 || k === 22) s += ' '; s += on ? '<b>' + HEX[k] + '</b>' : HEX[k]; }

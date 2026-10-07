@@ -16,10 +16,8 @@ DOCS = SRC.parent / "docs"
 HEAD = ('<!doctype html>\n<html lang="en">\n<meta charset="utf-8">\n'
         '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n'
         '<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">\n'
-        '<script src="../assets/analytics.js" defer></script>\n'
-        '<script src="../assets/sitenav.js" defer></script>\n'
-        '<script src="../assets/tour.js" defer></script>\n'
-        '<style>@view-transition{navigation:auto}::view-transition-old(root),::view-transition-new(root){animation-duration:.32s}</style>\n'
+        + ''.join(f'<script src="../assets/{n}.js?v=__V_{n}__" defer></script>\n' for n in ("analytics", "sound", "sitenav", "tour"))
+        + '<style>@view-transition{navigation:auto}::view-transition-old(root),::view-transition-new(root){animation-duration:.32s}</style>\n'
         + ''.join(f'<meta {k}="{n}" content="{v}">\n' for k, n, v in [
             ("property", "og:image:width", "1200"), ("property", "og:image:height", "630"),
             ("property", "og:site_name", "HZN-1"), ("name", "twitter:card", "summary_large_image")]))
@@ -58,6 +56,23 @@ DESCRIPTIONS = {  # what search engines and link previews show for each page
 }
 
 
+SHARED = ("analytics", "sound", "sitenav", "tour")  # scripts every page loads
+
+
+def versioned(text):
+    """Stamp the shared scripts' links with a hash of their contents, so browsers fetch them again only when they change."""
+    for n in SHARED:
+        text = text.replace(f"__V_{n}__", version(DOCS / "assets" / f"{n}.js"))
+    return text
+
+
+def stamp_landing():
+    p = DOCS / "index.html"; s = p.read_text()
+    for n in SHARED:
+        s = re.sub(rf'src="assets/{n}\.js(\?v=[0-9a-f]+)?"', f'src="assets/{n}.js?v={version(DOCS / "assets" / f"{n}.js")}"', s)
+    p.write_text(s)
+
+
 def write(name, html):
     out = DOCS / name / "index.html"
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -66,7 +81,7 @@ def write(name, html):
     page = (f'<meta property="og:image" content="{SITE}assets/{img}">\n'
             f'<meta name="description" content="{d}">\n<meta property="og:description" content="{d}">\n'
             f'<link rel="canonical" href="{SITE}{name}/">\n<meta property="og:url" content="{SITE}{name}/">\n')
-    out.write_text(HEAD + page + localize(html))
+    out.write_text(versioned(HEAD) + page + localize(html))
     print(f"{out.relative_to(DOCS.parent)}  {out.stat().st_size / 1e3:.0f} kB")
 
 
@@ -174,6 +189,7 @@ def build(data_json=None):
     m = rep(m, "__DATA__", (SRC / "model-data.json").read_text().replace("</", "<\\/"))
     m = rep(m, '<div class="eyebrow"><b>Fuel Horizon</b>', '<div class="eyebrow"><a href="../" style="text-decoration:none"><b>HZN-1</b></a><span>·</span><a href="../globe/" style="text-decoration:none"><b>Fuel Horizon</b></a>')
     write("model", m)
+    stamp_landing()
 
 
 if __name__ == "__main__":

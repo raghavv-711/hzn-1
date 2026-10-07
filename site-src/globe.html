@@ -957,6 +957,7 @@ function runAsk(text){
       const angs=list.map(p=>ang(p.pos,c)).sort((a,b)=>a-b);spread=angs[Math.floor(angs.length*.9)]||0;
       flyTo(c,1+clamp(spread*2.4*fitScale(),.12,2.6));}}
   recolor();summary();setHash('ask/'+encodeURIComponent(text));
+  window.HZNSound&&HZNSound.play('answer');
 }
 function clearAsk(){if(!state.q)return;state.q=null;$('askChip').hidden=true;recolor();summary();
   if(/^#ask\//.test(location.hash))setHash(area.on&&area.id?'area/'+area.id:'');}
@@ -1046,6 +1047,7 @@ function replayTicks(){const F=RP.frames,t0=F[0].t,t1=F[F.length-1].t,el=$('rpTi
 function setPlaying(on){RP.playing=on&&RP.frames&&RP.frames.length>1;$('rpPlay').setAttribute('aria-label',RP.playing?'Pause':'Play');
   $('rpIcon').setAttribute('d',RP.playing?'M7 5h4v14H7zM13 5h4v14h-4z':'M7 5l12 7-12 7z');RP.last=performance.now();}
 async function openReplay(){
+  window.HZNSound&&HZNSound.play('sweep');
   RP.on=true;document.body.classList.add('replaying');$('replay').hidden=false;placeReplay();$('replayBtn').setAttribute('aria-pressed','true');
   clearAsk();select(null);renderCard();setHash('replay');ptsObj.visible=false;trails.visible=false;rObj.visible=true;
   if(!RP.frames&&!RP.loading){RP.loading=true;
