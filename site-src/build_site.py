@@ -135,6 +135,7 @@ def build(data_json=None):
             "  srcs.forEach((src,i)=>{const img=new Image();img.onerror=finish;img.onload=()=>{")
     g = rep(g, "earthMats[i].uniforms.map.value=tex;earthMats[i].uniforms.hasMap.value=1;};img.src=src;});",
             "const old=earthMats[i].uniforms.map.value;earthMats[i].uniforms.map.value=tex;earthMats[i].uniforms.hasMap.value=1;if(old&&old.dispose)old.dispose();finish();};img.src=src;});")
+    g = rep(g, "replay.json?v=__RV__", f"replay.json?v={version(DOCS / 'globe' / 'replay.json')}")
     g = re.sub(r'<div class="brand">(.*?)</div>', r'<a class="brand" href="../" style="pointer-events:auto;color:inherit;text-decoration:none" aria-label="HZN-1 home">\1</a>', g, count=1)
     write("globe", g)
 

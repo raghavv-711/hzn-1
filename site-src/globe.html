@@ -158,6 +158,18 @@ input[type=range]{-webkit-appearance:none;appearance:none;width:150px;height:4px
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--text);cursor:pointer}
 input[type=range]::-moz-range-thumb{width:16px;height:16px;border:0;border-radius:50%;background:var(--text);cursor:pointer}
 .summary{font-size:12.5px;color:var(--muted);padding-right:6px;white-space:nowrap}
+.replay{position:fixed;left:50%;bottom:calc(76px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:min(640px,calc(100vw - 32px));display:flex;align-items:center;gap:12px;padding:10px 10px 10px 12px;z-index:6}
+.rp-play{all:unset;cursor:pointer;flex-shrink:0;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--text);color:#06121c}
+.rp-play svg{width:16px;height:16px}
+.rp-play:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.rp-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.rp-head{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;color:var(--muted);white-space:nowrap}
+.rp-time{color:var(--text);font-weight:500;font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis}
+.rp-count{font-variant-numeric:tabular-nums}
+#rpRange{width:100%;margin:0}
+.rp-ticks{position:relative;height:12px;font-size:10.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.rp-ticks span{position:absolute;top:0;transform:translateX(-50%);white-space:nowrap}
+body.replaying #card,body.replaying #tip{display:none!important}
 .summary b{color:var(--text);font-weight:500}
 
 .zoom{position:fixed;right:16px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:2px;padding:4px;border-radius:12px}
@@ -196,6 +208,8 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border:0;border-radiu
   .zoom{display:none}
   #attrib{top:auto;bottom:calc(132px + env(safe-area-inset-bottom,0px));left:16px;right:16px;max-width:none;text-align:left}
   body.card-open #attrib{display:none}
+  .replay{left:16px;right:16px;transform:none;width:auto;bottom:calc(132px + env(safe-area-inset-bottom,0px))}
+  body.replaying #attrib{display:none}
 }
 @media (prefers-reduced-motion:reduce){.key-head svg{transition:none}}
 [hidden]{display:none!important}
@@ -251,7 +265,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border:0;border-radiu
     <button id="mElec" aria-pressed="false">Electric</button>
     <button id="mAlt" aria-pressed="false">Altitude</button>
   </div>
-  <div class="seg" role="group" aria-label="Trails"><button id="trailBtn" aria-pressed="true">Trails</button></div>
+  <div class="seg" role="group" aria-label="Trails and replay"><button id="trailBtn" aria-pressed="true">Trails</button><button id="replayBtn" aria-pressed="false" aria-controls="replay">Replay 24h</button></div>
   <div class="slider" id="sliderWrap" hidden>
     <label for="dens">Battery</label>
     <input id="dens" type="range" min="0" max="1000" value="318">
@@ -259,6 +273,15 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border:0;border-radiu
   </div>
   <div class="summary" id="summary"></div>
 </footer>
+<div class="replay glass" id="replay" hidden role="group" aria-label="24-hour replay">
+  <button class="rp-play" id="rpPlay" aria-label="Play"><svg viewBox="0 0 24 24" aria-hidden="true"><path id="rpIcon" d="M7 5l12 7-12 7z" fill="currentColor"/></svg></button>
+  <div class="rp-main">
+    <div class="rp-head"><span class="rp-time" id="rpTime">Loading the last 24 hours…</span><span class="rp-count" id="rpCount"></span></div>
+    <input id="rpRange" type="range" min="0" max="1" step="1" value="0" aria-label="Time" disabled>
+    <div class="rp-ticks" id="rpTicks" aria-hidden="true"></div>
+  </div>
+  <button class="icon-btn" id="rpClose" aria-label="Back to the latest snapshot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+</div>
 <div class="zoom glass" role="group" aria-label="Zoom">
   <button id="zIn" aria-label="Zoom in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
   <button id="zOut" aria-label="Zoom out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14"/></svg></button>
@@ -479,7 +502,7 @@ function inArea(p){
   for(const r of area.rings){if(lat<r.minY||lat>r.maxY)continue;for(const L of [ll[1],ll[1]+360,ll[1]-360])if(L>=r.minX&&L<=r.maxX){if(pip(r.pts,L,lat))inside=!inside;break;}}
   return inside;
 }
-function refreshArea(){for(const p of planes)p.inA=inArea(p);}
+function refreshArea(){for(const p of planes)p.inA=inArea(p);if(typeof RP!=='undefined')RP.area=null;}
 function drawArea(){
   while(area.lines.children.length){const c=area.lines.children.pop();c.geometry.dispose();}
   if(!area.on)return;const mat=new THREE.LineBasicMaterial({color:0xa8dcff,depthWrite:false});
@@ -575,6 +598,9 @@ function placeLabels(){
 
 // ---------- summary ----------
 function summary(){
+  if(typeof RP!=='undefined'&&RP.on&&RP.frames&&RP.frames.length){const F=RP.frames;let i=0;while(i<F.length-2&&F[i+1].t<=RP.t)i++;const A=F[i],B=F[i+1]||A,f=B===A?0:clamp((RP.t-A.t)/(B.t-A.t),0,1);
+    $('snapTxt').innerHTML='Replay · <b class="num">'+esc(rWhen(RP.t))+'</b>';
+    $('summary').innerHTML='<b class="num">'+fmt(Math.round(lerp(A.n,B.n,f)))+'</b> planes in the air · about <b class="num">'+fmt(lerp(A.burn,B.burn,f)/1000,0)+' t</b> of fuel an hour (modelled flights)';return;}
   let all=0,air=0,burn=0,rt=0,feas=0;
   for(const p of planes){if(p.landed)continue;all++;if(area.on&&!p.inA)continue;air++;burn+=p.burnEff;if(p.B){rt++;if(elecState(p,state.dens).feasible)feas++;}}
   const mins=Math.round((Date.now()-LOADED)/60000);
@@ -675,7 +701,7 @@ const tip=$('tip');let ptr=null,downAt=null;
 canvas.addEventListener('pointermove',e=>{ptr=[e.clientX,e.clientY,e.pointerType];});
 canvas.addEventListener('pointerleave',()=>{ptr=null;tip.hidden=true;if(state.hover){state.hover=null;recolor();}});
 canvas.addEventListener('pointerdown',e=>{downAt=[e.clientX,e.clientY];});
-canvas.addEventListener('pointerup',e=>{if(!downAt)return;const moved=Math.hypot(e.clientX-downAt[0],e.clientY-downAt[1]);downAt=null;if(moved>6)return;select(pick(e.clientX,e.clientY));});
+canvas.addEventListener('pointerup',e=>{if(!downAt||RP.on)return;const moved=Math.hypot(e.clientX-downAt[0],e.clientY-downAt[1]);downAt=null;if(moved>6)return;select(pick(e.clientX,e.clientY));});
 // trackpad pinch arrives as Ctrl + wheel: zoom in proportion to the pinch
 canvas.addEventListener('wheel',e=>{if(!e.ctrlKey)return;e.preventDefault();e.stopImmediatePropagation();
   const d=camera.position.length(),nd=clamp(1+(d-1)*Math.exp(e.deltaY*.012),controls.minDistance,controls.maxDistance);camera.position.multiplyScalar(nd/d);},{passive:false,capture:true});
@@ -687,7 +713,7 @@ const MODES={mFuel:'fuel',mElec:'elec',mAlt:'alt'};
 Object.keys(MODES).forEach(id=>$(id).addEventListener('click',()=>{state.mode=MODES[id];Object.keys(MODES).forEach(k=>$(k).setAttribute('aria-pressed',k===id?'true':'false'));
   $('sliderWrap').hidden=state.mode!=='elec';renderKey();recolor();buildRoute();renderCard();summary();}));
 const trailBtn=$('trailBtn');
-function applyTrails(){trails.visible=state.trails;trailBtn.setAttribute('aria-pressed',String(state.trails));}
+function applyTrails(){trails.visible=state.trails&&!(typeof RP!=='undefined'&&RP.on);trailBtn.setAttribute('aria-pressed',String(state.trails));}
 trailBtn.addEventListener('click',()=>{state.trails=!state.trails;applyTrails();try{localStorage.setItem('fh-trails',state.trails?'on':'off');}catch(e){}});
 const dens=$('dens');const sliderToDens=v=>Math.round(Math.pow(10,2+v/1000*1.5)/10)*10;
 function onDens(){state.dens=sliderToDens(+dens.value);$('densOut').textContent=fmt(state.dens)+' Wh/kg';recolor();summary();renderCard();buildRoute();renderKey();}
@@ -721,6 +747,91 @@ q.addEventListener('input',()=>{const raw=q.value.trim(),s=raw.toUpperCase();res
 q.addEventListener('keydown',e=>{if(e.key==='Enter'){const b=res.querySelector('button');if(b)b.click();}});
 addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(!res.hidden)res.hidden=true;else if(!info.hidden){info.hidden=true;infoBtn.setAttribute('aria-expanded','false');}else if(state.sel)select(null);else if(area.on)clearArea();});
 
+// ---------- 24-hour replay: one frame per hour, recorded by the site's refresh job ----------
+// Planes seen in two neighbouring frames glide between them along a great circle; planes that take off or land in
+// between fade in or out. Frames: {t, n, burn, h:[hex…], v:[lat*100, lon*100, ft/100, heading, fuel%|-1]…}.
+const REPLAY_URL='replay.json?v=__RV__';
+const RP={on:false,frames:null,loading:false,t:0,playing:false,last:0,pair:-1,map:null,area:null};
+const rGeo=new THREE.BufferGeometry();let rCap=0,rCount=0,rPos,rDir,rCol,rSize;
+function rAlloc(n){rCap=n;rPos=new Float32Array(n*3);rDir=new Float32Array(n*3);rCol=new Float32Array(n*3);rSize=new Float32Array(n);
+  rGeo.setAttribute('position',new THREE.BufferAttribute(rPos,3).setUsage(THREE.DynamicDrawUsage));
+  rGeo.setAttribute('dir',new THREE.BufferAttribute(rDir,3).setUsage(THREE.DynamicDrawUsage));
+  rGeo.setAttribute('color',new THREE.BufferAttribute(rCol,3).setUsage(THREE.DynamicDrawUsage));
+  rGeo.setAttribute('size',new THREE.BufferAttribute(rSize,1).setUsage(THREE.DynamicDrawUsage));}
+const rObj=new THREE.Points(rGeo,planeMat);rObj.frustumCulled=false;rObj.renderOrder=3;rObj.visible=false;scene.add(rObj);
+const rWhen=t=>new Date(t*1000).toLocaleString('en-US',{weekday:'short',hour:'numeric',minute:'2-digit',timeZone:TZ,timeZoneName:'short'});
+function rPrep(F){ // unit vectors and an index by hex for every frame
+  const n=F.h.length;F.u=new Float32Array(n*3);F.idx=new Map();const v=new THREE.Vector3();
+  for(let i=0;i<n;i++){vec(F.v[i*5]/100,F.v[i*5+1]/100,v);F.u.set([v.x,v.y,v.z],i*3);F.idx.set(F.h[i],i);}}
+function rPair(i){ // entries for the stretch between frame i and i+1: [index in A or -1, index in B or -1]
+  const A=RP.frames[i],B=RP.frames[i+1]||A,m=[];
+  for(let a=0;a<A.h.length;a++){const b=B.idx.get(A.h[a]);m.push(a,b===undefined?-1:b);}
+  if(B!==A)for(let b=0;b<B.h.length;b++)if(!A.idx.has(B.h[b]))m.push(-1,b);
+  RP.pair=i;RP.map=Int32Array.from(m);RP.area=null;if(RP.map.length/2>rCap)rAlloc(Math.ceil(RP.map.length/2*1.2));}
+const rTmp={pos:new THREE.Vector3()},rA=new THREE.Vector3(),rB=new THREE.Vector3(),rP=new THREE.Vector3(),rT=new THREE.Vector3();
+function rAreaMask(){ // which entries are inside the chosen area (checked at the start of each stretch)
+  const A=RP.frames[RP.pair],B=RP.frames[RP.pair+1]||A,m=RP.map,mask=new Uint8Array(m.length/2);
+  for(let k=0;k<mask.length;k++){const a=m[k*2],b=m[k*2+1],F=a>=0?A:B,i=a>=0?a:b;rTmp.pos.set(F.u[i*3],F.u[i*3+1],F.u[i*3+2]);mask[k]=inArea(rTmp)?1:0;}
+  RP.area=mask;}
+function replayDraw(){
+  const F=RP.frames;if(!F||!F.length)return;
+  let i=0;while(i<F.length-2&&F[i+1].t<=RP.t)i++;
+  if(i!==RP.pair)rPair(i);
+  if(area.on&&!RP.area)rAreaMask();
+  const A=F[i],B=F[i+1]||A,f=B===A?0:clamp((RP.t-A.t)/(B.t-A.t),0,1),m=RP.map,n=m.length/2,c=[0,0,0];
+  const fadeOut=1-clamp(f/.35,0,1),fadeIn=clamp((f-.65)/.35,0,1);
+  for(let k=0;k<n;k++){const a=m[k*2],b=m[k*2+1];let size=1,alt,frac,hd;
+    if(area.on&&RP.area&&!RP.area[k]){rSize[k]=0;continue;}
+    if(a>=0&&b>=0){rA.set(A.u[a*3],A.u[a*3+1],A.u[a*3+2]);rB.set(B.u[b*3],B.u[b*3+1],B.u[b*3+2]);slerp(rA,rB,f,rP);
+      alt=lerp(A.v[a*5+2],B.v[b*5+2],f)*100;const fa=A.v[a*5+4],fb=B.v[b*5+4];frac=fa>=0&&fb>=0?lerp(fa,fb,f):Math.max(fa,fb);
+      rT.copy(rB).addScaledVector(rP,-rP.dot(rB));if(rT.lengthSq()<1e-10){hd=A.v[a*5+3];rT.set(0,0,0);}}
+    else{const G=a>=0?A:B,j=a>=0?a:b;rP.set(G.u[j*3],G.u[j*3+1],G.u[j*3+2]);alt=G.v[j*5+2]*100;frac=G.v[j*5+4];hd=G.v[j*5+3];rT.set(0,0,0);size=a>=0?fadeOut:fadeIn;}
+    if(rT.lengthSq()<1e-10){const fr=frameAt(rP);rT.copy(fr.north).multiplyScalar(Math.cos(hd*D2R)).addScaledVector(fr.east,Math.sin(hd*D2R));}
+    rT.normalize();const r=altR(alt);rPos[k*3]=rP.x*r;rPos[k*3+1]=rP.y*r;rPos[k*3+2]=rP.z*r;rDir[k*3]=rT.x;rDir[k*3+1]=rT.y;rDir[k*3+2]=rT.z;
+    if(state.mode==='alt')altRamp(alt,c);else if(frac>=0)ramp(frac/100,c);else{c[0]=C_DIM[0]*.65;c[1]=C_DIM[1]*.65;c[2]=C_DIM[2]*.65;size*=.85;}
+    rCol[k*3]=c[0];rCol[k*3+1]=c[1];rCol[k*3+2]=c[2];rSize[k]=size;}
+  for(let k=n;k<rCount;k++)rSize[k]=0;rCount=n;rGeo.setDrawRange(0,n);
+  for(const a of ['position','dir','color','size'])rGeo.attributes[a].needsUpdate=true;
+  const planesNow=Math.round(lerp(A.n,B.n,f));
+  $('rpTime').textContent=rWhen(RP.t);$('rpCount').textContent=fmt(planesNow)+' planes';
+  if(+$('rpRange').value!==Math.round(RP.t))$('rpRange').value=String(Math.round(RP.t));
+}
+function replayTicks(){const F=RP.frames,t0=F[0].t,t1=F[F.length-1].t,el=$('rpTicks');el.textContent='';if(t1-t0<3*3600)return;
+  const step=t1-t0>12*3600?6*3600:3*3600;
+  for(let t=Math.ceil(t0/step)*step;t<=t1;t+=step){const s=document.createElement('span');s.style.left=((t-t0)/(t1-t0)*100)+'%';
+    s.textContent=new Date(t*1000).toLocaleTimeString('en-US',{hour:'numeric',timeZone:TZ});el.appendChild(s);}}
+function setPlaying(on){RP.playing=on&&RP.frames&&RP.frames.length>1;$('rpPlay').setAttribute('aria-label',RP.playing?'Pause':'Play');
+  $('rpIcon').setAttribute('d',RP.playing?'M7 5h4v14H7zM13 5h4v14h-4z':'M7 5l12 7-12 7z');RP.last=performance.now();}
+async function openReplay(){
+  RP.on=true;document.body.classList.add('replaying');$('replay').hidden=false;placeReplay();$('replayBtn').setAttribute('aria-pressed','true');
+  select(null);ptsObj.visible=false;trails.visible=false;rObj.visible=true;
+  if(!RP.frames&&!RP.loading){RP.loading=true;
+    try{const d=await (await fetch(REPLAY_URL)).json();RP.frames=(d.frames||[]).sort((a,b)=>a.t-b.t);RP.frames.forEach(rPrep);}catch(e){RP.frames=[];}
+    RP.loading=false;
+    const F=RP.frames;if(!F.length){$('rpTime').textContent='No replay recorded yet. Check back in an hour.';return;}
+    const r=$('rpRange');r.min=String(F[0].t);r.max=String(F[F.length-1].t);r.step='60';r.disabled=F.length<2;
+    RP.t=F.length>1?F[0].t:F[0].t;replayTicks();
+    if(F.length<2){$('rpTime').textContent=rWhen(F[0].t);$('rpCount').textContent='More hours appear as they are recorded';}
+    else if(!reduce)setPlaying(true);}
+  if(!RP.on)return;replayDraw();summary();
+}
+function closeReplay(){RP.on=false;setPlaying(false);document.body.classList.remove('replaying');$('replay').hidden=true;$('replayBtn').setAttribute('aria-pressed','false');
+  rObj.visible=false;ptsObj.visible=true;applyTrails();summary();}
+// keep the timeline just above the bottom bar, whose height changes as it wraps on narrow screens
+const barEl=document.querySelector('.bar');
+const placeReplay=()=>{$('replay').style.bottom=Math.round(innerHeight-barEl.getBoundingClientRect().top+10)+'px';};
+new ResizeObserver(placeReplay).observe(barEl);addEventListener('resize',placeReplay);
+$('replayBtn').addEventListener('click',()=>RP.on?closeReplay():openReplay());
+$('rpClose').addEventListener('click',closeReplay);
+$('rpPlay').addEventListener('click',()=>{const F=RP.frames;if(!F||F.length<2)return;if(!RP.playing&&RP.t>=F[F.length-1].t)RP.t=F[0].t;setPlaying(!RP.playing);});
+$('rpRange').addEventListener('input',e=>{setPlaying(false);RP.t=+e.target.value;replayDraw();summary();});
+const REPLAY_RATE=3600/1.4; // one recorded hour every 1.4 seconds: a full day in about half a minute
+function replayTick(now){
+  if(RP.playing){const F=RP.frames,dt=Math.min(.1,(now-RP.last)/1000);RP.last=now;RP.t+=dt*REPLAY_RATE;
+    if(RP.t>=F[F.length-1].t){RP.t=F[F.length-1].t;setPlaying(false);}}
+  replayDraw();
+}
+
 // ---------- resize + loop ----------
 function resize(){const w=innerWidth,h=innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
   borderMat.resolution.set(w,h);stateMat.resolution.set(w,h);
@@ -738,7 +849,8 @@ function frame(t){
   stateMat.opacity=clamp((2.4-d)/.6,0,1)*.55;stateLines.visible=stateMat.opacity>.01;
   borderMat.opacity=lerp(.8,.4,clamp((d-1.1)/1.6,0,1));borderMat.linewidth=lerp(1.6,1.1,clamp((d-1.1)/1.6,0,1));
   U.uIcon.value=d<1.16?PLANE:ARROW;
-  if(ptr&&ptr[2]==='mouse'){const p=pick(ptr[0],ptr[1]);if(p!==state.hover){state.hover=p;recolor();}
+  if(RP.on)replayTick(t);
+  if(ptr&&ptr[2]==='mouse'&&!RP.on){const p=pick(ptr[0],ptr[1]);if(p!==state.hover){state.hover=p;recolor();}
     canvas.style.cursor=p?'pointer':'';
     if(p){tip.hidden=false;tip.style.left=ptr[0]+'px';tip.style.top=ptr[1]+'px';tip.innerHTML=esc(p.cs)+' <span>'+esc(p.B?AP[p.o][0]+' → '+AP[p.d][0]:(p.type||CLS[p.cls]))+' · tap for details</span>';}else tip.hidden=true;}
   if(t-lastCity>200){lastCity=t;updateCities();}
