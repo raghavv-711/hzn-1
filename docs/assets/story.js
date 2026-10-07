@@ -434,6 +434,7 @@ const labelPos = (v, el, alpha) => {
 };
 
 function frame(now) {
+  if (window.__hznCovered) return; // the next page is showing on top of this one
   requestAnimationFrame(frame);
   if (document.hidden) { last = now; return; }
   tick(now);

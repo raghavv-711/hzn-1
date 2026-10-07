@@ -3,12 +3,18 @@
 // Off until someone turns it on; the choice is remembered. Browsers only allow sound after a click or key press on
 // each page, so when it's on but waiting, the speaker buttons show a pulsing dot and the next tap starts it.
 (() => {
+  // Pages shown inside the sound "shell" (see below) use the one audio engine that lives in the top page.
+  let top = null; try { if (window !== window.top && window.top.HZNSound) top = window.top.HZNSound; } catch (e) {}
+  if (top) {
+    window.HZNSound = Object.assign({}, top, { subscribe: f => { const u = top.subscribe(f); addEventListener('pagehide', u); return u; } });
+    return;
+  }
   const KEY = 'hzn-sound';
   let on = false; try { on = localStorage.getItem(KEY) === 'on'; } catch (e) {}
   let ctx = null, master = null, hum = null;
   const listeners = new Set();
   const state = () => (!on ? 'off' : ctx && ctx.state === 'running' ? 'on' : 'waiting');
-  const notify = () => listeners.forEach(f => f(state()));
+  const notify = () => listeners.forEach(f => { try { f(state()); } catch (e) { listeners.delete(f); } });
 
   function build() {
     if (ctx) return;
@@ -43,7 +49,6 @@
     notify();
   }
   ['pointerdown', 'keydown', 'touchstart'].forEach(ev => addEventListener(ev, () => { if (on && (!ctx || ctx.state !== 'running')) wake(); }, { passive: true }));
-  document.addEventListener('visibilitychange', () => { if (!ctx) return; if (document.hidden) ctx.suspend(); else if (on) wake(); });
 
   const ready = () => on && ctx && ctx.state === 'running';
   function tone(freq, to, dur, gain, type = 'sine', delay = 0) {
@@ -65,7 +70,40 @@
     sweep: () => { tone(220, 880, .9, .035, 'sine'); click(.05, .02); },                                 // the replay starts
   };
 
+  // Browsers silence every newly loaded page until it's clicked. So while sound is on, site links open the next page
+  // in a full-window frame on top of this page instead of replacing it: the audio keeps playing, and the address bar,
+  // title and back button follow the page inside. Links inside that frame then move it along as usual.
+  const SITE = new URL('../', document.currentScript.src);
+  let shell = null;
+  function sync() {
+    try { const w = shell.contentWindow, href = w.location.href;
+      if (href.startsWith('http') && href !== location.href) history.replaceState(null, '', href);
+      if (w.document.title) document.title = w.document.title; } catch (e) {}
+  }
+  function go(url) {
+    if (shell) { shell.contentWindow.location.href = url; return; }
+    window.__hznCovered = true;
+    for (const el of document.body.children) el.style.visibility = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    shell = document.createElement('iframe');
+    shell.title = document.title; shell.setAttribute('allow', 'autoplay; fullscreen; clipboard-write');
+    shell.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;border:0;z-index:2147483647;background:#04070b;visibility:visible';
+    shell.addEventListener('load', () => { sync(); try { shell.contentWindow.focus(); } catch (e) {} });
+    setInterval(sync, 700);
+    shell.src = url; document.body.appendChild(shell);
+  }
+  document.addEventListener('click', e => {
+    if (!on || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const a = e.target.closest && e.target.closest('a[href]');
+    if (!a || (a.target && a.target !== '_self') || a.hasAttribute('download')) return;
+    const u = new URL(a.href, location.href);
+    if (u.origin !== location.origin || !u.pathname.startsWith(SITE.pathname)) return;
+    if (u.pathname === location.pathname && u.search === location.search) return;  // a link within this page
+    e.preventDefault(); wake(); go(u.href);
+  }, true);
+
   window.HZNSound = {
+    go: url => { if (!on) return false; wake(); go(new URL(url, location.href).href); return true; },
     play: (name, arg) => { if (ready() && sounds[name]) try { sounds[name](arg); } catch (e) {} },
     toggle: () => { if (on && ctx && ctx.state !== 'running') wake(); else setOn(!on); },
     state, subscribe: f => { listeners.add(f); f(state()); return () => listeners.delete(f); },

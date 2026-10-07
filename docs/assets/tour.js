@@ -7,7 +7,8 @@
   const page = /\/globe\/?$/.test(path) ? 'globe' : /\/stats\/?$/.test(path) ? 'stats' : /\/(chip|model)\/?$/.test(path) ? 'other' : 'home';
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const $ = s => document.querySelector(s);
-  const next = p => { location.href = new URL(p + '?tour', root).href; };
+  // with sound on, the next page opens on top of this one so the audio carries on (see sound.js)
+  const next = p => { const u = new URL(p + '?tour', root).href; if (!(window.HZNSound && HZNSound.go && HZNSound.go(u))) location.href = u; };
 
   // ---------- caption bar ----------
   const css = document.createElement('style');

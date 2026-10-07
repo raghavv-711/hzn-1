@@ -4,9 +4,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
 <script src="../assets/analytics.js?v=64f1784b94" defer></script>
-<script src="../assets/sound.js?v=8fe490aea0" defer></script>
+<script src="../assets/sound.js?v=db0ac1f894" defer></script>
 <script src="../assets/sitenav.js?v=bddc4dcbc7" defer></script>
-<script src="../assets/tour.js?v=f77d41de4c" defer></script>
+<script src="../assets/tour.js?v=1d4f33004d" defer></script>
 <style>@view-transition{navigation:auto}::view-transition-old(root),::view-transition-new(root){animation-duration:.32s}</style>
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -1122,6 +1122,7 @@ function resize(){const w=innerWidth,h=innerHeight;renderer.setSize(w,h,false);c
 addEventListener('resize',resize);
 let lastSlow=0,lastCity=0,lastStep=0;
 function frame(t){
+  if(window.__hznCovered)return; // the next page is showing on top of this one
   if(t-lastStep>=50){lastStep=t;step();}
   if(fly){const k=clamp((t-fly.t0)/1300,0,1),e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
     const dir=slerp(fly.from,fly.to,e,new THREE.Vector3()).normalize();camera.position.copy(dir.multiplyScalar(fly.d0+(fly.d1-fly.d0)*e));camera.lookAt(0,0,0);if(k>=1)fly=null;}

@@ -4,9 +4,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
 <script src="../assets/analytics.js?v=64f1784b94" defer></script>
-<script src="../assets/sound.js?v=8fe490aea0" defer></script>
+<script src="../assets/sound.js?v=db0ac1f894" defer></script>
 <script src="../assets/sitenav.js?v=bddc4dcbc7" defer></script>
-<script src="../assets/tour.js?v=f77d41de4c" defer></script>
+<script src="../assets/tour.js?v=1d4f33004d" defer></script>
 <style>@view-transition{navigation:auto}::view-transition-old(root),::view-transition-new(root){animation-duration:.32s}</style>
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -554,6 +554,7 @@ function pathPts(a,b){return a===b?[pointOn(a)]:manhattan(WP[a],WP[b]).map(p=>ne
 function along(pts,t){if(pts.length===1)return pts[0].clone();let L=0;const seg=[];for(let i=0;i<pts.length-1;i++){const l=pts[i].distanceTo(pts[i+1]);seg.push(l);L+=l;}
   let d=t*L;for(let i=0;i<seg.length;i++){if(d<=seg[i])return pts[i].clone().lerp(pts[i+1],seg[i]?d/seg[i]:0);d-=seg[i];}return pts[pts.length-1].clone();}
 function frame(now){
+  if(window.__hznCovered)return; // the next page is showing on top of this one
   const dt=Math.min(.05,(now-last)/1000);last=now;
   // camera tween
   if(camTween){const k=clamp((now-camTween.t0)/camTween.dur,0,1),e=ease(k);camera.position.lerpVectors(camTween.from,camTween.to,e);controls.target.lerpVectors(camTween.tf,camTween.tt,e);if(k>=1)camTween=null;}
