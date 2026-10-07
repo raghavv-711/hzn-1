@@ -53,12 +53,14 @@ jobs:
             .fuel-horizon-cache/airlines.dat
             .fuel-horizon-cache/admin1-50m.geojson
 
-      - name: Recent flight paths from earlier runs
+      - name: Recent flight paths and replay frames from earlier runs
         uses: actions/cache/restore@v4
         with:
           key: history-${{ github.run_id }}
           restore-keys: history-
-          path: .fuel-horizon-cache/history.json.gz
+          path: |
+            .fuel-horizon-cache/history.json.gz
+            .fuel-horizon-cache/replay
 
       - name: Record fresh flights
         id: refresh
@@ -70,13 +72,15 @@ jobs:
         # pushes take one quick pull; scheduled runs take three, four minutes apart, so trails have shape
         run: python tools/refresh_snapshot.py --pulls ${{ github.event_name == 'push' && 1 || 3 }}
 
-      - name: Save flight paths for the next run
+      - name: Save flight paths and replay frames for the next run
         if: always()
         continue-on-error: true
         uses: actions/cache/save@v4
         with:
           key: history-${{ github.run_id }}
-          path: .fuel-horizon-cache/history.json.gz
+          path: |
+            .fuel-horizon-cache/history.json.gz
+            .fuel-horizon-cache/replay
 
       - name: Note when the refresh failed
         if: steps.refresh.outcome == 'failure'

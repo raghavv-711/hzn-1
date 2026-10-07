@@ -53,6 +53,16 @@ def hav(a, b, c, d):
     return 2 * 6371 * math.asin(math.sqrt(math.sin((p2 - p1) / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2))
 
 
+def fuel_frac(r, ap):
+    """Fraction of takeoff fuel still on board for one snapshot row, or -1 when there's no route or model."""
+    lat, lon, o, de, f = r[3], r[4], r[11], r[12], (r[16] if len(r) > 16 else 0)
+    if not (f and f[0] and o in ap and de in ap):
+        return -1
+    D = hav(ap[o][2], ap[o][3], ap[de][2], ap[de][3]); flown = max(0, D - hav(lat, lon, ap[de][2], ap[de][3]))
+    taxi = max(0, f[0] - f[1] - f[2]); x = f[4] * flown / max(f[3], 1e-6) if flown < f[3] else f[4] + (flown - f[3]) * f[5]
+    return round(max(0, f[0] - taxi - min(x, f[1])) / f[0], 2)
+
+
 def globe_points(d):
     """Dots for the landing page globe: land from the mask, flights with their fuel-left fraction (-1 = no route)."""
     from PIL import Image
@@ -64,13 +74,7 @@ def globe_points(d):
             land += [round(lat, 2), round(lon, 2)]
     ap, flights = d["ap"], []
     for r in d["p"]:
-        lat, lon, o, de, f = r[3], r[4], r[11], r[12], (r[16] if len(r) > 16 else 0)
-        frac = -1
-        if f and f[0] and o in ap and de in ap:
-            D = hav(ap[o][2], ap[o][3], ap[de][2], ap[de][3]); flown = max(0, D - hav(lat, lon, ap[de][2], ap[de][3]))
-            taxi = max(0, f[0] - f[1] - f[2]); x = f[4] * flown / max(f[3], 1e-6) if flown < f[3] else f[4] + (flown - f[3]) * f[5]
-            frac = round(max(0, f[0] - taxi - min(x, f[1])) / f[0], 2)
-        flights += [round(lat, 2), round(lon, 2), frac]
+        flights += [round(r[3], 2), round(r[4], 2), fuel_frac(r, ap)]
     out = {"land": land, "flights": flights, "t": d["t"], "n": len(d["p"]), "modelled": sum(1 for r in d["p"] if len(r) > 16 and r[16])}
     (DOCS / "assets" / "globe-points.json").write_text(json.dumps(out, separators=(",", ":")))
 
