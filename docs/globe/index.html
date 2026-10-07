@@ -250,6 +250,7 @@ body.replaying #card,body.replaying #tip{display:none!important}
 #tip{position:fixed;pointer-events:none;padding:6px 10px;border-radius:9px;font:12px var(--f-mono);white-space:nowrap;transform:translate(14px,-50%);z-index:5}
 #tip span{color:var(--muted)}
 
+#attrib a{color:inherit;pointer-events:auto;text-decoration:underline;text-decoration-color:rgba(255,255,255,.3);text-underline-offset:2px}
 @media (max-width:1320px){#attrib{bottom:calc(76px + env(safe-area-inset-bottom,0px))}}
 @media (max-width:760px){
   .brand span{display:none}
@@ -270,7 +271,7 @@ body.replaying #card,body.replaying #tip{display:none!important}
   .summary{white-space:normal;text-align:center}
   .key{width:auto;max-width:calc(100vw - 32px)}
   .zoom{display:none}
-  #attrib{top:auto;bottom:calc(132px + env(safe-area-inset-bottom,0px));left:16px;right:16px;max-width:none;text-align:left}
+  #attrib{top:auto;bottom:calc(174px + env(safe-area-inset-bottom,0px));left:16px;right:16px;max-width:none;text-align:left}
   body.card-open #attrib{display:none}
   .replay{left:16px;right:16px;transform:none;width:auto;bottom:calc(132px + env(safe-area-inset-bottom,0px))}
   body.replaying #attrib{display:none}
@@ -320,7 +321,7 @@ body.replaying #card,body.replaying #tip{display:none!important}
   <div><h3>Try this</h3><ul><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 9l10 4-4 2-2 4z"/><path d="M5 3v3M3 5h3"/></svg></i><span><b>Click a plane</b> to see its airline, route, fuel estimate and more.</span></li><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"/><path d="m20 20-4-4"/></svg></i><span><b>Search or ask.</b> Type a flight number (UA123), a place, or a question like “longest flight”, “A380s over Europe” or “United flights to London”. Pick an airport to see a board of every flight heading there.</span></li><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="16" height="10" rx="2"/><path d="M22 11v2M7 10v4"/></svg></i><span><b>Switch to Electric</b> and drag the battery slider to see how many flights batteries could handle.</span></li><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 12h18M8 7l4-4 4 4M8 17l4 4 4-4"/></svg></i><span><b>Drag</b> to spin the globe. <b>Scroll or pinch</b> to zoom.</span></li><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></i><span><b>Replay 24h</b> plays back the last day of air traffic, one recording per hour. Watch night sweep around the world as you scrub. New here? <a href="../?tour" style="color:var(--accent)">Take the 90-second tour</a>.</span></li><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1 1"/><path d="M14 10a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1-1"/></svg></i><span><b>Share</b> what you're looking at: the address bar always links to the flight, place or replay on screen.</span></li></ul></div>
   <div><h3>Good to know</h3><ul><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v5l3 2"/><circle cx="12" cy="12" r="8"/></svg></i><span><b>Fuel is an estimate.</b> Planes don't broadcast it, so it's worked out from the route and a performance model of each exact aircraft type (OpenAP, from TU Delft), tuned to match 126 published fuel figures. On flights it hadn't seen, it was off by about 5% on average. It plans fuel the way airlines do, with extra for a backup airport and 30 minutes of holding, so expect a range of about ±12%. Types it doesn't know get a rougher size-class estimate. <a href="../model/" style="color:var(--accent)">See how the model was checked</a> There's also an <a href="../stats/" style="color:var(--accent)">hourly fuel &amp; CO₂ dashboard</a>.</span></li><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3L5 14h6l-1 7 8-11h-6z"/></svg></i><span><b>“Electric” is a thought experiment:</b> each plane carries a battery weighing the same as a full tank of fuel. With today's batteries, almost no airliner could finish its trip.</span></li><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8" stroke-dasharray="3 3"/></svg></i><span><b>Empty areas usually mean no receivers nearby, not no planes.</b> Positions come from volunteers' ground stations, which each hear planes within about 400 km. There are thousands across North America and Europe but very few across Africa, much of Asia and the oceans.</span></li><li><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 7v5h4"/></svg></i><span><b>This is a snapshot.</b> Each plane keeps moving along its route for up to 30 minutes after it was recorded. The live version runs on a computer with the Fuel Horizon server.</span></li></ul></div>
   <p>Fuel Horizon is one half of a project. The other half is <a href="../chip/">HZN-1</a>, a chip designed to pick up planes' radio signals directly.</p>
-  <div class="src">Flights: OpenSky Network, adsb.lol, VRS standing data. Aircraft and airlines: ADS-B Exchange, OpenFlights. Map: NASA Visible Earth, Natural Earth.</div>
+  <div class="src">Flights: OpenSky Network, adsb.lol, VRS standing data. Aircraft and airlines: ADS-B Exchange, OpenFlights. Map: NASA Visible Earth, Natural Earth; close-up imagery EOxCloudless (cloudless.eox.at) by EOX IT Services GmbH, contains modified Copernicus Sentinel data 2024.</div>
   <div class="actions"><button class="go" id="aboutGo">Start exploring</button></div>
 </section>
 </div>
@@ -361,7 +362,7 @@ body.replaying #card,body.replaying #tip{display:none!important}
   <button id="zIn" aria-label="Zoom in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
   <button id="zOut" aria-label="Zoom out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14"/></svg></button>
 </div>
-<div id="attrib">Earth imagery: NASA Visible Earth<br>Made by Raghav Vijayapal</div>
+<div id="attrib">Earth imagery: NASA Visible Earth and Black Marble<br>Close-up: <a href="https://cloudless.eox.at" target="_blank" rel="noopener">EOxCloudless</a> by EOX IT Services GmbH (contains modified Copernicus Sentinel data 2024)<br>Made by Raghav Vijayapal</div>
 <div id="tip" class="glass" hidden></div>
 <div id="toast" class="toast glass" role="status" hidden></div>
 
@@ -472,7 +473,7 @@ const scene=new THREE.Scene();
 const camera=new THREE.PerspectiveCamera(38,1,0.005,100);
 camera.position.set(0,0.9,3.3);
 const controls=new THREE.OrbitControls(camera,canvas);
-controls.enablePan=false;controls.enableDamping=true;controls.dampingFactor=0.08;controls.minDistance=1.04;controls.maxDistance=6;controls.zoomSpeed=0.8;
+controls.enablePan=false;controls.enableDamping=true;controls.dampingFactor=0.08;controls.minDistance=1.02;controls.maxDistance=6;controls.zoomSpeed=0.8;
 let fly=null;controls.addEventListener('start',()=>{fly=null;});
 
 const earthDim={value:.7};
@@ -502,6 +503,87 @@ earthMats.forEach((m,i)=>scene.add(new THREE.Mesh(new THREE.SphereGeometry(1,96,
 scene.add(new THREE.Mesh(new THREE.SphereGeometry(1.08,64,64),new THREE.ShaderMaterial({side:THREE.BackSide,blending:THREE.AdditiveBlending,transparent:true,depthWrite:false,
   vertexShader:`varying vec3 vN;void main(){vN=normalize(normalMatrix*normal);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
   fragmentShader:`varying vec3 vN;void main(){float i=pow(clamp(.62-dot(vN,vec3(0.,0.,1.)),0.,1.),4.);gl_FragColor=vec4(vec3(.35,.6,1.)*i*.9,i);}`})));
+
+// ---------- close-up imagery: Sentinel-2 cloudless tiles (10 m per pixel), streamed in only for the area in view ----------
+// Zoomed out, the globe uses its two 6,144-pixel NASA images (about 3 km per pixel). Closer in, 256-pixel Web Mercator tiles
+// from EOxCloudless fade in on top, sharper the closer you get. After dark each tile shows NASA's Black Marble city lights
+// (500 m tiles, up to zoom 8) instead, so night close-ups stay sharp too. Each tile is a small curved patch just above the surface.
+const TILE_URL=(z,x,y)=>`https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2024_3857/default/g/${z}/${y}/${x}.jpg`;
+const NIGHT_URL=(z,x,y)=>`https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_Black_Marble/default/2016-01-01/GoogleMapsCompatible_Level8/${z}/${y}/${x}.png`;
+const NIGHT_ZMAX=8,NIGHT_CACHE=120;
+const TILE_ZMIN=6,TILE_ZMAX=12,TILE_MAX=96,TILE_CACHE=260,TILE_R=1.0003;
+const tileOp={value:0};
+const tileVS=`varying vec2 vUv;varying vec3 vN;varying vec3 vV;varying vec3 vW;void main(){vUv=uv;vW=normalize(position);vN=normalize(normalMatrix*vW);vec4 mv=modelViewMatrix*vec4(position,1.);vV=normalize(-mv.xyz);gl_Position=projectionMatrix*mv;}`;
+const tileFS=`uniform sampler2D map;uniform sampler2D nmap;uniform float hasN;uniform vec2 nOff;uniform float nScale;uniform float dim;uniform vec3 sun;uniform float op;uniform float fade;
+  varying vec2 vUv;varying vec3 vN;varying vec3 vV;varying vec3 vW;
+  void main(){vec3 base=texture2D(map,vUv).rgb;base=pow(base,vec3(1.12))*.92;float ndv=max(dot(vN,vV),0.);
+    float sd=dot(vW,sun),day=smoothstep(-.10,.14,sd);
+    vec3 lit=base*dim*(.72+.32*ndv);
+    float L=0.;if(hasN>0.){vec3 n=texture2D(nmap,nOff+vUv*nScale).rgb;L=smoothstep(.1,1.,dot(n,vec3(.35,.5,.15)))*hasN;}
+    vec3 night=base*dim*.17+vec3(1.,.76,.45)*pow(L,2.6)*1.05*(1.-day);
+    vec3 col=mix(night,lit,day)+vec3(.95,.45,.18)*exp(-sd*sd/.02)*.04*dim;
+    gl_FragColor=vec4(col,op*fade*mix(smoothstep(-.02,.16,sd),1.,hasN));}`;
+// night-lights tiles are shared: a zoom-11 day tile uses the zoom-8 night tile it sits inside
+const nightTex=new Map();
+function nightFor(t){const pz=Math.min(t.z,NIGHT_ZMAX),k=t.z-pz,px=t.x>>k,py=t.y>>k,key=pz+'/'+px+'/'+py,n=1<<k;
+  const u=t.mesh.material.uniforms;u.nScale.value=1/n;u.nOff.value.set((t.x-(px<<k))/n,(n-(t.y-(py<<k))-1)/n);t.nKey=key;
+  let e=nightTex.get(key);
+  if(!e){e={tex:null,users:new Set(),used:0};nightTex.set(key,e);
+    tileLoader.load(NIGHT_URL(pz,px,py),tex=>{tex.minFilter=THREE.LinearMipmapLinearFilter;e.tex=tex;e.at=performance.now();for(const m of e.users)m.uniforms.nmap.value=tex;},undefined,()=>{e.failed=true;});}
+  e.users.add(t.mesh.material);e.used=performance.now();if(e.tex)u.nmap.value=e.tex;
+  if(nightTex.size>NIGHT_CACHE)for(const [k2,e2] of nightTex){if(nightTex.size<=NIGHT_CACHE)break;if(!e2.users.size&&e2.tex){e2.tex.dispose();nightTex.delete(k2);}}}
+const tiles=new Map();let tileQueue=[],tileLoading=0,tileWanted=new Set(),tilePending=0,tileLastPos=new THREE.Vector3(),tileLastAt=0;
+const tileLoader=new THREE.TextureLoader();tileLoader.setCrossOrigin('anonymous');
+function tileGeo(z,x,y){const N=z<=6?16:8,n=1<<z,pos=[],uv=[],idx=[],v=new THREE.Vector3();
+  for(let j=0;j<=N;j++)for(let i=0;i<=N;i++){const lon=(x+i/N)/n*360-180,lat=Math.atan(Math.sinh(Math.PI*(1-2*(y+j/N)/n)))/D2R;
+    vec(lat,lon,v).multiplyScalar(TILE_R);pos.push(v.x,v.y,v.z);uv.push(i/N,1-j/N);}
+  for(let j=0;j<N;j++)for(let i=0;i<N;i++){const a=j*(N+1)+i,b=a+1,c=a+N+1,d=c+1;idx.push(a,c,b,b,c,d);}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(idx);g.computeBoundingSphere();return g;}
+function tileCenter(z,x,y){const n=1<<z;return vec(Math.atan(Math.sinh(Math.PI*(1-2*(y+.5)/n)))/D2R,(x+.5)/n*360-180);}
+function loadNextTiles(){
+  while(tileLoading<8&&tileQueue.length){const t=tileQueue.shift();if(!tileWanted.has(t.key)||t.state!=='queued')continue;
+    t.state='loading';tileLoading++;
+    tileLoader.load(TILE_URL(t.z,t.x,t.y),tex=>{tileLoading--;tex.anisotropy=renderer.capabilities.getMaxAnisotropy();tex.minFilter=THREE.LinearMipmapLinearFilter;
+        const m=new THREE.ShaderMaterial({uniforms:{map:{value:tex},nmap:{value:null},hasN:{value:0},nOff:{value:new THREE.Vector2()},nScale:{value:1},dim:earthDim,sun:sunU,op:tileOp,fade:{value:0}},vertexShader:tileVS,fragmentShader:tileFS,transparent:true,depthWrite:false});
+        t.mesh=new THREE.Mesh(tileGeo(t.z,t.x,t.y),m);t.mesh.renderOrder=-2+t.z*.01;t.born=performance.now();t.state='ready';scene.add(t.mesh);nightFor(t);loadNextTiles();},
+      undefined,()=>{tileLoading--;t.state='failed';loadNextTiles();});}}
+if(/[?&]debug\b/.test(location.search))window.__tiles={tiles,get wanted(){return tileWanted},get op(){return tileOp.value},get loading(){return tileLoading},camera};
+function dropTile(t){if(t.mesh){const e=nightTex.get(t.nKey);if(e)e.users.delete(t.mesh.material);scene.remove(t.mesh);t.mesh.geometry.dispose();t.mesh.material.uniforms.map.value.dispose();t.mesh.material.dispose();}tiles.delete(t.key);}
+function updateTiles(now){
+  const d=camera.position.length();tileOp.value=clamp((1.3-d)/.1,0,1);  // from ~1,900 km up, where tiles start beating the 3 km base image
+  const show=tileOp.value>0;
+  // fade new tiles in, and hide the ones that are no longer needed once everything in view has arrived
+  tilePending=0;for(const k of tileWanted){const t=tiles.get(k);if(t&&(t.state==='queued'||t.state==='loading'))tilePending++;}
+  for(const t of tiles.values())if(t.mesh){const u=t.mesh.material.uniforms,e=nightTex.get(t.nKey);u.fade.value=Math.min(1,(now-t.born)/350);u.hasN.value=e&&e.tex?Math.min(1,(now-e.at)/350):0;t.mesh.visible=show&&(tileWanted.has(t.key)||(tilePending>0&&t.keep));}
+  if(!show){tileWanted=new Set();return;}
+  if(now-tileLastAt<200||camera.position.distanceToSquared(tileLastPos)<1e-9&&tileWanted.size)return;
+  tileLastAt=now;tileLastPos.copy(camera.position);
+  // what the camera sees: it always looks at the centre, so that's a cap around the point below it
+  const sub=camera.position.clone().normalize(),[lat0,lon0]=toLatLon(sub);
+  const half=19*D2R,alpha=Math.atan(Math.tan(half)*Math.sqrt(1+camera.aspect*camera.aspect)),s=d*Math.sin(alpha);
+  const theta=Math.min(s<1?Math.asin(s)-alpha:Math.acos(1/d),Math.acos(1/d));
+  const kmPx=(d-1)*6371*2*Math.tan(half)/(innerHeight*Math.min(devicePixelRatio,2)/1.4);
+  let z=clamp(Math.ceil(Math.log2(40075*Math.max(Math.cos(lat0*D2R),.2)/(256*kmPx))),TILE_ZMIN,TILE_ZMAX),list;
+  for(;;){list=[];const n=1<<z,latA=clamp(lat0-theta/D2R,-85,85),latB=clamp(lat0+theta/D2R,-85,85);
+    const merc=l=>Math.floor((1-Math.log(Math.tan(Math.PI/4+l*D2R/2))/Math.PI)/2*n);
+    const y0=clamp(merc(latB),0,n-1),y1=clamp(merc(latA),0,n-1),polar=Math.abs(lat0)+theta/D2R>84;
+    const dLon=polar?180:Math.min(180,theta/D2R/Math.max(Math.cos(Math.max(Math.abs(latA),Math.abs(latB))*D2R),.05));
+    const x0=Math.floor((lon0-dLon+180)/360*n),x1=Math.floor((lon0+dLon+180)/360*n);
+    const reach=theta+Math.PI/n;  // plus about half a tile, so tiles straddling the edge of view count
+    for(let y=y0;y<=y1;y++)for(let xx=x0;xx<=Math.min(x1,x0+n-1);xx++){const x=((xx%n)+n)%n,c=tileCenter(z,x,y);const a=ang(c,sub);if(a<=reach)list.push({z,x,y,a});}
+    if(list.length<=TILE_MAX||z<=TILE_ZMIN)break;z--;}
+  list.sort((p,q)=>p.a-q.a);
+  for(const t of tiles.values())t.keep=t.mesh&&t.mesh.visible;
+  tileWanted=new Set(list.map(t=>t.z+'/'+t.x+'/'+t.y));
+  tileQueue=[];
+  for(const it of list){const key=it.z+'/'+it.x+'/'+it.y;let t=tiles.get(key);
+    if(!t){t={key,z:it.z,x:it.x,y:it.y,state:'queued'};tiles.set(key,t);}
+    else tiles.delete(key),tiles.set(key,t);  // most recently wanted last, for the cache below
+    t.used=now;if(t.state==='queued')tileQueue.push(t);}
+  loadNextTiles();
+  // keep a few hundred tiles in memory; drop the least recently wanted ones that aren't on screen
+  if(tiles.size>TILE_CACHE)for(const t of [...tiles.values()]){if(tiles.size<=TILE_CACHE)break;if(!tileWanted.has(t.key)&&!(t.mesh&&t.mesh.visible)&&t.state!=='loading')dropTile(t);}
+}
 
 // earth texture: NASA imagery, plus country borders and names drawn on top
 const countryIds=Object.keys(DATA.areas.shapes).filter(k=>k.startsWith('country:'));
@@ -1164,6 +1246,7 @@ function frame(t){
     canvas.style.cursor=p?'pointer':'';
     if(p){tip.hidden=false;tip.style.left=ptr[0]+'px';tip.style.top=ptr[1]+'px';tip.innerHTML=esc(p.cs)+' <span>'+esc(p.B?AP[p.o][0]+' → '+AP[p.d][0]:(p.type||CLS[p.cls]))+' · tap for details</span>';}else tip.hidden=true;}
   if(t-lastCity>200){lastCity=t;updateCities();}
+  updateTiles(t);
   placeLabels();
   if(t-lastSlow>1000){lastSlow=t;if(area.on)refreshArea();recolor();summary();if(state.sel){renderCard();if(state.sel.B)buildRoute();}else if(area.on&&area.kind==='Airport')renderBoard();}
   renderer.render(scene,camera);
