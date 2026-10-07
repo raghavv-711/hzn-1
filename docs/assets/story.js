@@ -339,6 +339,12 @@ const endDrag = () => {
   yawVel = clamp(yawVel, -9, 9);
 };
 addEventListener('pointerup', endDrag); addEventListener('pointercancel', endDrag);
+// a sideways two-finger trackpad swipe spins it too (and doesn't trigger the browser's back gesture)
+addEventListener('wheel', e => {
+  if (Math.abs(e.deltaX) <= Math.abs(e.deltaY) * 1.2 || e.target.closest?.('.table-wrap')) return;
+  e.preventDefault();
+  spinDelta -= e.deltaX * 3.5 / Math.max(innerWidth, 400); yawVel = 0; idle = 0;
+}, { passive: false });
 function spin(dt) {
   if (!dragging) { spinDelta += yawVel * dt; yawVel *= Math.exp(-dt * 2.4); if (Math.abs(yawVel) < .02) yawVel = 0; }
   userYaw += spinDelta; globe.rotation.y += spinDelta; spinDelta = 0;
