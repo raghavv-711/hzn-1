@@ -13,16 +13,6 @@
   --f-mono:"Geist Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
   color-scheme:dark;
 }
-@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){
-  --bg:#f4f7fa; --surface:#ffffff; --raise:#eef3f8; --line:#dde5ee; --line-strong:#c3cfdc;
-  --text:#0c1621; --muted:#566678; --faint:#8794a3;
-  --accent:#1767ad; --accent-soft:rgba(23,103,173,.1); --raw:#7d8896; --raw-soft:rgba(125,136,150,.16);
-  --good:#0d8579; --warn:#b26a00; --bad:#c73a3a; color-scheme:light}}
-:root[data-theme="light"]{
-  --bg:#f4f7fa; --surface:#ffffff; --raise:#eef3f8; --line:#dde5ee; --line-strong:#c3cfdc;
-  --text:#0c1621; --muted:#566678; --faint:#8794a3;
-  --accent:#1767ad; --accent-soft:rgba(23,103,173,.1); --raw:#7d8896; --raw-soft:rgba(125,136,150,.16);
-  --good:#0d8579; --warn:#b26a00; --bad:#c73a3a; color-scheme:light}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.55 var(--f-sans);-webkit-font-smoothing:antialiased}
 .wrap{max-width:1000px;margin:0 auto;padding:48px 20px 72px;display:flex;flex-direction:column;gap:56px}
@@ -215,7 +205,7 @@ footer p{max-width:80ch}
 
 <script type="application/json" id="d">__DATA__</script>
 
-<div class="sitebar"><a class="logo" href="../" aria-label="HZN-1 home"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="8" y="8" width="16" height="16" rx="2"/><rect x="12" y="12" width="8" height="8" rx="1"/><path d="M12 8V4M16 8V4M20 8V4M12 28v-4M16 28v-4M20 28v-4M8 12H4M8 16H4M8 20H4M28 12h-4M28 16h-4M28 20h-4"/></svg>HZN-1</a><div data-sitenav class="light-aware" data-page="model" data-collapse="760" data-align="right"></div></div>
+<div class="sitebar"><a class="logo" href="../" aria-label="HZN-1 home"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="8" y="8" width="16" height="16" rx="2"/><rect x="12" y="12" width="8" height="8" rx="1"/><path d="M12 8V4M16 8V4M20 8V4M12 28v-4M16 28v-4M20 28v-4M8 12H4M8 16H4M8 20H4M28 12h-4M28 16h-4M28 20h-4"/></svg>HZN-1</a><div data-sitenav data-page="model" data-collapse="760" data-align="right"></div></div>
 <main class="wrap">
   <header>
     <div class="eyebrow"><b>Fuel Horizon</b><span>·</span><span>Fuel model check</span></div>

@@ -18,6 +18,7 @@ HEAD = ('<!doctype html>\n<html lang="en">\n<meta charset="utf-8">\n'
         '<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">\n'
         '<script src="../assets/analytics.js" defer></script>\n'
         '<script src="../assets/sitenav.js" defer></script>\n'
+        '<style>@view-transition{navigation:auto}::view-transition-old(root),::view-transition-new(root){animation-duration:.32s}</style>\n'
         + ''.join(f'<meta {k}="{n}" content="{v}">\n' for k, n, v in [
             ("property", "og:image", "https://raghavv-711.github.io/hzn-1/assets/og.jpg"),
             ("property", "og:image:width", "1200"), ("property", "og:image:height", "630"),
@@ -149,7 +150,7 @@ def build(data_json=None):
     g = rep(g, '<script>const EARTH_EAST="data:image/jpeg;base64,__EARTH1__";</script>\n', '')
     g = rep(g, "const DATA=JSON.parse(document.getElementById('fh').textContent);", "const DATA=Object.assign({},window.FH_STATIC,window.FH_DATA);")
     g = rep(g, "function buildEarth(){\n  [EARTH_WEST,EARTH_EAST].forEach((src,i)=>{const img=new Image();img.onload=()=>{",
-            "function buildEarth(){\n  setLoading('Loading satellite imagery…');\n  loadEarth([EARTH_WEST,EARTH_EAST],()=>{hideLoading();if(EARTH_HI)loadEarth(EARTH_HI);});\n}\n"
+            "function buildEarth(){\n  setLoading('Loading satellite imagery…');\n  loadEarth([EARTH_WEST,EARTH_EAST],()=>{hideLoading();loadLights();if(EARTH_HI)loadEarth(EARTH_HI);});\n}\n"
             "function loadEarth(srcs,done){let left=srcs.length;const finish=()=>{if(--left===0&&done)done();};\n"
             "  srcs.forEach((src,i)=>{const img=new Image();img.onerror=finish;img.onload=()=>{")
     g = rep(g, "earthMats[i].uniforms.map.value=tex;earthMats[i].uniforms.hasMap.value=1;};img.src=src;});",
