@@ -701,12 +701,14 @@ function renderBoard(){
     return '<button class="brow" data-hex="'+p.hex+'"><span class="b1"><b>'+esc(p.cs||p.hex.toUpperCase())+'</b><small>'+(board.tab==='arr'?'from ':'to ')+esc(other[0])+' · '+esc(other[1])+'</small></span>'+
       '<span class="b2">'+when+'</span><span class="b3">'+esc(extra)+'</span></button>';};
   const st=el.querySelector('.blist')?el.querySelector('.blist').scrollTop:0;
-  el.innerHTML='<div class="card-head"><div><div class="cs">'+esc(code)+'</div><div class="sub">'+esc((area.full||'').replace(/^[A-Z0-9]{3,4} · /,''))+'</div></div>'+
+  const html='<div class="card-head"><div><div class="cs">'+esc(code)+'</div><div class="sub">'+esc((area.full||'').replace(/^[A-Z0-9]{3,4} · /,''))+'</div></div>'+
     '<button class="icon-btn" id="boardClose" aria-label="Close airport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>'+
     '<div class="seg btabs" role="tablist"><button role="tab" data-tab="arr" aria-selected="'+(board.tab==='arr')+'" aria-pressed="'+(board.tab==='arr')+'">Arriving · '+arr.length+'</button>'+
     '<button role="tab" data-tab="dep" aria-selected="'+(board.tab==='dep')+'" aria-pressed="'+(board.tab==='dep')+'">Departed · '+dep.length+'</button></div>'+
     '<div class="blist">'+(rows.length?rows.slice(0,80).map(row).join(''):'<p class="note">'+(board.tab==='arr'?'No flights on file are heading here right now.':'No flights on file left here in the last few hours.')+'</p>')+'</div>'+
     '<div class="foot">Flights in the air with a known route. Times are estimates from current speed, in Central time.</div>';
+  // rebuild only when something changed, so a click isn't lost to the once-a-second refresh
+  if(html===el._html&&!el.hidden)return;el._html=html;el.innerHTML=html;
   el.hidden=false;document.body.classList.add('card-open');el.querySelector('.blist').scrollTop=st;
   $('boardClose').addEventListener('click',clearArea);
   el.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>{board.tab=b.dataset.tab;renderBoard();}));
