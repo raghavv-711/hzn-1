@@ -1,0 +1,1269 @@
+{
+ "factors": {
+  "A19N": 1.38703915930105,
+  "A20N": 1.2884178899147924,
+  "A21N": 1.2979486051019202,
+  "A318": 0.9633042900943144,
+  "A319": 0.9370855478534649,
+  "A320": 0.8807352662456801,
+  "A321": 0.9114619121970536,
+  "A332": 0.886765651112034,
+  "A333": 0.9722805674081129,
+  "A338": 0.811357952351905,
+  "A339": 0.8912756901071529,
+  "A343": 0.7996235039393192,
+  "A346": 0.7996235039393192,
+  "A359": 0.73758836584175,
+  "A35K": 0.8351646804042169,
+  "A388": 0.9248549736796934,
+  "B733": 1.0809287365625195,
+  "B734": 1.0809287365625195,
+  "B735": 1.0809287365625195,
+  "B736": 0.8828573718503004,
+  "B737": 0.8736424175141436,
+  "B738": 0.9633042900943144,
+  "B739": 0.9879241811602697,
+  "B37M": 1.0272094466610542,
+  "B38M": 1.0126261427240308,
+  "B39M": 1.0636458006875151,
+  "B3XM": 0.9633042900943144,
+  "B744": 0.7778861881885095,
+  "B748": 0.7503953452254845,
+  "B752": 0.7967369608949461,
+  "B753": 0.8580276953239321,
+  "B762": 0.7142148909969299,
+  "B763": 0.7717489489083441,
+  "B764": 0.8260000414203347,
+  "B772": 0.5937332769971574,
+  "B77L": 0.6221783061673825,
+  "B773": 0.6366858611196203,
+  "B77W": 0.6754627750884288,
+  "B788": 0.9242083432497069,
+  "B789": 0.7533425434236098,
+  "B78X": 0.7634937603285552,
+  "BCS1": 1.2471024209527877,
+  "BCS3": 1.276564019874758,
+  "CRJ1": 1.4417909701027953,
+  "CRJ2": 1.3868037208862614,
+  "CRJ7": 1.1806546339759638,
+  "CRJ9": 1.2800139805410935,
+  "CRJX": 1.175890316726813,
+  "E135": 1.1729131863012119,
+  "E145": 1.2141941413846187,
+  "E45X": 1.2141941413846187,
+  "E170": 1.0269835225312562,
+  "E75L": 1.1364241844675775,
+  "E75S": 1.1364241844675775,
+  "E190": 1.1687846118821283,
+  "E195": 1.1407385439255184,
+  "E290": 0.9659220676510053,
+  "E295": 0.9927333971643301,
+  "C550": 0.9633042900943144,
+  "GLF6": 0.9633042900943144
+ },
+ "validation": [
+  {
+   "type": "A19N",
+   "model": "Airbus A319neo",
+   "nmi": 600.0,
+   "seats": 144,
+   "published": 3.37,
+   "openap_raw": 2.101,
+   "calibrated_loo": 2.757
+  },
+  {
+   "type": "A19N",
+   "model": "Airbus A319neo",
+   "nmi": 660.0,
+   "seats": 124,
+   "published": 2.82,
+   "openap_raw": 2.023,
+   "calibrated_loo": 2.848
+  },
+  {
+   "type": "A19N",
+   "model": "Airbus A319neo",
+   "nmi": 1000.0,
+   "seats": 136,
+   "published": 2.4,
+   "openap_raw": 1.938,
+   "calibrated_loo": 2.909
+  },
+  {
+   "type": "A20N",
+   "model": "Airbus A320neo",
+   "nmi": 660.0,
+   "seats": 154,
+   "published": 2.79,
+   "openap_raw": 2.172,
+   "calibrated_loo": 2.86
+  },
+  {
+   "type": "A20N",
+   "model": "Airbus A320neo",
+   "nmi": 1000.0,
+   "seats": 180,
+   "published": 2.79,
+   "openap_raw": 2.112,
+   "calibrated_loo": 2.721
+  },
+  {
+   "type": "A21N",
+   "model": "Airbus A321neo",
+   "nmi": 660.0,
+   "seats": 192,
+   "published": 3.3,
+   "openap_raw": 2.594,
+   "calibrated_loo": 3.46
+  },
+  {
+   "type": "A21N",
+   "model": "Airbus A321neo",
+   "nmi": 1000.0,
+   "seats": 220,
+   "published": 3.47,
+   "openap_raw": 2.524,
+   "calibrated_loo": 3.256
+  },
+  {
+   "type": "A21N",
+   "model": "Airbus A321LR",
+   "nmi": 3400.0,
+   "seats": 154,
+   "published": 2.99,
+   "openap_raw": 2.255,
+   "calibrated_loo": 3.04
+  },
+  {
+   "type": "A319",
+   "model": "Airbus A319",
+   "nmi": 1000.0,
+   "seats": 124,
+   "published": 2.93,
+   "openap_raw": 3.138,
+   "calibrated_loo": null
+  },
+  {
+   "type": "A320",
+   "model": "Airbus A320",
+   "nmi": 1000.0,
+   "seats": 150,
+   "published": 3.13,
+   "openap_raw": 3.486,
+   "calibrated_loo": 2.966
+  },
+  {
+   "type": "A320",
+   "model": "Airbus A320",
+   "nmi": 2151.0,
+   "seats": 150,
+   "published": 2.91,
+   "openap_raw": 3.441,
+   "calibrated_loo": 3.077
+  },
+  {
+   "type": "A321",
+   "model": "Airbus A321-200",
+   "nmi": 1000.0,
+   "seats": 180,
+   "published": 3.61,
+   "openap_raw": 3.986,
+   "calibrated_loo": null
+  },
+  {
+   "type": "A332",
+   "model": "Airbus A330-200",
+   "nmi": 1000.0,
+   "seats": 293,
+   "published": 5.6,
+   "openap_raw": 7.164,
+   "calibrated_loo": 6.577
+  },
+  {
+   "type": "A332",
+   "model": "Airbus A330-200",
+   "nmi": 3000.0,
+   "seats": 241,
+   "published": 6.0,
+   "openap_raw": 6.714,
+   "calibrated_loo": 5.849
+  },
+  {
+   "type": "A332",
+   "model": "Airbus A330-200",
+   "nmi": 6000.0,
+   "seats": 241,
+   "published": 6.4,
+   "openap_raw": 6.877,
+   "calibrated_loo": 6.052
+  },
+  {
+   "type": "A332",
+   "model": "Airbus A330-200",
+   "nmi": 5549.0,
+   "seats": 248,
+   "published": 6.55,
+   "openap_raw": 6.959,
+   "calibrated_loo": 5.974
+  },
+  {
+   "type": "A333",
+   "model": "Airbus A330-300",
+   "nmi": 3000.0,
+   "seats": 262,
+   "published": 6.25,
+   "openap_raw": 6.579,
+   "calibrated_loo": 6.512
+  },
+  {
+   "type": "A333",
+   "model": "Airbus A330-300",
+   "nmi": 5548.0,
+   "seats": 274,
+   "published": 6.81,
+   "openap_raw": 6.885,
+   "calibrated_loo": 6.521
+  },
+  {
+   "type": "A338",
+   "model": "Airbus A330-800",
+   "nmi": 4650.0,
+   "seats": 248,
+   "published": 5.45,
+   "openap_raw": 6.904,
+   "calibrated_loo": null
+  },
+  {
+   "type": "A339",
+   "model": "Airbus A330-900",
+   "nmi": 3350.0,
+   "seats": 310,
+   "published": 6.0,
+   "openap_raw": 6.738,
+   "calibrated_loo": 5.87
+  },
+  {
+   "type": "A339",
+   "model": "Airbus A330-900",
+   "nmi": 4650.0,
+   "seats": 300,
+   "published": 5.94,
+   "openap_raw": 6.845,
+   "calibrated_loo": 6.075
+  },
+  {
+   "type": "A343",
+   "model": "Airbus A340-300",
+   "nmi": 3000.0,
+   "seats": 262,
+   "published": 6.81,
+   "openap_raw": 8.798,
+   "calibrated_loo": 6.951
+  },
+  {
+   "type": "A343",
+   "model": "Airbus A340-300",
+   "nmi": 6000.0,
+   "seats": 262,
+   "published": 7.32,
+   "openap_raw": 9.302,
+   "calibrated_loo": 7.164
+  },
+  {
+   "type": "A359",
+   "model": "Airbus A350-900",
+   "nmi": 4972.0,
+   "seats": 315,
+   "published": 6.03,
+   "openap_raw": 9.048,
+   "calibrated_loo": 6.699
+  },
+  {
+   "type": "A359",
+   "model": "Airbus A350-900",
+   "nmi": 5534.0,
+   "seats": 318,
+   "published": 6.52,
+   "openap_raw": 8.988,
+   "calibrated_loo": 6.51
+  },
+  {
+   "type": "A359",
+   "model": "Airbus A350-900",
+   "nmi": 6542.0,
+   "seats": 315,
+   "published": 7.07,
+   "openap_raw": 8.812,
+   "calibrated_loo": 6.357
+  },
+  {
+   "type": "A35K",
+   "model": "Airbus A350-1000",
+   "nmi": 5531.0,
+   "seats": 327,
+   "published": 7.46,
+   "openap_raw": 8.983,
+   "calibrated_loo": 7.504
+  },
+  {
+   "type": "A35K",
+   "model": "Airbus A350-1000",
+   "nmi": 5531.0,
+   "seats": 367,
+   "published": 7.58,
+   "openap_raw": 8.983,
+   "calibrated_loo": 7.536
+  },
+  {
+   "type": "A388",
+   "model": "Airbus A380",
+   "nmi": 2000.0,
+   "seats": 544,
+   "published": 13.6,
+   "openap_raw": 14.169,
+   "calibrated_loo": 12.731
+  },
+  {
+   "type": "A388",
+   "model": "Airbus A380",
+   "nmi": 7200.0,
+   "seats": 525,
+   "published": 13.78,
+   "openap_raw": 15.378,
+   "calibrated_loo": 14.541
+  },
+  {
+   "type": "A388",
+   "model": "Airbus A380",
+   "nmi": 6000.0,
+   "seats": 544,
+   "published": 13.78,
+   "openap_raw": 15.326,
+   "calibrated_loo": 14.051
+  },
+  {
+   "type": "B733",
+   "model": "Boeing 737-300",
+   "nmi": 507.0,
+   "seats": 126,
+   "published": 3.49,
+   "openap_raw": 3.214,
+   "calibrated_loo": null
+  },
+  {
+   "type": "B736",
+   "model": "Boeing 737-600",
+   "nmi": 500.0,
+   "seats": 110,
+   "published": 3.16,
+   "openap_raw": 3.542,
+   "calibrated_loo": 3.059
+  },
+  {
+   "type": "B736",
+   "model": "Boeing 737-600",
+   "nmi": 1000.0,
+   "seats": 110,
+   "published": 2.77,
+   "openap_raw": 3.215,
+   "calibrated_loo": 2.863
+  },
+  {
+   "type": "B737",
+   "model": "Boeing 737-700",
+   "nmi": 500.0,
+   "seats": 126,
+   "published": 3.21,
+   "openap_raw": 3.61,
+   "calibrated_loo": 3.097
+  },
+  {
+   "type": "B737",
+   "model": "Boeing 737-700",
+   "nmi": 1000.0,
+   "seats": 126,
+   "published": 2.82,
+   "openap_raw": 3.281,
+   "calibrated_loo": 2.851
+  },
+  {
+   "type": "B737",
+   "model": "Boeing 737-700",
+   "nmi": 1000.0,
+   "seats": 128,
+   "published": 2.8,
+   "openap_raw": 3.289,
+   "calibrated_loo": 2.872
+  },
+  {
+   "type": "B738",
+   "model": "Boeing 737-800",
+   "nmi": 500.0,
+   "seats": 162,
+   "published": 3.59,
+   "openap_raw": 3.717,
+   "calibrated_loo": 3.569
+  },
+  {
+   "type": "B738",
+   "model": "Boeing 737-800",
+   "nmi": 1000.0,
+   "seats": 162,
+   "published": 3.17,
+   "openap_raw": 3.405,
+   "calibrated_loo": 3.306
+  },
+  {
+   "type": "B738",
+   "model": "Boeing 737-800",
+   "nmi": 1000.0,
+   "seats": 160,
+   "published": 3.45,
+   "openap_raw": 3.397,
+   "calibrated_loo": 3.204
+  },
+  {
+   "type": "B738",
+   "model": "Boeing 737-800W",
+   "nmi": 1000.0,
+   "seats": 162,
+   "published": 3.18,
+   "openap_raw": 3.405,
+   "calibrated_loo": 3.303
+  },
+  {
+   "type": "B739",
+   "model": "Boeing 737-900ER",
+   "nmi": 500.0,
+   "seats": 180,
+   "published": 3.83,
+   "openap_raw": 3.808,
+   "calibrated_loo": 3.726
+  },
+  {
+   "type": "B739",
+   "model": "Boeing 737-900ER",
+   "nmi": 1000.0,
+   "seats": 180,
+   "published": 3.42,
+   "openap_raw": 3.497,
+   "calibrated_loo": 3.468
+  },
+  {
+   "type": "B739",
+   "model": "Boeing 737-900ERW",
+   "nmi": 1000.0,
+   "seats": 180,
+   "published": 3.42,
+   "openap_raw": 3.497,
+   "calibrated_loo": 3.468
+  },
+  {
+   "type": "B37M",
+   "model": "Boeing 737 MAX 7",
+   "nmi": 660.0,
+   "seats": 128,
+   "published": 2.85,
+   "openap_raw": 2.817,
+   "calibrated_loo": 2.92
+  },
+  {
+   "type": "B37M",
+   "model": "Boeing 737 MAX 7",
+   "nmi": 600.0,
+   "seats": 144,
+   "published": 3.39,
+   "openap_raw": 2.9,
+   "calibrated_loo": 2.798
+  },
+  {
+   "type": "B37M",
+   "model": "Boeing 737 MAX-7",
+   "nmi": 1000.0,
+   "seats": 140,
+   "published": 2.51,
+   "openap_raw": 2.731,
+   "calibrated_loo": 2.973
+  },
+  {
+   "type": "B38M",
+   "model": "Boeing 737 MAX 8",
+   "nmi": 660.0,
+   "seats": 166,
+   "published": 3.04,
+   "openap_raw": 2.916,
+   "calibrated_loo": 2.913
+  },
+  {
+   "type": "B38M",
+   "model": "Boeing 737 MAX-8",
+   "nmi": 1000.0,
+   "seats": 162,
+   "published": 2.71,
+   "openap_raw": 2.791,
+   "calibrated_loo": 2.889
+  },
+  {
+   "type": "B38M",
+   "model": "Boeing 737 MAX-8",
+   "nmi": 3400.0,
+   "seats": 168,
+   "published": 2.86,
+   "openap_raw": 2.794,
+   "calibrated_loo": 2.809
+  },
+  {
+   "type": "B39M",
+   "model": "Boeing 737 MAX 9",
+   "nmi": 660.0,
+   "seats": 180,
+   "published": 3.3,
+   "openap_raw": 2.963,
+   "calibrated_loo": 3.092
+  },
+  {
+   "type": "B39M",
+   "model": "Boeing 737 MAX-9",
+   "nmi": 1000.0,
+   "seats": 180,
+   "published": 2.91,
+   "openap_raw": 2.848,
+   "calibrated_loo": 3.106
+  },
+  {
+   "type": "B39M",
+   "model": "Boeing 737 MAX-9",
+   "nmi": 3400.0,
+   "seats": 144,
+   "published": 2.91,
+   "openap_raw": 2.717,
+   "calibrated_loo": 2.912
+  },
+  {
+   "type": "B744",
+   "model": "Boeing 747-400",
+   "nmi": 2151.0,
+   "seats": 416,
+   "published": 10.77,
+   "openap_raw": 14.406,
+   "calibrated_loo": 11.032
+  },
+  {
+   "type": "B744",
+   "model": "Boeing 747-400",
+   "nmi": 6000.0,
+   "seats": 416,
+   "published": 11.11,
+   "openap_raw": 14.903,
+   "calibrated_loo": 11.9
+  },
+  {
+   "type": "B744",
+   "model": "Boeing 747-400",
+   "nmi": 5503.0,
+   "seats": 393,
+   "published": 11.82,
+   "openap_raw": 15.124,
+   "calibrated_loo": 11.402
+  },
+  {
+   "type": "B744",
+   "model": "Boeing 747-400",
+   "nmi": 5479.0,
+   "seats": 487,
+   "published": 12.31,
+   "openap_raw": 15.134,
+   "calibrated_loo": 11.614
+  },
+  {
+   "type": "B748",
+   "model": "Boeing 747-8",
+   "nmi": 3000.0,
+   "seats": 467,
+   "published": 9.9,
+   "openap_raw": 13.829,
+   "calibrated_loo": 10.175
+  },
+  {
+   "type": "B748",
+   "model": "Boeing 747-8",
+   "nmi": 6000.0,
+   "seats": 467,
+   "published": 10.54,
+   "openap_raw": 14.433,
+   "calibrated_loo": 10.595
+  },
+  {
+   "type": "B748",
+   "model": "Boeing 747-8",
+   "nmi": 7200.0,
+   "seats": 405,
+   "published": 10.9,
+   "openap_raw": 13.977,
+   "calibrated_loo": 10.527
+  },
+  {
+   "type": "B752",
+   "model": "Boeing 757-200",
+   "nmi": 500.0,
+   "seats": 200,
+   "published": 4.68,
+   "openap_raw": 5.823,
+   "calibrated_loo": 4.564
+  },
+  {
+   "type": "B752",
+   "model": "Boeing 757-200",
+   "nmi": 1000.0,
+   "seats": 190,
+   "published": 4.6,
+   "openap_raw": 5.379,
+   "calibrated_loo": 4.107
+  },
+  {
+   "type": "B752",
+   "model": "Boeing 757-200",
+   "nmi": 1000.0,
+   "seats": 200,
+   "published": 4.16,
+   "openap_raw": 5.419,
+   "calibrated_loo": 4.289
+  },
+  {
+   "type": "B752",
+   "model": "Boeing 757-200W",
+   "nmi": 3400.0,
+   "seats": 158,
+   "published": 3.79,
+   "openap_raw": 5.355,
+   "calibrated_loo": 4.253
+  },
+  {
+   "type": "B753",
+   "model": "Boeing 757-300",
+   "nmi": 500.0,
+   "seats": 243,
+   "published": 5.19,
+   "openap_raw": 6.0,
+   "calibrated_loo": 5.034
+  },
+  {
+   "type": "B753",
+   "model": "Boeing 757-300",
+   "nmi": 1000.0,
+   "seats": 243,
+   "published": 4.68,
+   "openap_raw": 5.598,
+   "calibrated_loo": 4.828
+  },
+  {
+   "type": "B762",
+   "model": "Boeing 767-200ER",
+   "nmi": 3000.0,
+   "seats": 181,
+   "published": 4.83,
+   "openap_raw": 7.043,
+   "calibrated_loo": 4.89
+  },
+  {
+   "type": "B762",
+   "model": "Boeing 767-200ER",
+   "nmi": 3400.0,
+   "seats": 193,
+   "published": 5.01,
+   "openap_raw": 6.943,
+   "calibrated_loo": 4.882
+  },
+  {
+   "type": "B762",
+   "model": "Boeing 767-200ER",
+   "nmi": 3000.0,
+   "seats": 224,
+   "published": 4.93,
+   "openap_raw": 7.043,
+   "calibrated_loo": 4.997
+  },
+  {
+   "type": "B763",
+   "model": "Boeing 767-300ER",
+   "nmi": 2151.0,
+   "seats": 218,
+   "published": 5.38,
+   "openap_raw": 7.081,
+   "calibrated_loo": 5.329
+  },
+  {
+   "type": "B763",
+   "model": "Boeing 767-300ER",
+   "nmi": 3000.0,
+   "seats": 218,
+   "published": 5.39,
+   "openap_raw": 7.043,
+   "calibrated_loo": 5.402
+  },
+  {
+   "type": "B763",
+   "model": "Boeing 767-300ER",
+   "nmi": 3000.0,
+   "seats": 269,
+   "published": 5.51,
+   "openap_raw": 7.043,
+   "calibrated_loo": 5.552
+  },
+  {
+   "type": "B764",
+   "model": "Boeing 767-400ER",
+   "nmi": 3000.0,
+   "seats": 245,
+   "published": 5.78,
+   "openap_raw": 7.043,
+   "calibrated_loo": 5.953
+  },
+  {
+   "type": "B764",
+   "model": "Boeing 767-400ER",
+   "nmi": 3000.0,
+   "seats": 304,
+   "published": 5.93,
+   "openap_raw": 7.043,
+   "calibrated_loo": 5.889
+  },
+  {
+   "type": "B764",
+   "model": "Boeing 767-400ER",
+   "nmi": 3265.0,
+   "seats": 304,
+   "published": 5.92,
+   "openap_raw": 6.972,
+   "calibrated_loo": 5.813
+  },
+  {
+   "type": "B772",
+   "model": "Boeing 777-200",
+   "nmi": 3000.0,
+   "seats": 305,
+   "published": 6.83,
+   "openap_raw": 12.52,
+   "calibrated_loo": 7.151
+  },
+  {
+   "type": "B772",
+   "model": "Boeing 777-200ER",
+   "nmi": 3000.0,
+   "seats": 301,
+   "published": 6.96,
+   "openap_raw": 12.506,
+   "calibrated_loo": 7.109
+  },
+  {
+   "type": "B772",
+   "model": "Boeing 777-200ER",
+   "nmi": 5535.0,
+   "seats": 304,
+   "published": 7.57,
+   "openap_raw": 12.486,
+   "calibrated_loo": 7.246
+  },
+  {
+   "type": "B772",
+   "model": "Boeing 777-200ER",
+   "nmi": 6000.0,
+   "seats": 301,
+   "published": 7.42,
+   "openap_raw": 12.326,
+   "calibrated_loo": 7.299
+  },
+  {
+   "type": "B772",
+   "model": "Boeing 777-200ER",
+   "nmi": 6000.0,
+   "seats": 301,
+   "published": 7.44,
+   "openap_raw": 12.326,
+   "calibrated_loo": 7.299
+  },
+  {
+   "type": "B77L",
+   "model": "Boeing 777-200LR",
+   "nmi": 4972.0,
+   "seats": 291,
+   "published": 7.57,
+   "openap_raw": 12.999,
+   "calibrated_loo": null
+  },
+  {
+   "type": "B773",
+   "model": "Boeing 777-300",
+   "nmi": 3000.0,
+   "seats": 368,
+   "published": 7.88,
+   "openap_raw": 12.92,
+   "calibrated_loo": null
+  },
+  {
+   "type": "B77W",
+   "model": "Boeing 777-300ER",
+   "nmi": 5507.0,
+   "seats": 382,
+   "published": 8.86,
+   "openap_raw": 13.028,
+   "calibrated_loo": 8.44
+  },
+  {
+   "type": "B77W",
+   "model": "Boeing 777-300ER",
+   "nmi": 6000.0,
+   "seats": 365,
+   "published": 8.49,
+   "openap_raw": 12.847,
+   "calibrated_loo": 8.669
+  },
+  {
+   "type": "B77W",
+   "model": "Boeing 777-300ER",
+   "nmi": 7200.0,
+   "seats": 344,
+   "published": 8.58,
+   "openap_raw": 12.447,
+   "calibrated_loo": 8.828
+  },
+  {
+   "type": "B788",
+   "model": "Boeing 787-8",
+   "nmi": 1000.0,
+   "seats": 248,
+   "published": 5.5,
+   "openap_raw": 5.952,
+   "calibrated_loo": 5.486
+  },
+  {
+   "type": "B788",
+   "model": "Boeing 787-8",
+   "nmi": 3400.0,
+   "seats": 291,
+   "published": 5.26,
+   "openap_raw": 5.808,
+   "calibrated_loo": 5.352
+  },
+  {
+   "type": "B788",
+   "model": "Boeing 787-8",
+   "nmi": 3400.0,
+   "seats": 238,
+   "published": 5.11,
+   "openap_raw": 5.71,
+   "calibrated_loo": 5.275
+  },
+  {
+   "type": "B788",
+   "model": "Boeing 787-8",
+   "nmi": 4650.0,
+   "seats": 243,
+   "published": 5.38,
+   "openap_raw": 5.792,
+   "calibrated_loo": 5.3
+  },
+  {
+   "type": "B788",
+   "model": "Boeing 787-8 GEnx",
+   "nmi": 5537.0,
+   "seats": 220,
+   "published": 5.3,
+   "openap_raw": 5.818,
+   "calibrated_loo": 5.337
+  },
+  {
+   "type": "B788",
+   "model": "Boeing 787-8 Trent",
+   "nmi": 5537.0,
+   "seats": 220,
+   "published": 5.51,
+   "openap_raw": 5.818,
+   "calibrated_loo": 5.295
+  },
+  {
+   "type": "B789",
+   "model": "Boeing 787-9",
+   "nmi": 1000.0,
+   "seats": 296,
+   "published": 5.67,
+   "openap_raw": 8.104,
+   "calibrated_loo": 6.126
+  },
+  {
+   "type": "B789",
+   "model": "Boeing 787-9",
+   "nmi": 3350.0,
+   "seats": 304,
+   "published": 5.77,
+   "openap_raw": 7.931,
+   "calibrated_loo": 5.857
+  },
+  {
+   "type": "B789",
+   "model": "Boeing 787-9 GEnx",
+   "nmi": 4650.0,
+   "seats": 294,
+   "published": 5.85,
+   "openap_raw": 8.056,
+   "calibrated_loo": 5.901
+  },
+  {
+   "type": "B789",
+   "model": "Boeing 787-9",
+   "nmi": 4972.0,
+   "seats": 304,
+   "published": 5.63,
+   "openap_raw": 8.13,
+   "calibrated_loo": 5.998
+  },
+  {
+   "type": "B789",
+   "model": "Boeing 787-9 GEnx",
+   "nmi": 5534.0,
+   "seats": 266,
+   "published": 5.62,
+   "openap_raw": 8.076,
+   "calibrated_loo": 5.97
+  },
+  {
+   "type": "B789",
+   "model": "Boeing 787-9",
+   "nmi": 6542.0,
+   "seats": 291,
+   "published": 7.18,
+   "openap_raw": 7.908,
+   "calibrated_loo": 5.799
+  },
+  {
+   "type": "B78X",
+   "model": "Boeing 787-10",
+   "nmi": 1000.0,
+   "seats": 336,
+   "published": 6.09,
+   "openap_raw": 8.188,
+   "calibrated_loo": 6.247
+  },
+  {
+   "type": "B78X",
+   "model": "Boeing 787-10 GEnx",
+   "nmi": 5529.0,
+   "seats": 337,
+   "published": 6.12,
+   "openap_raw": 8.074,
+   "calibrated_loo": 6.125
+  },
+  {
+   "type": "B78X",
+   "model": "Boeing 787-10 Trent",
+   "nmi": 5529.0,
+   "seats": 337,
+   "published": 6.24,
+   "openap_raw": 8.074,
+   "calibrated_loo": 6.066
+  },
+  {
+   "type": "BCS1",
+   "model": "Airbus A220-100",
+   "nmi": 600.0,
+   "seats": 115,
+   "published": 2.8,
+   "openap_raw": 2.036,
+   "calibrated_loo": 2.445
+  },
+  {
+   "type": "BCS1",
+   "model": "Airbus A220-100",
+   "nmi": 500.0,
+   "seats": 125,
+   "published": 2.57,
+   "openap_raw": 2.122,
+   "calibrated_loo": 2.711
+  },
+  {
+   "type": "BCS1",
+   "model": "Airbus A220-100",
+   "nmi": 1000.0,
+   "seats": 125,
+   "published": 2.28,
+   "openap_raw": 1.914,
+   "calibrated_loo": 2.477
+  },
+  {
+   "type": "BCS3",
+   "model": "Airbus A220-300",
+   "nmi": 600.0,
+   "seats": 140,
+   "published": 3.1,
+   "openap_raw": 2.092,
+   "calibrated_loo": 2.617
+  },
+  {
+   "type": "BCS3",
+   "model": "Airbus A220-300",
+   "nmi": 500.0,
+   "seats": 160,
+   "published": 2.85,
+   "openap_raw": 2.201,
+   "calibrated_loo": 2.828
+  },
+  {
+   "type": "BCS3",
+   "model": "Airbus A220-300",
+   "nmi": 1000.0,
+   "seats": 135,
+   "published": 2.3,
+   "openap_raw": 1.935,
+   "calibrated_loo": 2.538
+  },
+  {
+   "type": "BCS3",
+   "model": "Airbus A220-300",
+   "nmi": 1000.0,
+   "seats": 150,
+   "published": 2.42,
+   "openap_raw": 1.968,
+   "calibrated_loo": 2.565
+  },
+  {
+   "type": "BCS3",
+   "model": "Airbus A220-300",
+   "nmi": 1000.0,
+   "seats": 160,
+   "published": 2.56,
+   "openap_raw": 1.991,
+   "calibrated_loo": 2.571
+  },
+  {
+   "type": "BCS3",
+   "model": "Airbus A220-300",
+   "nmi": 2000.0,
+   "seats": 150,
+   "published": 2.42,
+   "openap_raw": 1.892,
+   "calibrated_loo": 2.464
+  },
+  {
+   "type": "CRJ1",
+   "model": "Bombardier CRJ100",
+   "nmi": 577.0,
+   "seats": 50,
+   "published": 1.87,
+   "openap_raw": 1.269,
+   "calibrated_loo": null
+  },
+  {
+   "type": "CRJ2",
+   "model": "Bombardier CRJ200",
+   "nmi": 580.0,
+   "seats": 50,
+   "published": 1.8,
+   "openap_raw": 1.273,
+   "calibrated_loo": null
+  },
+  {
+   "type": "CRJ7",
+   "model": "Bombardier CRJ700",
+   "nmi": 574.0,
+   "seats": 70,
+   "published": 2.45,
+   "openap_raw": 2.055,
+   "calibrated_loo": null
+  },
+  {
+   "type": "CRJ9",
+   "model": "Bombardier CRJ900",
+   "nmi": 573.0,
+   "seats": 88,
+   "published": 2.78,
+   "openap_raw": 2.137,
+   "calibrated_loo": null
+  },
+  {
+   "type": "CRJX",
+   "model": "Bombardier CRJ1000",
+   "nmi": 500.0,
+   "seats": 100,
+   "published": 2.66,
+   "openap_raw": 2.24,
+   "calibrated_loo": null
+  },
+  {
+   "type": "E135",
+   "model": "Embraer ERJ-135ER",
+   "nmi": 596.0,
+   "seats": 37,
+   "published": 1.44,
+   "openap_raw": 1.218,
+   "calibrated_loo": null
+  },
+  {
+   "type": "E145",
+   "model": "Embraer ERJ-145ER",
+   "nmi": 598.0,
+   "seats": 50,
+   "published": 1.55,
+   "openap_raw": 1.263,
+   "calibrated_loo": null
+  },
+  {
+   "type": "E45X",
+   "model": "Embraer ERJ-145ER",
+   "nmi": 598.0,
+   "seats": 50,
+   "published": 1.55,
+   "openap_raw": 1.263,
+   "calibrated_loo": null
+  },
+  {
+   "type": "E170",
+   "model": "Embraer E-Jet-170",
+   "nmi": 606.0,
+   "seats": 80,
+   "published": 2.6,
+   "openap_raw": 2.528,
+   "calibrated_loo": null
+  },
+  {
+   "type": "E75L",
+   "model": "Embraer E-Jet-175",
+   "nmi": 605.0,
+   "seats": 88,
+   "published": 2.8,
+   "openap_raw": 2.445,
+   "calibrated_loo": null
+  },
+  {
+   "type": "E75S",
+   "model": "Embraer E-Jet-175",
+   "nmi": 605.0,
+   "seats": 88,
+   "published": 2.8,
+   "openap_raw": 2.445,
+   "calibrated_loo": null
+  },
+  {
+   "type": "E190",
+   "model": "Embraer E-Jet-190",
+   "nmi": 607.0,
+   "seats": 114,
+   "published": 3.24,
+   "openap_raw": 2.749,
+   "calibrated_loo": null
+  },
+  {
+   "type": "E195",
+   "model": "Embraer E-Jet-195",
+   "nmi": 607.0,
+   "seats": 122,
+   "published": 3.21,
+   "openap_raw": 2.794,
+   "calibrated_loo": null
+  },
+  {
+   "type": "E290",
+   "model": "Embraer E-Jet E2-190",
+   "nmi": 500.0,
+   "seats": 106,
+   "published": 2.48,
+   "openap_raw": 2.77,
+   "calibrated_loo": 2.878
+  },
+  {
+   "type": "E290",
+   "model": "Embraer E-Jet E2-190",
+   "nmi": 600.0,
+   "seats": 106,
+   "published": 2.83,
+   "openap_raw": 2.723,
+   "calibrated_loo": 2.437
+  },
+  {
+   "type": "E295",
+   "model": "Embraer E-Jet E2-195",
+   "nmi": 500.0,
+   "seats": 132,
+   "published": 2.62,
+   "openap_raw": 2.88,
+   "calibrated_loo": 3.12
+  },
+  {
+   "type": "E295",
+   "model": "Embraer E-Jet E2-195",
+   "nmi": 600.0,
+   "seats": 132,
+   "published": 3.07,
+   "openap_raw": 2.833,
+   "calibrated_loo": 2.576
+  }
+ ],
+ "rated": {
+  "AT72": {
+   "kgkm": 1.41,
+   "kt": 275,
+   "tank": 5000
+  },
+  "AT75": {
+   "kgkm": 1.41,
+   "kt": 275,
+   "tank": 5000
+  },
+  "AT76": {
+   "kgkm": 1.41,
+   "kt": 275,
+   "tank": 5000
+  },
+  "AT43": {
+   "kgkm": 1.3,
+   "kt": 300,
+   "tank": 4500
+  },
+  "AT45": {
+   "kgkm": 1.3,
+   "kt": 300,
+   "tank": 4500
+  },
+  "AT46": {
+   "kgkm": 1.3,
+   "kt": 300,
+   "tank": 4500
+  },
+  "DH8D": {
+   "kgkm": 2.0700000000000003,
+   "kt": 360,
+   "tank": 5300
+  },
+  "SF34": {
+   "kgkm": 0.95,
+   "kt": 250,
+   "tank": 2600
+  },
+  "SB20": {
+   "kgkm": 1.54,
+   "kt": 340,
+   "tank": 4200
+  },
+  "D328": {
+   "kgkm": 1.08,
+   "kt": 335,
+   "tank": 3400
+  },
+  "PC12": {
+   "kgkm": 0.41,
+   "kt": 270,
+   "tank": 1200
+  },
+  "KODI": {
+   "kgkm": 0.71,
+   "kt": 170,
+   "tank": 1000
+  }
+ },
+ "summary": {
+  "refs": 126,
+  "openap_raw_mape": 0.22741032456220342,
+  "loo_refs": 107,
+  "calibrated_loo_mape": 0.050375620116042415,
+  "seconds": 31.2
+ }
+}

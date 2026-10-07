@@ -1,7 +1,10 @@
 .DS_Store
 __pycache__/
 *.pyc
-.fuel-horizon-cache/
+.fuel-horizon-cache/*
+# the fuel model's calibration and pre-planned missions ship with the code (rebuilding them takes ~7 min)
+!.fuel-horizon-cache/fuel-calibration.json
+!.fuel-horizon-cache/fuel-grid.json
 *.bak.html
 .claude/
 # published single-file copies of the pages; the site builds its own from site-src/

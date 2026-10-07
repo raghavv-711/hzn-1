@@ -234,54 +234,59 @@ class Live:
 
     def poll_global_forever(self):
         while True:
-            wait = self.next_interval()
-            try:
-                with fetch(OPENSKY_URL, timeout=60, headers=self.auth_header()) as r:
-                    rem = r.headers.get("X-Rate-Limit-Remaining")
-                    self.credits = int(rem) if rem and rem.isdigit() else self.credits
-                    data = json.load(r)
-                rows = []
-                for s in data.get("states") or []:
-                    hexid, cs, country, tpos, lastc, lon, lat, balt, ground, vel, trk, vr, _, galt = s[:14]
-                    cat = s[17] if len(s) > 17 else None
-                    alt = balt if balt is not None else galt
-                    if ground or lat is None or lon is None or vel is None or alt is None or vel < 20:
-                        continue
-                    if data["time"] - (tpos or lastc or 0) > 120:
-                        continue
-                    category = "A%d" % (cat - 1) if isinstance(cat, int) and 2 <= cat <= 8 else ""
-                    rows.append(self.m.row(hexid, cs, lat, lon, alt * 3.28084, vel * 1.94384, trk,
-                                           (vr or 0) * 196.85, category, country, tpos or lastc, squawk=s[14]))
-                self.remember(rows)
-                self.prune_history()
-                if time.time() - self.saved_at > HISTORY_SAVE_EVERY:
-                    try:
-                        self.save_history()
-                    except OSError as e:
-                        print("[history] couldn't save:", e, flush=True)
-                with self.lock:
-                    self.global_rows, self.global_t = rows, data["time"]
-                    self.global_note = ""
-                wait = self.next_interval()
-                print(f"[opensky] {len(rows)} airborne · credits left {self.credits} · next pull in {wait:.0f}s", flush=True)
-            except urllib.error.HTTPError as e:
-                if e.code == 429:
-                    retry = e.headers.get("X-Rate-Limit-Retry-After-Seconds")
-                    wait = float(retry) if retry and retry.isdigit() else 1800.0
-                    self.credits = 0
-                    note = "OpenSky daily quota used up. Global refresh resumes in %d min; your focus region stays live." % (wait // 60)
-                else:
-                    note, wait = "OpenSky returned HTTP %d. Retrying." % e.code, 60.0
-                with self.lock:
-                    self.global_note = note
-                print("[opensky]", note, flush=True)
-            except Exception as e:
-                with self.lock:
-                    self.global_note = "OpenSky unreachable. Retrying."
-                print("[opensky] error:", e, flush=True)
-                wait = 60.0
+            wait = self.pull_global()
             self.wake.wait(min(wait, 900.0))
             self.wake.clear()
+
+    def pull_global(self):
+        """One OpenSky pull of every airborne aircraft; returns how long to wait before the next one."""
+        wait = self.next_interval()
+        try:
+            with fetch(OPENSKY_URL, timeout=60, headers=self.auth_header()) as r:
+                rem = r.headers.get("X-Rate-Limit-Remaining")
+                self.credits = int(rem) if rem and rem.isdigit() else self.credits
+                data = json.load(r)
+            rows = []
+            for s in data.get("states") or []:
+                hexid, cs, country, tpos, lastc, lon, lat, balt, ground, vel, trk, vr, _, galt = s[:14]
+                cat = s[17] if len(s) > 17 else None
+                alt = balt if balt is not None else galt
+                if ground or lat is None or lon is None or vel is None or alt is None or vel < 20:
+                    continue
+                if data["time"] - (tpos or lastc or 0) > 120:
+                    continue
+                category = "A%d" % (cat - 1) if isinstance(cat, int) and 2 <= cat <= 8 else ""
+                rows.append(self.m.row(hexid, cs, lat, lon, alt * 3.28084, vel * 1.94384, trk,
+                                       (vr or 0) * 196.85, category, country, tpos or lastc, squawk=s[14]))
+            self.remember(rows)
+            self.prune_history()
+            if time.time() - self.saved_at > HISTORY_SAVE_EVERY:
+                try:
+                    self.save_history()
+                except OSError as e:
+                    print("[history] couldn't save:", e, flush=True)
+            with self.lock:
+                self.global_rows, self.global_t = rows, data["time"]
+                self.global_note = ""
+            wait = self.next_interval()
+            print(f"[opensky] {len(rows)} airborne · credits left {self.credits} · next pull in {wait:.0f}s", flush=True)
+        except urllib.error.HTTPError as e:
+            if e.code == 429:
+                retry = e.headers.get("X-Rate-Limit-Retry-After-Seconds")
+                wait = float(retry) if retry and retry.isdigit() else 1800.0
+                self.credits = 0
+                note = "OpenSky daily quota used up. Global refresh resumes in %d min; your focus region stays live." % (wait // 60)
+            else:
+                note, wait = "OpenSky returned HTTP %d. Retrying." % e.code, 60.0
+            with self.lock:
+                self.global_note = note
+            print("[opensky]", note, flush=True)
+        except Exception as e:
+            with self.lock:
+                self.global_note = "OpenSky unreachable. Retrying."
+            print("[opensky] error:", e, flush=True)
+            wait = 60.0
+        return wait
 
     # adsb.lol focus region ---------------------------------------------
     def want_region(self, lat, lon):

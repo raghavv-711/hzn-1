@@ -19,6 +19,14 @@ python3 -m http.server 8770 --directory docs
 
 Then open http://localhost:8770. Add `?debug` to the landing page URL to expose a frame-stepping hook for automated checks.
 
+## Hourly refresh
+
+[`.github/workflows/site.yml`](.github/workflows/site.yml) rebuilds and deploys the site every hour and on every push. It runs [`tools/refresh_snapshot.py`](tools/refresh_snapshot.py), which pulls OpenSky's global feed three times a few minutes apart, runs the fuel model on every flight, and rewrites the globe data. The fresh data goes straight into the Pages deployment, so the repo doesn't grow with each refresh; flight paths carry over between runs in the Actions cache. If OpenSky can't be reached, the site is deployed with the data already in `docs/`.
+
+- Run it now: Actions → *Build and deploy site* → *Run workflow*, or `gh workflow run site.yml`.
+- Optional: add `OPENSKY_CLIENT_ID` and `OPENSKY_CLIENT_SECRET` as repository secrets for higher OpenSky limits.
+- GitHub pauses scheduled workflows after 60 days without commits; re-enable it from the Actions tab if that happens.
+
 ## Editing
 
 - The landing page is edited directly: `docs/index.html` (markup and styles) and `docs/assets/story.js` (the 3D scene and scroll keyframes, see `KEYS`).
