@@ -1,0 +1,288 @@
+<title>Fuel Horizon Dashboard</title>
+<meta name="description" content="How much jet fuel is burning in the sky right now, which airlines and aircraft burn it, and what cleaner fuels or aircraft could save. Updated every hour.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one 1040px report column. Headline numbers first, then the last day, then who burns it, then what could change. */
+:root{
+  --bg:#070b11; --surface:#0d141d; --raise:#121b27; --line:rgba(146,176,208,.16); --line-strong:rgba(146,176,208,.3);
+  --text:#e6edf5; --muted:#8c9bad; --faint:#5f6d7e;
+  --accent:#7cc4ff; --accent-soft:rgba(124,196,255,.12); --teal:#4fd1c5; --warn:#f5b041;
+  --f-sans:"Geist",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"Geist Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){
+  --bg:#f4f7fa; --surface:#ffffff; --raise:#eef3f8; --line:#dde5ee; --line-strong:#c3cfdc;
+  --text:#0c1621; --muted:#566678; --faint:#8794a3;
+  --accent:#1767ad; --accent-soft:rgba(23,103,173,.1); --teal:#0d8579; --warn:#b26a00; color-scheme:light}}
+:root[data-theme="light"]{
+  --bg:#f4f7fa; --surface:#ffffff; --raise:#eef3f8; --line:#dde5ee; --line-strong:#c3cfdc;
+  --text:#0c1621; --muted:#566678; --faint:#8794a3;
+  --accent:#1767ad; --accent-soft:rgba(23,103,173,.1); --teal:#0d8579; --warn:#b26a00; color-scheme:light}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.55 var(--f-sans);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1040px;margin:0 auto;padding:40px 20px 72px;display:flex;flex-direction:column;gap:52px}
+a{color:var(--accent);text-underline-offset:3px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+h1,h2,h3{margin:0;font-weight:600;letter-spacing:-.022em;text-wrap:balance}
+h1{font-size:clamp(28px,4.6vw,42px);line-height:1.12;max-width:24ch}
+h2{font-size:22px;line-height:1.25}
+h3{font-size:15px;letter-spacing:-.01em}
+p{margin:0;max-width:70ch}
+.eyebrow{font:500 12px/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.eyebrow a{text-decoration:none;color:var(--accent)}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+header{display:flex;flex-direction:column;gap:16px}
+.lede{font-size:17px;color:var(--muted);max-width:64ch}
+.lede strong{color:var(--text);font-weight:500}
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.tile{padding:18px 20px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.tile+.tile{border-left:1px solid var(--line)}
+.tile .v{font:600 30px/1 var(--f-mono);letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.tile .v small{font-size:15px;color:var(--faint);font-weight:500;margin-left:4px}
+.tile .k{font-size:13px;color:var(--muted);line-height:1.4}
+@media (max-width:760px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.tile:nth-child(3){border-left:0}.tile:nth-child(n+3){border-top:1px solid var(--line)}.tile .v{font-size:24px}}
+section{display:flex;flex-direction:column;gap:16px}
+.sec-head{display:flex;flex-direction:column;gap:8px}
+.sec-head p{color:var(--muted);font-size:14.5px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;min-width:0}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+@media (max-width:760px){.grid2{grid-template-columns:minmax(0,1fr)}}
+.panel h3{margin-bottom:10px}
+.chart{position:relative;min-width:0}
+svg{display:block;width:100%;height:auto;overflow:visible}
+svg text{font-family:var(--f-mono);font-size:11px;fill:var(--muted)}
+.gridline{stroke:var(--line);stroke-width:1}
+.axis{stroke:var(--line-strong);stroke-width:1}
+.empty{font-size:13.5px;color:var(--muted);padding:24px 4px}
+.tip{position:absolute;pointer-events:none;background:var(--raise);border:1px solid var(--line-strong);border-radius:10px;padding:8px 10px;font-size:12.5px;line-height:1.4;box-shadow:0 8px 24px rgba(0,0,0,.25);z-index:2;white-space:nowrap}
+.tip b{font-weight:600}
+/* horizontal bar lists: label · bar · value, one row per item */
+.bars{display:flex;flex-direction:column;gap:2px}
+.brow{display:grid;grid-template-columns:minmax(0,190px) minmax(0,1fr) 136px;gap:10px;align-items:center;padding:4px 6px;border-radius:7px;font-size:13px}
+.brow:hover{background:var(--raise)}
+.brow .l{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brow .l small{color:var(--faint);font-family:var(--f-mono);margin-right:6px}
+.brow .track{height:10px;position:relative}
+.brow .fill{position:absolute;left:0;top:0;bottom:0;border-radius:2px 4px 4px 2px;background:var(--accent);min-width:2px}
+.brow .v{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums;color:var(--text);font-size:12.5px;white-space:nowrap}
+.brow .v small{color:var(--faint)}
+@media (max-width:560px){.brow{grid-template-columns:minmax(0,110px) minmax(0,1fr) auto;gap:8px}.brow .v small{display:none}}
+.note{font-size:13px;color:var(--muted);line-height:1.5}
+.routes{display:flex;flex-direction:column}
+.rrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+.rrow:last-child{border-bottom:0}
+.rrow b{font-family:var(--f-mono);font-weight:500}
+.rrow small{grid-column:1;color:var(--muted);font-size:12.5px}
+.rrow .n{grid-row:1 / span 2;grid-column:2;align-self:center;font-family:var(--f-mono);color:var(--muted)}
+/* what-if scenarios */
+.scen{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+@media (max-width:760px){.scen{grid-template-columns:minmax(0,1fr)}}
+.sc{display:flex;flex-direction:column;gap:12px}
+.sc .big{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.sc .big b{font:600 32px/1 var(--f-mono);letter-spacing:-.03em;color:var(--teal);font-variant-numeric:tabular-nums}
+.sc .big span{font-size:13.5px;color:var(--muted)}
+.ctl{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted)}
+.ctl .row{display:flex;justify-content:space-between;gap:10px}
+.ctl output{color:var(--text);font-family:var(--f-mono)}
+.ctl input[type=range]{width:100%;accent-color:var(--accent)}
+.ctl select{height:34px;border-radius:8px;border:1px solid var(--line-strong);background:var(--surface);color:var(--text);font:13.5px var(--f-sans);padding:0 8px;max-width:100%}
+.facts{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:0;font-size:12.5px}
+.facts dt{color:var(--muted)}
+.facts dd{margin:0;text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.compare .brow .fill{background:var(--teal)}
+.sources{padding-left:18px;margin:0;color:var(--muted);font-size:13px;display:flex;flex-direction:column;gap:4px}
+footer{display:flex;flex-direction:column;gap:8px;padding-top:22px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
+</style>
+
+<main class="wrap">
+  <header>
+    <div class="eyebrow"><a href="../">HZN-1</a><span>·</span><a href="../globe/">Fuel Horizon</a><span>·</span><span>Dashboard</span></div>
+    <h1>Jet fuel burning in the sky right now</h1>
+    <p class="lede" id="lede">Every flight the network can see, run through a fuel model of its exact aircraft type. Updated every hour.</p>
+    <div class="tiles" id="tiles"></div>
+  </header>
+
+  <section aria-labelledby="h-day">
+    <div class="sec-head"><h2 id="h-day">The last 24 hours</h2>
+      <p>Each point is one hourly recording. Traffic rises and falls as the day moves around the world.</p></div>
+    <div class="grid2">
+      <div class="panel"><h3>Planes in the air</h3><div class="chart" id="cPlanes"></div></div>
+      <div class="panel"><h3>Fuel burned per hour <span class="muted" style="font-weight:400">(tonnes, modelled flights)</span></h3><div class="chart" id="cBurn"></div></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-air">
+    <div class="sec-head"><h2 id="h-air">Who's burning it</h2>
+      <p>Airlines ranked by the fuel their planes in the air are burning per hour right now. Big long-haul fleets rank high even with fewer flights.</p></div>
+    <div class="panel"><div class="bars" id="bAirlines"></div></div>
+  </section>
+
+  <section aria-labelledby="h-eff">
+    <div class="sec-head"><h2 id="h-eff">Fuel per seat</h2>
+      <p>Grams of CO₂ per seat per kilometre for each airline's flights in the air, from the fuel model and typical seat counts for each aircraft type. Newer aircraft and longer trips score better; real cabins vary, so treat small gaps as noise. Airlines with at least 8 rated flights.</p></div>
+    <div class="grid2">
+      <div class="panel"><h3>Least CO₂ per seat-km</h3><div class="bars" id="bBest"></div></div>
+      <div class="panel"><h3>Most CO₂ per seat-km</h3><div class="bars" id="bWorst"></div></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-mix">
+    <div class="sec-head"><h2 id="h-mix">Routes and aircraft</h2></div>
+    <div class="grid2">
+      <div class="panel"><h3>Busiest routes in the air</h3><div class="routes" id="rRoutes"></div></div>
+      <div class="panel"><h3>Most common aircraft</h3><div class="bars" id="bTypes"></div></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-what">
+    <div class="sec-head"><h2 id="h-what">What if?</h2>
+      <p>Four ways to cut aviation's CO₂, applied to the flights in the air right now. Each uses published figures (sources below), and each aircraft is still years from service, so read these as rough upper bounds for today's traffic.</p></div>
+    <div class="scen">
+      <div class="panel sc">
+        <h3>Sustainable aviation fuel</h3>
+        <div class="big"><b id="safOut">–</b><span>less lifecycle CO₂ across every flight</span></div>
+        <label class="ctl"><span class="row"><span>Share of fuel that's SAF</span><output id="safBlendOut"></output></span>
+          <input type="range" id="safBlend" min="0" max="50" step="1" value="6"></label>
+        <label class="ctl">Made from
+          <select id="safPath">
+            <option value="84">Used cooking oil (HEFA) · −84%</option>
+            <option value="75">Tallow (HEFA) · −75%</option>
+            <option value="27">Soybean oil (HEFA) · −27%</option>
+            <option value="91">Farm residues (Fischer-Tropsch) · −91%</option>
+            <option value="67">Farm residues via alcohol · −67%</option>
+            <option value="70">Power-to-liquid e-SAF · at least −70%</option>
+          </select></label>
+        <p class="note">Today SAF is about 0.6% of jet fuel. EU rules require 6% by 2030 and 70% by 2050; blends above 50% aren't certified yet.</p>
+      </div>
+      <div class="panel sc">
+        <h3>Battery-electric</h3>
+        <div class="big"><b id="batOut">–</b><span id="batSub">of flights could fly on batteries</span></div>
+        <label class="ctl"><span class="row"><span>Battery pack energy</span><output id="batDensOut"></output></span>
+          <input type="range" id="batDens" min="200" max="1500" step="50" value="250"></label>
+        <p class="note">Each battery weighs as much as a full fuel tank. Certified aviation packs are near 200 Wh/kg today; lithium-based packs probably top out around 400–500. Lifecycle savings are 49–88% depending on how clean the grid is.</p>
+      </div>
+      <div class="panel sc">
+        <h3>Hybrid-electric regional aircraft</h3>
+        <div class="big"><b id="hybOut">–</b><span>less fuel CO₂ across every flight</span></div>
+        <dl class="facts" id="hybFacts"></dl>
+        <p class="note">Assumes every regional jet and turboprop flight up to 1,200 km (the Heart Aerospace ES-36's hybrid range) uses about 30% less fuel, the RTX demonstrator's target.</p>
+      </div>
+      <div class="panel sc">
+        <h3>Hydrogen aircraft</h3>
+        <div class="big"><b id="h2Out">–</b><span>less lifecycle CO₂ across every flight</span></div>
+        <label class="ctl">Hydrogen made from
+          <select id="h2Src"><option value="86">Renewable electricity (green) · about −86%</option><option value="-3">Natural gas (grey) · about +3%</option></select></label>
+        <dl class="facts" id="h2Facts"></dl>
+        <p class="note">Assumes hydrogen aircraft like Airbus's ZEROe concept (100+ seats, about 1,850 km) fly every narrowbody and regional flight in range. ZEROe has slipped to the 2040s.</p>
+      </div>
+    </div>
+    <div class="panel compare"><h3>Share of today's CO₂ each would avoid, at the settings above</h3><div class="bars" id="bCompare"></div></div>
+  </section>
+
+  <footer>
+    <p>How it's measured: flights come from the OpenSky Network's live feed, recorded every hour. Fuel uses the <a href="../model/">Fuel Horizon model</a> (OpenAP, tuned per aircraft type; about 5% average error on published figures). CO₂ is 3.16 kg per kg of fuel burned, or about 3.84 kg counting how the fuel was made (ICAO CORSIA's 89 g/MJ baseline). Flights the network can't see, mostly over Africa and the oceans, aren't counted.</p>
+    <p>Scenario sources: <a href="https://www.icao.int/sites/default/files/sp-files/environmental-protection/CORSIA/Documents/ICAO%20document%2006%20-%20Default%20Life%20Cycle%20Emissions%20-%20November%202021.pdf">ICAO CORSIA default life-cycle values</a> · <a href="https://www.iata.org/en/pressroom/2025-releases/2025-12-09-04/">IATA SAF production 2025</a> · <a href="https://eur-lex.europa.eu/eli/reg/2023/2405/oj">ReFuelEU Aviation</a> · <a href="https://theicct.org/wp-content/uploads/2022/07/global-aviation-performance-analysis-regional-electric-aircraft-jul22-1.pdf-1.pdf">ICCT electric aircraft analysis</a> · <a href="https://h55.ch/technology/">H55 battery packs</a> · <a href="https://avweb.com/aviation-news/heart-unveils-es-36-with-jsx-order/">Heart Aerospace ES-36</a> · <a href="https://www.rtx.com/news/2026/03/03/rtxs-hybrid-electric-plane-is-one-step-closer-to-the-sky">RTX hybrid-electric demonstrator</a> · <a href="https://airbus.com/en/newsroom/press-releases/2025-03-airbus-showcases-hydrogen-aircraft-technologies-during-its-2025">Airbus ZEROe</a> · <a href="https://www.iea.org/reports/global-hydrogen-review-2024/ghg-emissions-of-hydrogen-and-its-derivatives">IEA hydrogen emissions</a></p>
+    <p>Made by Raghav Vijayapal · <a href="../">HZN-1</a> · <a href="../globe/">Fuel Horizon globe</a></p>
+  </footer>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+const TZ='America/Chicago';
+const fmt=(n,d=0)=>n.toLocaleString('en-US',{maximumFractionDigits:d,minimumFractionDigits:d});
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const when=(t,o)=>new Date(t*1000).toLocaleString('en-US',Object.assign({timeZone:TZ},o));
+const NS='http://www.w3.org/2000/svg';
+const el=(tag,a,p)=>{const e=document.createElementNS(NS,tag);for(const k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e;};
+const CO2=3.16, CO2_WTW=3.84; // kg CO2 per kg fuel: burned; burned plus making the fuel
+let S=null;
+
+function bars(target,rows,opts){ // rows: [label, sublabel, value, valueText]
+  const max=Math.max(...rows.map(r=>r[2]),1e-9);
+  $(target).innerHTML=rows.map(r=>'<div class="brow" title="'+esc(r[0])+'"><span class="l">'+(r[1]?'<small>'+esc(r[1])+'</small>':'')+esc(r[0])+'</span>'+
+    '<span class="track"><span class="fill" style="width:'+(r[2]/max*100).toFixed(1)+'%"></span></span><span class="v">'+r[3]+'</span></div>').join('');
+}
+
+function line(target,pts,unit,digits){ // a single-series line with a hover crosshair
+  const wrap=$(target);wrap.innerHTML='';
+  if(pts.length<2){wrap.innerHTML='<p class="empty">'+(pts.length?'One hour recorded so far: <b class="num">'+fmt(pts[0][1],digits)+'</b>'+unit+' at '+when(pts[0][0],{hour:'numeric',minute:'2-digit',timeZoneName:'short'})+'. This chart fills in as each hourly recording arrives.':'No recordings yet.')+'</p>';return;}
+  const W=Math.max(280,wrap.clientWidth),H=200,M={l:46,r:12,t:12,b:26};
+  const t0=pts[0][0],t1=pts[pts.length-1][0],vs=pts.map(p=>p[1]);let lo=Math.min(...vs),hi=Math.max(...vs);
+  const pad=(hi-lo)*.15||hi*.1||1;lo=Math.max(0,lo-pad);hi=hi+pad;
+  const sx=t=>M.l+(t-t0)/(t1-t0||1)*(W-M.l-M.r),sy=v=>H-M.b-(v-lo)/(hi-lo)*(H-M.t-M.b);
+  const svg=el('svg',{viewBox:'0 0 '+W+' '+H,role:'img','aria-label':'Line chart'},wrap);
+  const step=Math.pow(10,Math.floor(Math.log10((hi-lo)/3))),nice=[1,2,5,10].map(k=>k*step).find(s=>(hi-lo)/s<=5)||step*10;
+  for(let v=Math.ceil(lo/nice)*nice;v<=hi;v+=nice){el('line',{class:'gridline',x1:M.l,x2:W-M.r,y1:sy(v),y2:sy(v)},svg);el('text',{x:M.l-6,y:sy(v)+4,'text-anchor':'end'},svg).textContent=fmt(v,digits>0&&nice<1?1:0);}
+  const hrs=(t1-t0)/3600,tstep=hrs>12?6:hrs>5?3:1;
+  for(let t=Math.ceil(t0/(tstep*3600))*tstep*3600;t<=t1;t+=tstep*3600)el('text',{x:sx(t),y:H-8,'text-anchor':'middle'},svg).textContent=when(t,{hour:'numeric'});
+  el('line',{class:'axis',x1:M.l,x2:W-M.r,y1:H-M.b,y2:H-M.b},svg);
+  const d=pts.map((p,i)=>(i?'L':'M')+sx(p[0]).toFixed(1)+' '+sy(p[1]).toFixed(1)).join(' ');
+  el('path',{d:d+' L'+sx(t1)+' '+(H-M.b)+' L'+sx(t0)+' '+(H-M.b)+' Z',fill:'var(--accent-soft)',stroke:'none'},svg);
+  el('path',{d,fill:'none',stroke:'var(--accent)','stroke-width':2,'stroke-linejoin':'round','stroke-linecap':'round'},svg);
+  const last=pts[pts.length-1];el('circle',{cx:sx(last[0]),cy:sy(last[1]),r:4,fill:'var(--accent)',stroke:'var(--surface)','stroke-width':2},svg);
+  const cross=el('line',{class:'axis',y1:M.t,y2:H-M.b,visibility:'hidden'},svg),dot=el('circle',{r:4,fill:'var(--accent)',stroke:'var(--surface)','stroke-width':2,visibility:'hidden'},svg);
+  const tip=document.createElement('div');tip.className='tip';tip.hidden=true;wrap.appendChild(tip);
+  const show=x=>{const r=svg.getBoundingClientRect(),k=W/r.width,t=t0+((x-r.left)*k-M.l)/(W-M.l-M.r)*(t1-t0);
+    let best=pts[0];for(const p of pts)if(Math.abs(p[0]-t)<Math.abs(best[0]-t))best=p;
+    const X=sx(best[0]),Y=sy(best[1]);cross.setAttribute('x1',X);cross.setAttribute('x2',X);cross.setAttribute('visibility','visible');
+    dot.setAttribute('cx',X);dot.setAttribute('cy',Y);dot.setAttribute('visibility','visible');
+    tip.innerHTML='<b class="num">'+fmt(best[1],digits)+'</b>'+unit+'<br><span class="muted">'+when(best[0],{weekday:'short',hour:'numeric',minute:'2-digit',timeZoneName:'short'})+'</span>';
+    tip.hidden=false;const px=X/k;tip.style.left=Math.min(Math.max(0,px-tip.offsetWidth/2),r.width-tip.offsetWidth)+'px';tip.style.top=Math.max(0,Y/k-tip.offsetHeight-12)+'px';};
+  svg.addEventListener('pointermove',e=>show(e.clientX));svg.addEventListener('pointerdown',e=>show(e.clientX));
+  svg.addEventListener('pointerleave',()=>{tip.hidden=true;cross.setAttribute('visibility','hidden');dot.setAttribute('visibility','hidden');});
+}
+
+// what-if scenarios on the routed, modelled flights: [km, fuel for taxi+trip kg, battery Wh/kg needed, class, seats]
+function scenarios(){
+  const F=S.flights,n=F.length/5;let fuelAll=0;for(let i=0;i<n;i++)fuelAll+=F[i*5+1];
+  // SAF: lifecycle cut = blend share × pathway reduction
+  const blend=+$('safBlend').value/100,red=+$('safPath').value/100,saf=blend*red;
+  $('safBlendOut').textContent=fmt(blend*100)+'%';$('safOut').textContent=fmt(saf*100,1)+'%';
+  // battery-electric: flights whose whole trip fits in a battery weighing as much as a full tank
+  const dens=+$('batDens').value;let bN=0,bF=0;for(let i=0;i<n;i++)if(F[i*5+2]<=dens){bN++;bF+=F[i*5+1];}
+  $('batDensOut').textContent=fmt(dens)+' Wh/kg';$('batOut').textContent=fmt(bN/n*100,1)+'%';
+  $('batSub').textContent='of flights could fly on batteries · '+fmt(bF/fuelAll*100,2)+'% of the fuel';
+  const bat=bF/fuelAll*.685; // midpoint of the 49–88% lifecycle saving
+  // hybrid regional: regional jets (3) and turboprops (4) up to 1,200 km, 30% less fuel
+  let hN=0,hF=0;for(let i=0;i<n;i++){const c=F[i*5+3];if((c===3||c===4)&&F[i*5]<=1200){hN++;hF+=F[i*5+1];}}
+  const hyb=hF/fuelAll*.30;$('hybOut').textContent=fmt(hyb*100,1)+'%';
+  $('hybFacts').innerHTML='<dt>Flights in range</dt><dd>'+fmt(hN)+' ('+fmt(hN/n*100,1)+'%)</dd><dt>Their share of fuel</dt><dd>'+fmt(hF/fuelAll*100,1)+'%</dd>';
+  // hydrogen: narrowbody (2) and regional (3, 4) flights up to 1,850 km
+  let yN=0,yF=0;for(let i=0;i<n;i++){const c=F[i*5+3];if(c>=2&&c<=4&&F[i*5]<=1850){yN++;yF+=F[i*5+1];}}
+  const h2=yF/fuelAll*(+$('h2Src').value/100);$('h2Out').textContent=(h2<0?'+':'')+fmt(Math.abs(h2)*100,1)+'%';
+  $('h2Out').parentElement.querySelector('span').textContent=h2<0?'more lifecycle CO₂ across every flight':'less lifecycle CO₂ across every flight';
+  $('h2Facts').innerHTML='<dt>Flights in range</dt><dd>'+fmt(yN)+' ('+fmt(yN/n*100,1)+'%)</dd><dt>Their share of fuel</dt><dd>'+fmt(yF/fuelAll*100,1)+'%</dd>';
+  const co2h=S.burn*CO2_WTW/1000;
+  bars('bCompare',[['Sustainable aviation fuel','',saf,fmt(saf*100,1)+'% <small>· '+fmt(co2h*saf)+' t/h</small>'],
+    ['Hydrogen aircraft','',Math.max(0,h2),(h2<0?'none':fmt(h2*100,1)+'%')+' <small>· '+fmt(co2h*Math.max(0,h2))+' t/h</small>'],
+    ['Hybrid-electric regional','',hyb,fmt(hyb*100,1)+'% <small>· '+fmt(co2h*hyb)+' t/h</small>'],
+    ['Battery-electric','',bat,fmt(bat*100,2)+'% <small>· '+fmt(co2h*bat)+' t/h</small>']]);
+}
+
+function render(){
+  const co2=S.burn*CO2/1000;
+  $('lede').innerHTML='Every flight the network can see, run through a fuel model of its exact aircraft type. Recorded <strong>'+
+    when(S.t,{weekday:'long',hour:'numeric',minute:'2-digit',timeZoneName:'short'})+'</strong>; updated every hour.';
+  $('tiles').innerHTML=[[fmt(S.n),'','Planes in the air'],[fmt(S.burn/1000),'t','Jet fuel burned per hour (modelled flights)'],
+    [fmt(co2),'t','CO₂ released per hour'],[fmt(S.modelled/S.n*100),'%','Flights modelled by exact aircraft type']]
+    .map(([v,u,k])=>'<div class="tile"><div class="v">'+v+(u?'<small>'+u+'</small>':'')+'</div><div class="k">'+k+'</div></div>').join('');
+  const hist=S.history.length?S.history:[[S.t,S.n,S.burn]];
+  line('cPlanes',hist.map(h=>[h[0],h[1]]),' planes',0);
+  line('cBurn',hist.map(h=>[h[0],h[2]/1000]),' t of fuel an hour',0);
+  bars('bAirlines',S.airlines.map(a=>[a[1],a[0],a[3],fmt(a[3]/1000,1)+' t/h <small>· '+fmt(a[2])+'</small>']));
+  const eff=S.efficiency;
+  bars('bBest',eff.slice(0,8).map(a=>[a[1],a[0],a[3],fmt(a[3],1)+' g <small>· '+a[2]+'</small>']));
+  bars('bWorst',eff.slice(-8).reverse().map(a=>[a[1],a[0],a[3],fmt(a[3],1)+' g <small>· '+a[2]+'</small>']));
+  $('rRoutes').innerHTML=S.routes.map(r=>'<div class="rrow"><span><b>'+esc(r[0])+' → '+esc(r[1])+'</b></span><small>'+esc(r[2])+' to '+esc(r[3])+'</small><span class="n">'+r[4]+' in the air</span></div>').join('');
+  bars('bTypes',S.types.map(t=>[t[1],t[0],t[2],fmt(t[2])]));
+  scenarios();
+}
+['safBlend','safPath','batDens','h2Src'].forEach(id=>$(id).addEventListener('input',scenarios));
+let rw=0;new ResizeObserver(()=>{const w=document.body.clientWidth;if(S&&Math.abs(w-rw)>20){rw=w;render();}}).observe(document.body);
+fetch('stats.json?v=__SV__').then(r=>r.json()).then(d=>{S=d;rw=document.body.clientWidth;render();})
+  .catch(()=>{$('lede').textContent='Couldn\'t load the latest numbers. Try reloading in a minute.';});
+</script>

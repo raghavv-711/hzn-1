@@ -2,7 +2,8 @@
 
     python3 site-src/build_site.py [path/to/fh-data.json]
 
-Pages: docs/globe (Fuel Horizon snapshot), docs/chip (Inside HZN-1 explorer), docs/model (fuel model check).
+Pages: docs/globe (Fuel Horizon snapshot), docs/chip (Inside HZN-1 explorer), docs/model (fuel model check),
+docs/stats (hourly fuel & CO2 dashboard).
 The landing page (docs/index.html) and docs/assets are edited directly.
 Passing a fresh fh-data.json (from the snapshot bundler) also refreshes the globe's recorded flights.
 """
@@ -144,6 +145,9 @@ def build(data_json=None):
     c = rep(c, '<div><h1>Inside HZN-1</h1><p>A look inside the chip behind Fuel Horizon</p></div>\n  </div>',
             '<div><h1>Inside HZN-1</h1><p>A look inside the chip behind Fuel Horizon</p></div>\n  </a>')
     write("chip", c)
+
+    st = (SRC / "stats.html").read_text()
+    write("stats", rep(st, "stats.json?v=__SV__", f"stats.json?v={version(DOCS / 'stats' / 'stats.json')}"))
 
     m = (SRC / "model.html").read_text()
     m = rep(m, "__DATA__", (SRC / "model-data.json").read_text().replace("</", "<\\/"))

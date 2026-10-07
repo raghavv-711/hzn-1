@@ -83,9 +83,82 @@ def write_replay(now):
         with gzip.open(p, "rt") as fh:
             frames.append(json.load(fh))
     out = ROOT / "docs" / "globe" / "replay.json"
+    globals()["_frames"] = frames
     out.write_text(json.dumps({"frames": frames}, separators=(",", ":")))
     print(f"replay: {len(frames)} frames over {(frames[-1]['t'] - frames[0]['t']) / 3600:.1f} h, "
           f"{out.stat().st_size / 1e6:.1f} MB" if frames else "replay: no frames yet", flush=True)
+
+
+def seats_for(icao):
+    """Typical seats for an aircraft type, from the published figures the fuel model is tuned on (None if unknown)."""
+    import fuel_model as M
+    if icao in M.JETS:
+        return M._seats(icao, M.JETS[icao][0])
+    if icao in M.RATED:
+        s = [r[3] for r in M.REFS if r[0] in M.RATED[icao][0]]
+        return sum(s) / len(s) if s else None
+    return None
+
+
+def type_name(icao):
+    import fuel_model as M
+    names = (M.JETS.get(icao) or (None, []))[1] if icao in M.JETS else (M.RATED.get(icao) or ([],))[0]
+    return names[0] if names else icao
+
+
+def write_stats(rows, ap, airlines, t):
+    """docs/stats/stats.json for the dashboard: totals now, the last 24 hours, rankings and per-flight scenario inputs."""
+    from collections import Counter, defaultdict
+    hav = build_site.hav
+    burn = 0.0; modelled = 0; flights = []; al = defaultdict(lambda: {"n": 0, "burn": 0.0, "eff": []})
+    routes, types, seat_cache = Counter(), Counter(), {}
+    for r in rows:
+        f = r[16] if len(r) > 16 else 0
+        cs, typ, cls, o, de = r[1], r[2], r[9], r[11], r[12]
+        if typ:
+            types[typ] += 1
+        if o in ap and de in ap:
+            routes[(ap[o][0], ap[de][0])] += 1
+        code = cs[:3] if re.match(r"^[A-Z]{3}\d", cs) and cs[:3] in airlines and airlines[cs[:3]][0] else None
+        if code:
+            al[code]["n"] += 1
+        if not f:
+            continue
+        modelled += 1; burn += f[7]
+        if code:
+            al[code]["burn"] += f[7]
+        if f[0] and o in ap and de in ap:
+            D = hav(ap[o][2], ap[o][3], ap[de][2], ap[de][3])
+            if typ not in seat_cache:
+                seat_cache[typ] = seats_for(typ)
+            seats = seat_cache[typ]
+            trip = f[0] - f[2]                                 # taxi + trip, without reserves
+            need = trip * 4190 / (f[6] * 0.9)                  # battery Wh/kg needed if the battery weighed as much as a full tank
+            flights += [round(D), round(trip), round(need), cls, round(seats or 0)]
+            if seats and D > 300 and code:
+                al[code]["eff"].append(f[1] / D / seats * 3.16 * 1000)  # g CO2 per seat-km on this trip
+    top_al = sorted(al.items(), key=lambda kv: -kv[1]["burn"])[:15]
+    eff = sorted(((k, v) for k, v in al.items() if len(v["eff"]) >= 8), key=lambda kv: sum(kv[1]["eff"]) / len(kv[1]["eff"]))
+    out = {
+        "t": t, "n": len(rows), "modelled": modelled, "burn": round(burn),
+        "history": [[fr["t"], fr["n"], fr["burn"]] for fr in globals().get("_frames", [])],
+        "airlines": [[k, airlines[k][0], v["n"], round(v["burn"])] for k, v in top_al],
+        "efficiency": [[k, airlines[k][0], len(v["eff"]), round(sum(v["eff"]) / len(v["eff"]), 1)] for k, v in eff],
+        "routes": [[a, b, ap_name(ap, a), ap_name(ap, b), n] for (a, b), n in routes.most_common(10)],
+        "types": [[k, type_name(k), n] for k, n in types.most_common(12)],
+        "flights": flights,
+    }
+    p = ROOT / "docs" / "stats" / "stats.json"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(out, separators=(",", ":"), ensure_ascii=False))
+    print(f"stats: {len(flights) // 5:,} routed modelled flights, {len(eff)} airlines rated for efficiency", flush=True)
+
+
+def ap_name(ap, iata):
+    for v in ap.values():
+        if v[0] == iata:
+            return v[1]
+    return iata
 
 
 def main():
@@ -131,6 +204,7 @@ def main():
         f.write(js)
     save_frame(rows, payload["ap"], t)
     write_replay(t)
+    write_stats(rows, payload["ap"], airlines, t)
     build_site.build(f.name)
     modelled = sum(1 for r in rows if len(r) > 16 and r[16])
     print(f"snapshot {time.strftime('%Y-%m-%d %H:%M UTC', time.gmtime(t))}: {len(rows):,} flights, "
