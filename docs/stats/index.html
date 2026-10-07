@@ -10,8 +10,11 @@
 <meta property="og:image:height" content="630">
 <meta property="og:site_name" content="HZN-1">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="description" content="How much jet fuel is burning in the sky right now, which airlines and aircraft burn it, the last 24 hours, and what SAF, batteries, hybrids or hydrogen could save. Updated every hour.">
+<meta property="og:description" content="How much jet fuel is burning in the sky right now, which airlines and aircraft burn it, the last 24 hours, and what SAF, batteries, hybrids or hydrogen could save. Updated every hour.">
+<link rel="canonical" href="https://raghavv-711.github.io/hzn-1/stats/">
+<meta property="og:url" content="https://raghavv-711.github.io/hzn-1/stats/">
 <title>Fuel Horizon Dashboard</title>
-<meta name="description" content="How much jet fuel is burning in the sky right now, which airlines and aircraft burn it, and what cleaner fuels or aircraft could save. Updated every hour.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
@@ -283,7 +286,8 @@ function scenarios(){
 function render(){
   const co2=S.burn*CO2/1000;
   $('lede').innerHTML='Every flight the network can see, run through a fuel model of its exact aircraft type. Recorded <strong>'+
-    when(S.t,{weekday:'long',hour:'numeric',minute:'2-digit',timeZoneName:'short'})+'</strong>; updated every hour.';
+    when(S.t,{weekday:'long',hour:'numeric',minute:'2-digit',timeZoneName:'short'})+'</strong>; updated every hour.'+
+    ((Date.now()/1000-S.t)/3600>2.5?' <strong style="color:var(--warn)">The hourly update is running late: these numbers are '+Math.round((Date.now()/1000-S.t)/3600)+' hours old.</strong>':'');
   $('tiles').innerHTML=[[fmt(S.n),'','Planes in the air'],[fmt(S.burn/1000),'t','Jet fuel burned per hour (modelled flights)'],
     [fmt(co2),'t','CO₂ released per hour'],[fmt(S.modelled/S.n*100),'%','Flights modelled by exact aircraft type']]
     .map(([v,u,k])=>'<div class="tile"><div class="v">'+v+(u?'<small>'+u+'</small>':'')+'</div><div class="k">'+k+'</div></div>').join('');

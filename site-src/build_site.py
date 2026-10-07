@@ -44,10 +44,26 @@ def rep(s, a, b):
     return s.replace(a, b)
 
 
+SITE = "https://raghavv-711.github.io/hzn-1/"
+DESCRIPTIONS = {  # what search engines and link previews show for each page
+    "globe": "Every flight in the air on a 3D globe, refreshed hourly, with an estimate of the fuel each plane has left, "
+             "its electric twin, airport boards and a 24-hour replay.",
+    "chip": "Explore HZN-1 in 3D: the layers of a concept chip that decodes aircraft broadcasts, and one real message "
+            "followed through it step by step.",
+    "model": "How accurate Fuel Horizon's fuel estimates are: a per-aircraft model checked against 126 published "
+             "fuel-burn figures, within about 5% on figures it never saw.",
+    "stats": "How much jet fuel is burning in the sky right now, which airlines and aircraft burn it, the last 24 "
+             "hours, and what SAF, batteries, hybrids or hydrogen could save. Updated every hour.",
+}
+
+
 def write(name, html):
     out = DOCS / name / "index.html"
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(HEAD + localize(html))
+    d = DESCRIPTIONS[name].replace('"', "&quot;")
+    page = (f'<meta name="description" content="{d}">\n<meta property="og:description" content="{d}">\n'
+            f'<link rel="canonical" href="{SITE}{name}/">\n<meta property="og:url" content="{SITE}{name}/">\n')
+    out.write_text(HEAD + page + localize(html))
     print(f"{out.relative_to(DOCS.parent)}  {out.stat().st_size / 1e3:.0f} kB")
 
 

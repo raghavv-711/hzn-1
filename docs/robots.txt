@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://raghavv-711.github.io/hzn-1/sitemap.xml

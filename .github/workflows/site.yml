@@ -24,8 +24,24 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    outputs:
+      deploy: ${{ steps.fresh.outputs.deploy }}
+      age_hours: ${{ steps.fresh.outputs.age_hours }}
     steps:
       - uses: actions/checkout@v4
+
+      - id: pages
+        uses: actions/configure-pages@v5
+
+      # the data in the repo is only a fallback and is usually hours old; start from what the site is serving now,
+      # so a failed refresh never replaces newer flights with older ones
+      - name: Start from the site's current data
+        continue-on-error: true
+        run: |
+          base="${{ steps.pages.outputs.base_url }}"
+          for f in globe/data.js globe/replay.json assets/globe-points.json stats/stats.json; do
+            if curl -fsS --max-time 90 -o "/tmp/live.$$" "$base/$f"; then mv "/tmp/live.$$" "docs/$f"; echo "using live $f"; fi
+          done
 
       - uses: actions/setup-python@v5
         with:
@@ -82,17 +98,29 @@ jobs:
             .fuel-horizon-cache/history.json.gz
             .fuel-horizon-cache/replay
 
-      - name: Note when the refresh failed
+      - name: Rebuild pages around the data we have
         if: steps.refresh.outcome == 'failure'
-        run: echo "::warning::Couldn't record fresh flights; deploying the data already in docs/."
+        run: |
+          echo "::warning::Couldn't record fresh flights this run; keeping the site's current data."
+          python site-src/build_site.py
 
-      - uses: actions/configure-pages@v5
+      # scheduled runs that couldn't refresh leave the site as it is; pushes still deploy (with the current data)
+      - name: Check how fresh the data is
+        id: fresh
+        run: |
+          age=$(python -c "import json,time;s=open('docs/globe/data.js').read();print(round((time.time()-json.loads(s[s.index('{'):s.rindex('}')+1])['t'])/3600,1))")
+          echo "age_hours=$age" >> "$GITHUB_OUTPUT"
+          if [ "${{ steps.refresh.outcome }}" = "failure" ] && [ "${{ github.event_name }}" != "push" ]; then echo "deploy=false" >> "$GITHUB_OUTPUT"; else echo "deploy=true" >> "$GITHUB_OUTPUT"; fi
+          echo "flight data is $age h old"
+
       - uses: actions/upload-pages-artifact@v3
+        if: steps.fresh.outputs.deploy == 'true'
         with:
           path: docs
 
   deploy:
     needs: build
+    if: needs.build.outputs.deploy == 'true'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -100,3 +128,13 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+
+  # fails (and GitHub emails the repo owner) when the site's flights are more than 6 hours old
+  stale-alert:
+    needs: build
+    if: always() && needs.build.outputs.age_hours != '' && fromJSON(needs.build.outputs.age_hours) > 6
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "::error::The site's flight data is ${{ needs.build.outputs.age_hours }} hours old: the hourly refresh keeps failing. Check the 'Record fresh flights' step of recent runs."
+          exit 1

@@ -10,6 +10,10 @@
 <meta property="og:image:height" content="630">
 <meta property="og:site_name" content="HZN-1">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="description" content="Every flight in the air on a 3D globe, refreshed hourly, with an estimate of the fuel each plane has left, its electric twin, airport boards and a 24-hour replay.">
+<meta property="og:description" content="Every flight in the air on a 3D globe, refreshed hourly, with an estimate of the fuel each plane has left, its electric twin, airport boards and a 24-hour replay.">
+<link rel="canonical" href="https://raghavv-711.github.io/hzn-1/globe/">
+<meta property="og:url" content="https://raghavv-711.github.io/hzn-1/globe/">
 <title>Fuel Horizon</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -49,7 +53,9 @@ button{font:inherit;color:inherit}
 .brand{font-weight:600;font-size:15px;letter-spacing:-.01em;display:flex;align-items:center;gap:8px;margin-right:4px;pointer-events:none;text-shadow:0 1px 6px rgba(0,0,0,.7)}
 .brand svg{width:18px;height:18px}
 .pill{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 12px;border-radius:999px;font-size:12.5px;color:var(--muted);white-space:nowrap;flex-shrink:0}
-.pill i{width:7px;height:7px;border-radius:50%;background:var(--warn)}
+.pill i{width:7px;height:7px;border-radius:50%;background:var(--good,#4fd1c5)}
+.pill.stale i{background:var(--warn)}
+.pill.stale{color:var(--text)}
 .pill b{color:var(--text);font-weight:500}
 .area{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 4px 0 12px;border-radius:999px;font-size:13px;min-width:0;max-width:min(440px,50vw);border-color:rgba(124,196,255,.45)}
 .area>svg{width:15px;height:15px;color:var(--accent);flex-shrink:0}
@@ -253,7 +259,7 @@ body.replaying #card,body.replaying #tip{display:none!important}
 <header class="top">
   <a class="brand" href="../" style="pointer-events:auto;color:inherit;text-decoration:none" aria-label="HZN-1 home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.8 3 2.8 15 0 18M12 3c-2.8 3-2.8 15 0 18"/></svg><span>Fuel Horizon</span></a>
   <div data-sitenav data-page="globe" data-collapse="auto" data-icons="false" data-align="left"></div>
-  <div class="pill glass" id="snap" title="A recorded moment of real air traffic. The live version runs on your own computer."><i></i><span id="snapTxt">Snapshot</span></div>
+  <div class="pill glass" id="snap" title="Real air traffic, recorded every hour."><i></i><span id="snapTxt">Snapshot</span></div>
   <div class="area glass" id="areaChip" hidden>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
     <span class="area-text"><b id="areaName"></b> <span id="areaKind"></span></span>
@@ -659,7 +665,9 @@ function summary(){
   let all=0,air=0,burn=0,rt=0,feas=0;
   for(const p of planes){if(p.landed)continue;all++;if(area.on&&!p.inA)continue;air++;burn+=p.burnEff;if(p.B){rt++;if(elecState(p,state.dens).feasible)feas++;}}
   const mins=Math.round((Date.now()-LOADED)/60000);
-  $('snapTxt').innerHTML='Snapshot · <b class="num">'+ct(SNAP)+'</b>'+(mins>=1?' <span class="num">+'+Math.min(mins,30)+' min</span>':'');
+  const ageH=(Date.now()-SNAP)/3.6e6,stale=ageH>2.5;$('snap').classList.toggle('stale',stale);
+  $('snap').title=stale?'The hourly update is running late, so these flights are from '+Math.round(ageH)+' hours ago.':'Real air traffic, recorded every hour.';
+  $('snapTxt').innerHTML=stale?'Data from <b class="num">'+Math.round(ageH)+' h ago</b> · '+ct(SNAP):'Snapshot · <b class="num">'+ct(SNAP)+'</b>'+(mins>=1?' <span class="num">+'+Math.min(mins,30)+' min</span>':'');
   const where=!area.on?'':area.circle?' within '+fmt(area.circle.km)+' km of '+esc(area.name):' over '+esc(area.name);
   const el=$('summary');
   if(state.mode==='fuel')el.innerHTML='<b class="num">'+fmt(air)+'</b> planes'+where+' · about <b class="num">'+fmt(burn/1000,burn<1e4?1:0)+' t</b> of fuel burned per hour';
