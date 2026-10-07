@@ -289,10 +289,11 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const lerp=(a,b,t)=>a+(b-a)*t;
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
-const utc=t=>new Date(t).toISOString().slice(11,16)+' UTC';
+const TZ='America/Chicago'; // all times shown in US Central, switching between CDT and CST automatically
+const ct=t=>new Date(t).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:TZ,timeZoneName:'short'});
 const SNAP=DATA.t*1000, LOADED=Date.now();
 const simNow=()=>SNAP+(Date.now()-LOADED);
-$('snapWhen').textContent=new Date(SNAP).toLocaleString('en-US',{dateStyle:'medium',timeStyle:'short',timeZone:'UTC'})+' UTC';
+$('snapWhen').textContent=new Date(SNAP).toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',timeZone:TZ,timeZoneName:'short'});
 
 // ---------- geometry (y = polar axis, matches three.js sphere UVs) ----------
 function vec(lat,lon,out){const phi=(90-lat)*D2R,th=(lon+180)*D2R;out=out||new THREE.Vector3();
@@ -577,7 +578,7 @@ function summary(){
   let all=0,air=0,burn=0,rt=0,feas=0;
   for(const p of planes){if(p.landed)continue;all++;if(area.on&&!p.inA)continue;air++;burn+=p.burnEff;if(p.B){rt++;if(elecState(p,state.dens).feasible)feas++;}}
   const mins=Math.round((Date.now()-LOADED)/60000);
-  $('snapTxt').innerHTML='Snapshot · <b class="num">'+utc(SNAP)+'</b>'+(mins>=1?' <span class="num">+'+Math.min(mins,30)+' min</span>':'');
+  $('snapTxt').innerHTML='Snapshot · <b class="num">'+ct(SNAP)+'</b>'+(mins>=1?' <span class="num">+'+Math.min(mins,30)+' min</span>':'');
   const where=!area.on?'':area.circle?' within '+fmt(area.circle.km)+' km of '+esc(area.name):' over '+esc(area.name);
   const el=$('summary');
   if(state.mode==='fuel')el.innerHTML='<b class="num">'+fmt(air)+'</b> planes'+where+' · about <b class="num">'+fmt(burn/1000,burn<1e4?1:0)+' t</b> of fuel burned per hour';
@@ -624,7 +625,7 @@ function cardHTML(){
   const ll=toLatLon(p.pos);const vr=p.vr>300?'▲ '+fmt(p.vr)+' ft/min':p.vr<-300?'▼ '+fmt(-p.vr)+' ft/min':'Level';
   h+='<div class="sect"><h3>At this moment</h3><dl class="dl">'+row('Height',fmt(p.alt)+' ft')+row('Speed',fmt(p.gs)+' kt · '+fmt(p.gs*1.852)+' km/h')+
     row('Climbing / descending',vr)+row('Heading',fmt(p.trk)+'°')+row('Squawk code',p.sq?esc(p.sq):'')+
-    row('Position',fmt(Math.abs(ll[0]),2)+'°'+(ll[0]>=0?'N':'S')+' '+fmt(Math.abs(ll[1]),2)+'°'+(ll[1]>=0?'E':'W'))+row('Reported at',utc(p.t0))+'</dl></div>';
+    row('Position',fmt(Math.abs(ll[0]),2)+'°'+(ll[0]>=0?'N':'S')+' '+fmt(Math.abs(ll[1]),2)+'°'+(ll[1]>=0?'E':'W'))+row('Reported at',ct(p.t0))+'</dl></div>';
   if(p.B){const fs=fuelState(p);
     h+='<div class="sect"><h3>Trip <span style="text-transform:none;letter-spacing:0">(estimated)</span></h3><dl class="dl">'+
       row('Distance',fmt(fs.flown)+' of '+fmt(p.Dk)+' km')+row('Fuel burned so far',fmt(fs.used)+' kg')+row('CO₂ released so far',fmt(fs.used*3.16/1000,1)+' t')+

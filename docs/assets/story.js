@@ -286,7 +286,7 @@ fetch('assets/globe-points.json').then(r => r.json()).then(G => {
   pointMats.flights = fm; sizePoints();
   globe.add(new THREE.Points(fg, fm)); globeMats.push([fm, 1]);
   flightCount = G.n;
-  const when = new Date(G.t * 1000).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'UTC', timeZoneName: 'short' });
+  const when = new Date(G.t * 1000).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'America/Chicago', timeZoneName: 'short' });
   const mins = Math.max(0, Math.round((Date.now() / 1000 - G.t) / 60));
   const ago = mins < 2 ? 'just now' : mins < 90 ? mins + ' min ago' : mins < 48 * 60 ? Math.round(mins / 60) + ' h ago' : 'on ' + when;
   $('globeStats').innerHTML = '<div class="stat" title="' + when + '"><b>' + fmt(G.n) + '</b><span>Flights in the air, recorded ' + ago + '</span></div>' +
