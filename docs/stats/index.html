@@ -4,6 +4,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
 <script src="../assets/analytics.js" defer></script>
+<script src="../assets/sitenav.js" defer></script>
 <meta property="og:image" content="https://raghavv-711.github.io/hzn-1/assets/og.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -107,8 +108,13 @@ svg text{font-family:var(--f-mono);font-size:11px;fill:var(--muted)}
 .compare .brow .fill{background:var(--teal)}
 .sources{padding-left:18px;margin:0;color:var(--muted);font-size:13px;display:flex;flex-direction:column;gap:4px}
 footer{display:flex;flex-direction:column;gap:8px;padding-top:22px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
+.sitebar{position:sticky;top:0;z-index:40;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px max(16px,calc((100vw - 1040px)/2 + 20px));
+  background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.sitebar .logo{display:flex;align-items:center;gap:9px;text-decoration:none;color:var(--text);font:500 14px var(--f-mono);letter-spacing:.06em}
+.sitebar .logo svg{width:22px;height:22px;color:var(--accent)}
 </style>
 
+<div class="sitebar"><a class="logo" href="../" aria-label="HZN-1 home"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="8" y="8" width="16" height="16" rx="2"/><rect x="12" y="12" width="8" height="8" rx="1"/><path d="M12 8V4M16 8V4M20 8V4M12 28v-4M16 28v-4M20 28v-4M8 12H4M8 16H4M8 20H4M28 12h-4M28 16h-4M28 20h-4"/></svg>HZN-1</a><div data-sitenav class="light-aware" data-page="stats" data-collapse="760" data-align="right"></div></div>
 <main class="wrap">
   <header>
     <div class="eyebrow"><a href="../">HZN-1</a><span>·</span><a href="../globe/">Fuel Horizon</a><span>·</span><span>Dashboard</span></div>

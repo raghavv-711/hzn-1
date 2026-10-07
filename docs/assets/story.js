@@ -65,7 +65,7 @@ const KEYS = {
   fe: { cam: [-8.2, 6.9, 3.4], tgt: [-1.6, 4.15, .3], fov: 30, ex: 1, top: 1, sway: 0 },
   globe: { cam: [0, 1.5, 25], tgt: [0, 0, 0], chip: 0, globe: 1, sway: 0, gspin: 1 },
   acc: { cam: [0, 1.5, 28], tgt: [0, 0, 0], chip: 0, globe: 1, sway: 0, gspin: 1 },
-  outro: { cam: [0, 3, 32], tgt: [0, -2, 0], chip: 0, globe: .55, sway: 0, gspin: 1 },
+  outro: { cam: [0, 3, 32], tgt: [0, -2, 0], chip: 0, globe: 0, sway: 0, gspin: 1 },  // a clean backdrop behind the cards
 };
 for (const k in KEYS) KEYS[k] = { ...BASE, ...KEYS[k] };
 const NUM = Object.keys(BASE);

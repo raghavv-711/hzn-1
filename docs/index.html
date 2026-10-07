@@ -18,6 +18,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <script src="assets/analytics.js" defer></script>
+<script src="assets/sitenav.js" defer></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
@@ -57,11 +58,6 @@ a{color:inherit}
 .logo{display:flex;align-items:center;gap:10px;text-decoration:none;font-weight:600;letter-spacing:-.01em;margin-right:auto}
 .logo svg{width:26px;height:26px;color:var(--accent)}
 .logo span{font-family:var(--f-mono);font-weight:500;font-size:14px;letter-spacing:.06em}
-.nav a.tab{font-size:14px;color:var(--muted);text-decoration:none;padding:8px 12px;border-radius:999px;transition:color .2s,background .2s}
-.nav a.tab:hover{color:var(--ink);background:rgba(255,255,255,.05)}
-.nav a.cta{font-size:14px;font-weight:500;text-decoration:none;padding:8px 14px;border-radius:999px;background:var(--ink);color:#05080c;margin-left:6px}
-.nav a.cta:hover{background:#fff}
-@media (max-width:760px){.nav a.tab{display:none}}
 
 /* progress rail */
 .rail{position:fixed;right:22px;top:50%;transform:translateY(-50%);z-index:20;display:flex;flex-direction:column;gap:4px}
@@ -92,7 +88,8 @@ body.dragging,body.dragging *{cursor:grabbing!important;user-select:none;-webkit
 .eyebrow{font:500 12px/1 var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--accent);display:flex;gap:10px;align-items:center}
 .eyebrow::before{content:"";width:22px;height:1px;background:currentColor}
 h1,h2,h3{margin:0;letter-spacing:-.035em;text-wrap:balance;font-weight:600}
-h1{font-size:clamp(46px,8.4vw,112px);line-height:.92;letter-spacing:-.05em}
+h1{font-size:clamp(40px,min(8.4vw,11.5vh),112px);line-height:.92;letter-spacing:-.05em}
+@media (max-height:720px) and (min-width:761px){.hero .copy{gap:12px}.hero .copy p{font-size:15.5px}.hint{margin-top:6px}}
 h1 em{font-style:normal;color:transparent;background:linear-gradient(100deg,var(--accent),var(--teal) 55%,var(--amber));-webkit-background-clip:text;background-clip:text}
 h2{font-size:clamp(30px,4.2vw,50px);line-height:1.02}
 .copy p{margin:0;color:var(--muted);font-size:17px;max-width:42ch}
@@ -107,6 +104,15 @@ h2{font-size:clamp(30px,4.2vw,50px);line-height:1.02}
 .hint .touch{display:none}
 @media (pointer:coarse){.hint .mouse{display:none}.hint .touch{display:inline}}
 
+.quick{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:6px;width:min(640px,calc(100vw - 40px))}
+.quick a{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:14px;text-decoration:none;background:rgba(10,16,24,.62);border:1px solid var(--line);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);transition:border-color .2s,transform .2s,background .2s;min-width:0}
+.quick a:hover{border-color:rgba(124,196,255,.5);background:rgba(18,28,42,.8);transform:translateY(-2px)}
+.quick svg{width:20px;height:20px;color:var(--accent);flex-shrink:0}
+.quick span{display:flex;flex-direction:column;gap:3px;min-width:0}
+.quick b{font-weight:500;font-size:14px;white-space:nowrap}
+.quick small{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:860px){.quick{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .legend{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 14px;padding:0;margin:0;list-style:none;font-size:13.5px;color:var(--muted)}
 .legend li{display:flex;align-items:center;gap:8px;min-width:0}
 .legend i{width:9px;height:9px;border-radius:2px;flex-shrink:0}
@@ -186,16 +192,13 @@ footer a{color:var(--muted)}
 <div id="labels" aria-hidden="true"></div>
 <div class="bar" id="bar"></div>
 
-<nav class="nav" aria-label="Site">
+<header class="nav">
   <a class="logo" href="./" aria-label="HZN-1 home">
     <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="8" y="8" width="16" height="16" rx="2"/><rect x="12" y="12" width="8" height="8" rx="1"/><path d="M12 8V4M16 8V4M20 8V4M12 28v-4M16 28v-4M20 28v-4M8 12H4M8 16H4M8 20H4M28 12h-4M28 16h-4M28 20h-4"/></svg>
     <span>HZN-1</span>
   </a>
-  <a class="tab" href="chip/">Chip explorer</a>
-  <a class="tab" href="stats/">Dashboard</a>
-  <a class="tab" href="model/">Model check</a>
-  <a class="cta" href="globe/">Open the globe</a>
-</nav>
+  <div data-sitenav data-page="home" data-collapse="860" data-align="right"></div>
+</header>
 <div class="rail" id="rail" aria-label="Chapters"></div>
 
 <main>
@@ -205,6 +208,12 @@ footer a{color:var(--muted)}
       <h1>A chip that <em>listens to the sky.</em></h1>
       <p>Every airliner broadcasts who and where it is, several times a second. <strong>HZN-1</strong> hears those signals, decodes them, and estimates how much fuel each plane has left. Scroll to take it apart.</p>
       <ul class="specs"><li><b>Process</b>SKY130 · 130 nm</li><li><b>Die</b>3 × 3 mm</li><li><b>Clock</b>50 MHz</li><li><b>Tracks</b>1,024 planes</li></ul>
+      <div class="quick" aria-label="Jump straight to">
+        <a href="globe/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.8 3 2.8 15 0 18M12 3c-2.8 3-2.8 15 0 18"/></svg><span><b>Globe</b><small>Every flight now</small></span></a>
+        <a href="stats/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span><b>Dashboard</b><small>Fuel &amp; CO₂</small></span></a>
+        <a href="chip/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5 9-5z"/><path d="m3 13 9 5 9-5"/></svg><span><b>Chip</b><small>Explore in 3D</small></span></a>
+        <a href="model/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg><span><b>Model check</b><small>How accurate</small></span></a>
+      </div>
       <div class="hint"><i></i><span class="mouse">Scroll to open it up · drag or swipe sideways to spin it</span><span class="touch">Swipe up to open it up · drag sideways to spin</span></div>
     </div>
   </section>
@@ -295,6 +304,6 @@ footer a{color:var(--muted)}
 <noscript><div class="noscript">The 3D chip needs JavaScript. You can still open the <a href="globe/">globe</a>, <a href="chip/">chip explorer</a> or <a href="model/">model check</a>.</div></noscript>
 
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"}}</script>
-<script type="module" src="assets/story.js?v=5"></script>
+<script type="module" src="assets/story.js?v=6"></script>
 </body>
 </html>

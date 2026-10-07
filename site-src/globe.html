@@ -31,6 +31,9 @@ button{font:inherit;color:inherit}
 
 .top{position:fixed;top:calc(16px + env(safe-area-inset-top,0px));left:16px;right:16px;display:flex;align-items:center;gap:10px;pointer-events:none}
 .top>*{pointer-events:auto}
+/* nothing in the top row squeezes; when it gets crowded the site tabs fold into their menu button instead */
+.top>.brand,.top>.pill,.top>.sn,.top>.about-btn,.top>#infoBtn{flex-shrink:0;white-space:nowrap}
+.top>.area{min-width:180px}
 .brand{font-weight:600;font-size:15px;letter-spacing:-.01em;display:flex;align-items:center;gap:8px;margin-right:4px;pointer-events:none;text-shadow:0 1px 6px rgba(0,0,0,.7)}
 .brand svg{width:18px;height:18px}
 .pill{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 12px;border-radius:999px;font-size:12.5px;color:var(--muted);white-space:nowrap;flex-shrink:0}
@@ -211,6 +214,7 @@ body.replaying #card,body.replaying #tip{display:none!important}
   .top{flex-wrap:wrap}
   .area{max-width:none;flex:1 1 100%}
   .spacer{display:none}
+  .brand{display:none}
   #infoBtn{margin-left:auto}
   .search{order:6;flex:1 1 100%;min-width:0}
   .search input{width:100%}
@@ -236,6 +240,7 @@ body.replaying #card,body.replaying #tip{display:none!important}
 
 <header class="top">
   <div class="brand"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.8 3 2.8 15 0 18M12 3c-2.8 3-2.8 15 0 18"/></svg><span>Fuel Horizon</span></div>
+  <div data-sitenav data-page="globe" data-collapse="auto" data-icons="false" data-align="left"></div>
   <div class="pill glass" id="snap" title="A recorded moment of real air traffic. The live version runs on your own computer."><i></i><span id="snapTxt">Snapshot</span></div>
   <div class="area glass" id="areaChip" hidden>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>

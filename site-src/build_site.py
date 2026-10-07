@@ -17,6 +17,7 @@ HEAD = ('<!doctype html>\n<html lang="en">\n<meta charset="utf-8">\n'
         '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n'
         '<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">\n'
         '<script src="../assets/analytics.js" defer></script>\n'
+        '<script src="../assets/sitenav.js" defer></script>\n'
         + ''.join(f'<meta {k}="{n}" content="{v}">\n' for k, n, v in [
             ("property", "og:image", "https://raghavv-711.github.io/hzn-1/assets/og.jpg"),
             ("property", "og:image:width", "1200"), ("property", "og:image:height", "630"),

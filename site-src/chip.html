@@ -35,8 +35,8 @@ button{font:inherit;color:inherit}
 .brand h1{margin:0;font-size:17px;font-weight:600;letter-spacing:-.01em;line-height:1.2;text-shadow:0 1px 8px rgba(0,0,0,.9)}
 .brand p{text-shadow:0 1px 6px rgba(0,0,0,.9)}
 .brand p{margin:0;font-size:12.5px;color:var(--muted)}
-.top a{pointer-events:auto;margin-left:auto;font-size:12.5px;color:var(--accent);text-decoration:none;padding:7px 12px;border-radius:999px}
-.top a:hover{text-decoration:underline}
+.top>a.glass{pointer-events:auto;margin-left:auto;font-size:12.5px;color:var(--accent);text-decoration:none;padding:7px 12px;border-radius:999px}
+.top>a.glass:hover{text-decoration:underline}
 
 .tabs{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:flex;gap:2px;padding:4px;border-radius:12px}
 .tabs button{all:unset;cursor:pointer;padding:8px 16px;border-radius:9px;font-size:13.5px;color:var(--muted);white-space:nowrap}
@@ -130,7 +130,7 @@ table.tt td.ex{color:var(--muted)}
     <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="8" y="8" width="16" height="16" rx="2"/><rect x="12" y="12" width="8" height="8" rx="1"/><path d="M12 8V4M16 8V4M20 8V4M12 28v-4M16 28v-4M20 28v-4M8 12H4M8 16H4M8 20H4M28 12h-4M28 16h-4M28 20h-4"/></svg>
     <div><h1>Inside HZN-1</h1><p>A look inside the chip behind Fuel Horizon</p></div>
   </div>
-  <a href="https://claude.ai/artifact/BPyUVxays1xfAfQw4hxFaD" target="_blank" rel="noopener" class="glass">Fuel Horizon ↗</a>
+  <div data-sitenav data-page="chip" data-collapse="1000" data-align="right" style="margin-left:auto"></div>
 </header>
 
 <aside class="panel glass" id="panel" aria-live="polite"></aside>
