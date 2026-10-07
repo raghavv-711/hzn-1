@@ -96,6 +96,17 @@ button{font:inherit;color:inherit}
 .results small{color:var(--muted);font-weight:400;margin-left:4px}
 .card-head .cs{font-size:20px;font-weight:600;letter-spacing:-.01em;line-height:1.1}
 .card .airline{font-size:13px;margin-top:4px}
+.board{gap:10px}
+.btabs{align-self:flex-start}
+.blist{display:flex;flex-direction:column;margin:0 -8px;overflow-y:auto;min-height:0;max-height:min(52vh,460px)}
+.brow{all:unset;cursor:pointer;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;padding:8px;border-radius:8px}
+.brow:hover,.brow:focus-visible{background:rgba(255,255,255,.06)}
+.brow .b1{display:flex;flex-direction:column;min-width:0}
+.brow .b1 b{font-weight:500;font-size:13.5px}
+.brow small{font-size:11.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.brow .b2{display:flex;flex-direction:column;align-items:flex-end;font-size:13px}
+.brow .b3{grid-column:1/-1;font-size:11.5px;color:var(--muted)}
+.board .note{margin:8px;font-size:13px;color:var(--muted)}
 .card-head .sub{color:var(--muted);font-size:12.5px;margin-top:3px}
 .card-head .icon-btn{margin:-6px -8px 0 auto;width:30px;height:30px}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
@@ -257,6 +268,7 @@ body.replaying #card,body.replaying #tip{display:none!important}
 </div>
 
 <aside class="card glass" id="card" hidden aria-live="polite"></aside>
+<aside class="card glass board" id="board" hidden aria-label="Airport board"></aside>
 
 <aside class="key glass" id="key" data-collapsed="false" aria-label="Color key">
   <div class="key-head"><b>Key <span id="keyMode">· Fuel</span></b>
@@ -522,17 +534,17 @@ function drawArea(){
 function setArea(id){
   const sh=DATA.areas.shapes[id],ci=DATA.areas.circles[id],meta=DATA.areas.index.find(x=>x[0]===id);if(!meta)return;
   const [,kind,name,detail]=meta;
-  area.on=true;area.id=id;area.kind=kind;area.name=kind==='Airport'?name.split(' · ')[0]:name;
+  area.on=true;area.id=id;area.kind=kind;area.full=name;area.name=kind==='Airport'?name.split(' · ')[0]:name;
   area.circle=ci?{v:vec(ci[0],ci[1]),km:ci[2]}:null;area.rings=[];
   if(sh)for(const poly of sh.p)for(const r of poly){let a=1e9,b=-1e9,c=1e9,d=-1e9;for(const [x,y] of r){if(x<a)a=x;if(x>b)b=x;if(y<c)c=y;if(y>d)d=y;}area.rings.push({pts:r,minX:a,maxX:b,minY:c,maxY:d});}
   $('areaName').textContent=name;$('areaKind').textContent=ci?'':'· '+(detail?detail.split(',')[0]:kind);
   $('areaRadiusWrap').hidden=!ci;if(ci)$('areaRadius').value=String(ci[2]);
-  $('areaChip').hidden=false;refreshArea();drawArea();
-  if(state.sel&&!state.sel.inA)select(null);else{recolor();summary();}
+  $('areaChip').hidden=false;refreshArea();drawArea();board.tab='arr';
+  if(state.sel&&!state.sel.inA)select(null);else{recolor();summary();renderCard();}
   const center=ci?[ci[0],ci[1]]:sh.c,ext=ci?ci[2]:sh.e;flyTo(vec(center[0],center[1]),1+clamp(ext*2.6*fitScale()/R_E,.05,2.5));
   setHash('area/'+id);
 }
-function clearArea(){area.on=false;area.id=null;area.circle=null;area.rings=[];if(/^#area\//.test(location.hash))setHash('');$('areaChip').hidden=true;drawArea();refreshArea();recolor();summary();}
+function clearArea(){area.on=false;area.id=null;area.kind=null;area.circle=null;area.rings=[];$('board').hidden=true;if(/^#area\//.test(location.hash))setHash('');$('areaChip').hidden=true;drawArea();refreshArea();recolor();summary();renderCard();}
 $('areaClear').addEventListener('click',clearArea);
 $('areaRadius').addEventListener('change',()=>{if(!area.circle)return;area.circle.km=+$('areaRadius').value;refreshArea();drawArea();recolor();summary();
   flyTo(area.circle.v.clone(),1+clamp(area.circle.km*2.6*fitScale()/R_E,.05,2.5));});
@@ -671,12 +683,42 @@ function cardHTML(){
     '<div class="foot">'+(p.hist?'The bright line behind it is where it actually flew.':p.B?'The line behind it is estimated from its route.':'No route on file.')+'</div>';
   return h;
 }
+// ---------- airport board: every flight in the air heading to or from the chosen airport ----------
+const board={tab:'arr'};
+function fuelAtArrival(p){ // what should be left in the tanks on landing (reserves plus any margin)
+  if(p.fm&&p.fm[0])return Math.max(0,p.fm[0]-Math.min(p.fm[0],usedAt(p,p.Dk)));
+  return Math.max(0,p.planned-p.burnEff*(p.Dk/p.ck+OVH_TO));}
+function renderBoard(){
+  const el=$('board'),show=area.on&&area.kind==='Airport'&&!state.sel&&!(typeof RP!=='undefined'&&RP.on);
+  if(!show){el.hidden=true;document.body.classList.toggle('card-open',!!state.sel);return;}
+  const code=area.id.split(':')[1],now=simNow();
+  const arr=planes.filter(p=>!p.landed&&p.B&&AP[p.d][0]===code).map(p=>({p,eta:p.rem/(Math.max(p.gs,150)*1.852)})).sort((a,b)=>a.eta-b.eta);
+  const dep=planes.filter(p=>!p.landed&&p.B&&AP[p.o][0]===code).map(p=>({p,ago:Math.max(0,p.Dk-p.rem)/(Math.max(p.gs,150)*1.852)})).sort((a,b)=>a.ago-b.ago);
+  const rows=board.tab==='arr'?arr:dep;
+  const row=x=>{const p=x.p,other=board.tab==='arr'?AP[p.o]:AP[p.d];
+    const when=board.tab==='arr'?'<b class="num">'+ct(now+x.eta*3.6e6)+'</b><small>in '+dur(x.eta)+'</small>':'<b class="num">'+Math.round(clamp(1-p.rem/p.Dk,0,1)*100)+'%</b><small>'+dur(x.ago)+' ago</small>';
+    const extra=board.tab==='arr'?fmt(fuelAtArrival(p)/1000,1)+' t at landing':(p.type||CLS[p.cls]);
+    return '<button class="brow" data-hex="'+p.hex+'"><span class="b1"><b>'+esc(p.cs||p.hex.toUpperCase())+'</b><small>'+(board.tab==='arr'?'from ':'to ')+esc(other[0])+' · '+esc(other[1])+'</small></span>'+
+      '<span class="b2">'+when+'</span><span class="b3">'+esc(extra)+'</span></button>';};
+  const st=el.querySelector('.blist')?el.querySelector('.blist').scrollTop:0;
+  el.innerHTML='<div class="card-head"><div><div class="cs">'+esc(code)+'</div><div class="sub">'+esc((area.full||'').replace(/^[A-Z0-9]{3,4} · /,''))+'</div></div>'+
+    '<button class="icon-btn" id="boardClose" aria-label="Close airport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>'+
+    '<div class="seg btabs" role="tablist"><button role="tab" data-tab="arr" aria-selected="'+(board.tab==='arr')+'" aria-pressed="'+(board.tab==='arr')+'">Arriving · '+arr.length+'</button>'+
+    '<button role="tab" data-tab="dep" aria-selected="'+(board.tab==='dep')+'" aria-pressed="'+(board.tab==='dep')+'">Departed · '+dep.length+'</button></div>'+
+    '<div class="blist">'+(rows.length?rows.slice(0,80).map(row).join(''):'<p class="note">'+(board.tab==='arr'?'No flights on file are heading here right now.':'No flights on file left here in the last few hours.')+'</p>')+'</div>'+
+    '<div class="foot">Flights in the air with a known route. Times are estimates from current speed, in Central time.</div>';
+  el.hidden=false;document.body.classList.add('card-open');el.querySelector('.blist').scrollTop=st;
+  $('boardClose').addEventListener('click',clearArea);
+  el.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>{board.tab=b.dataset.tab;renderBoard();}));
+  el.querySelectorAll('.brow').forEach(b=>b.addEventListener('click',()=>{const p=byHex.get(b.dataset.hex);if(p)select(p,true);}));
+}
 function renderCard(){
-  document.body.classList.toggle('card-open',!!state.sel);
+  renderBoard();
+  document.body.classList.toggle('card-open',!!state.sel||!$('board').hidden);
   if(!state.sel){card.hidden=true;return;}
   const st=card.scrollTop;card.hidden=false;card.innerHTML=cardHTML();card.scrollTop=st;
   $('closeCard').addEventListener('click',()=>select(null));
-  $('copyLink').addEventListener('click',async e=>{const url=location.origin+location.pathname+'#flight/'+encodeURIComponent(p.cs||p.hex),btn=e.currentTarget;
+  $('copyLink').addEventListener('click',async e=>{const p=state.sel;if(!p)return;const url=location.origin+location.pathname+'#flight/'+encodeURIComponent(p.cs||p.hex),btn=e.currentTarget;
     try{await navigator.clipboard.writeText(url);btn.querySelector('span').textContent='Link copied';}catch(err){prompt('Copy this link',url);}
     setTimeout(()=>{if(btn.isConnected)btn.querySelector('span').textContent='Copy link to this flight';},2000);});
 }
@@ -837,7 +879,7 @@ function setPlaying(on){RP.playing=on&&RP.frames&&RP.frames.length>1;$('rpPlay')
   $('rpIcon').setAttribute('d',RP.playing?'M7 5h4v14H7zM13 5h4v14h-4z':'M7 5l12 7-12 7z');RP.last=performance.now();}
 async function openReplay(){
   RP.on=true;document.body.classList.add('replaying');$('replay').hidden=false;placeReplay();$('replayBtn').setAttribute('aria-pressed','true');
-  select(null);ptsObj.visible=false;trails.visible=false;rObj.visible=true;
+  select(null);renderCard();ptsObj.visible=false;trails.visible=false;rObj.visible=true;
   if(!RP.frames&&!RP.loading){RP.loading=true;
     try{const d=await (await fetch(REPLAY_URL)).json();RP.frames=(d.frames||[]).sort((a,b)=>a.t-b.t);RP.frames.forEach(rPrep);}catch(e){RP.frames=[];}
     RP.loading=false;
@@ -849,7 +891,7 @@ async function openReplay(){
   if(!RP.on)return;replayDraw();summary();
 }
 function closeReplay(){RP.on=false;setPlaying(false);document.body.classList.remove('replaying');$('replay').hidden=true;$('replayBtn').setAttribute('aria-pressed','false');
-  rObj.visible=false;ptsObj.visible=true;applyTrails();summary();}
+  rObj.visible=false;ptsObj.visible=true;applyTrails();summary();renderCard();}
 // keep the timeline just above the bottom bar, whose height changes as it wraps on narrow screens
 const barEl=document.querySelector('.bar');
 const placeReplay=()=>{$('replay').style.bottom=Math.round(innerHeight-barEl.getBoundingClientRect().top+10)+'px';};
@@ -888,7 +930,7 @@ function frame(t){
     if(p){tip.hidden=false;tip.style.left=ptr[0]+'px';tip.style.top=ptr[1]+'px';tip.innerHTML=esc(p.cs)+' <span>'+esc(p.B?AP[p.o][0]+' → '+AP[p.d][0]:(p.type||CLS[p.cls]))+' · tap for details</span>';}else tip.hidden=true;}
   if(t-lastCity>200){lastCity=t;updateCities();}
   placeLabels();
-  if(t-lastSlow>1000){lastSlow=t;if(area.on)refreshArea();recolor();summary();if(state.sel){renderCard();if(state.sel.B)buildRoute();}}
+  if(t-lastSlow>1000){lastSlow=t;if(area.on)refreshArea();recolor();summary();if(state.sel){renderCard();if(state.sel.B)buildRoute();}else if(area.on&&area.kind==='Airport')renderBoard();}
   renderer.render(scene,camera);
   requestAnimationFrame(frame);
 }
