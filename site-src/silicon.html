@@ -1,0 +1,357 @@
+<title>HZN-1 Real Silicon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* One report column: what's real, the layout, the checker running in the browser, the tests, how it works, what's next */
+:root{
+  --bg:#070b11; --surface:#0d141d; --raise:#121b27; --line:rgba(146,176,208,.16); --line-strong:rgba(146,176,208,.3);
+  --text:#e6edf5; --muted:#8c9bad; --faint:#5f6d7e;
+  --accent:#7cc4ff; --amber:#f5b041; --good:#4fd1c5; --bad:#ff6b6b; --violet:#b69cff;
+  --f-sans:"Geist",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"Geist Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.55 var(--f-sans);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1000px;margin:0 auto;padding:48px 20px 72px;display:flex;flex-direction:column;gap:64px}
+a{color:var(--accent);text-underline-offset:3px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+h1,h2{margin:0;letter-spacing:-.022em;text-wrap:balance;font-family:"Bricolage Grotesque",Geist,ui-sans-serif,system-ui,sans-serif;font-optical-sizing:auto;font-weight:700}
+h1{font-size:clamp(30px,5vw,48px);line-height:1.08;max-width:20ch}
+h2{font-size:24px;line-height:1.2}
+p{margin:0;max-width:68ch}
+.eyebrow{font:500 12px/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.eyebrow a{color:var(--accent);text-decoration:none}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+header{display:flex;flex-direction:column;gap:18px}
+.lede{font-size:17px;color:var(--muted);max-width:64ch}
+.lede strong{color:var(--text);font-weight:500}
+.real{display:inline-flex;align-items:center;gap:8px;align-self:flex-start;padding:6px 12px;border-radius:999px;font:500 12.5px/1 var(--f-mono);letter-spacing:.04em;
+  color:var(--good);background:rgba(79,209,197,.1);border:1px solid rgba(79,209,197,.3)}
+.real i{width:7px;height:7px;border-radius:50%;background:var(--good);box-shadow:0 0 10px var(--good)}
+
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.stat{padding:18px 20px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.stat+.stat{border-left:1px solid var(--line)}
+.stat .v{font:600 28px/1 var(--f-mono);font-variant-numeric:tabular-nums;letter-spacing:-.03em}
+.stat .v small{font-size:15px;color:var(--muted);font-weight:500;letter-spacing:0}
+.stat .k{font-size:13px;color:var(--muted);line-height:1.4}
+@media (max-width:760px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.stat:nth-child(3){border-left:0}.stat:nth-child(n+3){border-top:1px solid var(--line)}}
+
+section{display:flex;flex-direction:column;gap:16px}
+.sec-head{display:flex;flex-direction:column;gap:8px}
+.sec-head p{color:var(--muted);font-size:15px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px}
+.links{display:flex;gap:10px;flex-wrap:wrap}
+.btn{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:8px;padding:9px 15px;border-radius:999px;font-size:14px;font-weight:500;background:var(--text);color:#06121c;white-space:nowrap}
+.btn.ghost{background:none;color:var(--text);border:1px solid var(--line-strong)}
+.btn:hover{filter:brightness(1.08)}.btn.ghost:hover{background:rgba(255,255,255,.05)}
+.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn svg{width:15px;height:15px}
+
+/* the layout picture, with a magnifier */
+.layout{position:relative;margin:0;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:#0b3d5c;touch-action:pan-y;cursor:zoom-in;
+  box-shadow:0 0 0 1px rgba(124,196,255,.05),0 30px 80px -30px rgba(124,196,255,.35)}
+.layout img{display:block;width:100%;height:auto}
+.lens{position:absolute;width:210px;height:210px;border-radius:50%;pointer-events:none;border:2px solid rgba(232,238,245,.85);box-shadow:0 12px 40px rgba(0,0,0,.55);
+  background:#0b3d5c url(layout.png) no-repeat;opacity:0;transform:translate(-50%,-50%) scale(.85);transition:opacity .15s,transform .15s}
+.layout.on .lens{opacity:1;transform:translate(-50%,-50%) scale(1)}
+.layout .tag{position:absolute;left:12px;bottom:12px;padding:6px 10px;border-radius:8px;background:rgba(7,11,17,.78);font:500 12px/1.3 var(--f-mono);color:var(--muted);backdrop-filter:blur(6px)}
+.layout .tag b{color:var(--text);font-weight:500}
+@media (hover:none){.layout{cursor:default}}
+.cap{font-size:13.5px;color:var(--muted);max-width:76ch}
+
+/* the checker, running in the browser */
+.sim{display:flex;flex-direction:column;gap:16px}
+.sim-top{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center}
+.seg{display:inline-flex;flex-wrap:wrap;padding:3px;border-radius:10px;background:var(--raise);border:1px solid var(--line);gap:2px}
+.seg button{all:unset;cursor:pointer;padding:7px 12px;border-radius:7px;font-size:13px;color:var(--muted);white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.seg button:focus-visible{outline:2px solid var(--accent)}
+.bits{display:grid;grid-template-columns:repeat(28,minmax(0,1fr));gap:3px}
+@media (max-width:640px){.bits{grid-template-columns:repeat(14,minmax(0,1fr))}}
+.bit{all:unset;cursor:pointer;aspect-ratio:1/1.25;border-radius:4px;display:grid;place-items:center;font:500 11px/1 var(--f-mono);color:var(--muted);
+  background:color-mix(in srgb,var(--f) 10%,var(--raise));border-bottom:2px solid color-mix(in srgb,var(--f) 70%,transparent);transition:background .12s,color .12s,transform .12s}
+.bit.one{color:var(--text);background:color-mix(in srgb,var(--f) 26%,var(--raise))}
+.bit.cur{transform:translateY(-3px);background:var(--f);color:#06121c}
+.bit.flip{outline:2px solid var(--bad);outline-offset:-2px;color:var(--bad)}
+.bit:hover{filter:brightness(1.3)}
+.bit:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.fields{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
+.fields span{display:inline-flex;align-items:center;gap:6px}
+.fields i{width:10px;height:10px;border-radius:3px;background:var(--f)}
+.sim-mid{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:end}
+@media (max-width:760px){.sim-mid{grid-template-columns:minmax(0,1fr)}}
+.reg-wrap{display:flex;flex-direction:column;gap:8px;min-width:0}
+.lbl{font:500 11.5px/1 var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
+.reg{display:grid;grid-template-columns:repeat(24,minmax(0,1fr));gap:3px;max-width:560px}
+.reg i{height:22px;border-radius:3px;background:var(--raise);border:1px solid var(--line);transition:background .08s}
+.reg i.one{background:var(--amber);border-color:transparent;box-shadow:0 0 8px rgba(245,176,65,.45)}
+.pins{display:flex;gap:8px;flex-wrap:wrap}
+.pin{display:flex;align-items:center;gap:7px;padding:7px 11px;border-radius:999px;border:1px solid var(--line);font:500 12px/1 var(--f-mono);color:var(--faint);transition:color .2s,border-color .2s,background .2s}
+.pin i{width:8px;height:8px;border-radius:50%;background:var(--raise);transition:background .2s,box-shadow .2s}
+.pin.on{color:var(--text);border-color:var(--line-strong)}
+.pin.on i{background:var(--c);box-shadow:0 0 10px var(--c)}
+.pin.ok.on{background:rgba(79,209,197,.1);border-color:rgba(79,209,197,.45)}
+.pin.bad.on{background:rgba(255,107,107,.1);border-color:rgba(255,107,107,.45)}
+.sim-bot{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;align-items:center;border-top:1px solid var(--line);padding-top:14px}
+.read{display:flex;gap:22px;flex-wrap:wrap}
+.read div{display:flex;flex-direction:column;gap:5px}
+.read b{font:500 18px/1 var(--f-mono);font-variant-numeric:tabular-nums;color:var(--text)}
+.say{font-size:14px;color:var(--muted);min-height:21px}
+.say strong{color:var(--text);font-weight:500}
+
+/* tests */
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{font:500 11.5px/1 var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--faint);text-align:left;padding:0 12px 10px}
+td{padding:12px;border-top:1px solid var(--line);vertical-align:top}
+td:first-child{color:var(--text)}
+td.p{white-space:nowrap;font:500 12.5px/1.5 var(--f-mono);color:var(--good)}
+td .d{color:var(--muted);font-size:13.5px}
+.tbl{overflow-x:auto}
+@media (max-width:640px){th.hide,td.hide{display:none}}
+
+/* how it works */
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+@media (max-width:820px){.two{grid-template-columns:minmax(0,1fr)}}
+.two p+p{margin-top:12px}
+.two p{color:var(--muted)}
+.two p strong{color:var(--text);font-weight:500}
+pre{margin:0;padding:16px;border-radius:12px;background:#05080d;border:1px solid var(--line);overflow-x:auto;font:13px/1.6 var(--f-mono);color:#c7d3e0}
+pre .c{color:var(--faint)}pre .k{color:var(--violet)}pre .n{color:var(--amber)}
+.pinout{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:13.5px;margin-top:14px}
+.pinout dt{font-family:var(--f-mono);color:var(--accent)}
+.pinout dd{margin:0;color:var(--muted)}
+
+.next{border:1px solid var(--line);border-radius:14px;padding:22px;display:flex;flex-direction:column;gap:12px;
+  background:radial-gradient(120% 140% at 0% 0%,rgba(124,196,255,.08),transparent 60%),var(--surface)}
+.next p{color:var(--muted)}
+footer{border-top:1px solid var(--line);padding-top:22px;display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+footer b{color:var(--text);font-weight:500}
+
+.reveal{opacity:0;transform:translateY(18px);transition:opacity .8s cubic-bezier(.2,.7,.2,1),transform .8s cubic-bezier(.2,.7,.2,1)}
+.reveal.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}.bit,.reg i,.lens{transition:none}}
+
+.sitebar{position:sticky;top:0;z-index:40;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px max(16px,calc((100vw - 1040px)/2 + 20px));
+  background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.sitebar .logo{display:flex;align-items:center;gap:11px;text-decoration:none;color:var(--text);font:500 16px var(--f-mono);letter-spacing:.06em}
+.sitebar .logo svg{width:34px;height:34px;color:var(--accent);filter:drop-shadow(0 0 8px rgba(124,196,255,.3))}
+</style>
+
+<div class="sitebar"><a class="logo" href="../" aria-label="HZN-1 home"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="7" y="7" width="18" height="18" rx="4"/><path d="M12 7V4M16 7V4M20 7V4M12 28v-3M16 28v-3M20 28v-3M7 12H4M7 16H4M7 20H4M28 12h-3M28 16h-3M28 20h-3"/><path d="M9.5 20.5h13" stroke-linecap="round"/><path d="M13 20.5a3 3 0 0 1 6 0M10.5 20.5a5.5 5.5 0 0 1 11 0" stroke-linecap="round"/><circle cx="16" cy="20.5" r="1.7" fill="currentColor" stroke="none"/></svg>HZN-1</a><div data-sitenav data-page="silicon" data-collapse="860" data-align="right"></div></div>
+<main class="wrap">
+  <header>
+    <div class="eyebrow"><a href="../">HZN-1</a><span>·</span><span>Real silicon</span></div>
+    <h1>One piece of HZN-1, built as a real chip layout</h1>
+    <p class="lede">Most of HZN-1 is a concept. <strong>This block is real.</strong> It's the checker that throws away damaged aircraft broadcasts, written in Verilog, tested on real ADS-B messages and turned into a layout for SkyWater's 130 nm chip process.</p>
+    <span class="real"><i></i>Passes Tiny Tapeout's precheck · not yet fabricated</span>
+    <div class="stats">
+      <div class="stat"><span class="v">161×112<small> µm</small></span><span class="k">About as wide as two human hairs</span></div>
+      <div class="stat"><span class="v">321</span><span class="k">Logic cells, including 73 flip-flops</span></div>
+      <div class="stat"><span class="v">6<small>/6</small></span><span class="k">Tests pass on the design and on the finished netlist</span></div>
+      <div class="stat"><span class="v">0</span><span class="k">Layout-rule, wiring-match or timing errors</span></div>
+    </div>
+  </header>
+
+  <section class="reveal" aria-labelledby="h-layout">
+    <div class="sec-head"><h2 id="h-layout">The layout</h2>
+      <p>This is the actual layout a fab would build from, drawn from the GDS file. Hover over it (or press and drag) to look closer.</p></div>
+    <figure class="layout" id="layout">
+      <img src="layout.png" width="1610" height="1116" alt="Chip layout of the HZN-1 CRC checker: rows of colored logic cells packed toward the top, with regular filler rows below and input and output wires along the top edge" decoding="async">
+      <div class="lens" aria-hidden="true"></div>
+      <span class="tag"><b>tt_um_raghavv711_hzn1_crc</b> · SKY130</span>
+    </figure>
+    <p class="cap">Each colored block is one logic cell from SkyWater's library. They're packed near the top edge, where the pins are. The even pattern below is filler and power taps: the checker only needs about a third of its tile. The thin lines across the top are the 24 input and output wires.</p>
+    <div class="links">
+      <a class="btn" href="https://raghavv-711.github.io/hzn-1-silicon/" target="_blank" rel="noopener">Open the 3D viewer <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+      <a class="btn ghost" href="https://github.com/raghavv-711/hzn-1-silicon" target="_blank" rel="noopener">Source and test runs on GitHub <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+    </div>
+  </section>
+
+  <section class="reveal" aria-labelledby="h-try">
+    <div class="sec-head"><h2 id="h-try">Run the checker</h2>
+      <p>Pick a real message and press Run. Your browser takes the same steps the chip does: one bit per tick. Click any bit to flip it, then run again.</p></div>
+    <div class="panel sim">
+      <div class="sim-top">
+        <div class="seg" id="msgs" role="group" aria-label="Message"></div>
+        <div class="links">
+          <button class="btn" id="run" type="button">Run</button>
+          <button class="btn ghost" id="flip" type="button">Flip a random bit</button>
+          <button class="btn ghost" id="reset" type="button">Reset</button>
+        </div>
+      </div>
+      <div class="bits" id="bits" role="group" aria-label="Message bits; activate a bit to flip it"></div>
+      <div class="fields" id="fields"></div>
+      <div class="sim-mid">
+        <div class="reg-wrap"><span class="lbl">24-bit remainder register</span><div class="reg" id="reg"></div></div>
+        <div class="pins" id="pins"></div>
+      </div>
+      <div class="sim-bot">
+        <div class="read">
+          <div><span class="lbl">Bits</span><b id="r-n">0</b></div>
+          <div><span class="lbl">ICAO address</span><b id="r-icao">------</b></div>
+          <div><span class="lbl">Syndrome</span><b id="r-syn">000000</b></div>
+        </div>
+        <p class="say" id="say" aria-live="polite">Ready.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="reveal" aria-labelledby="h-tests">
+    <div class="sec-head"><h2 id="h-tests">The tests</h2>
+      <p>Each test runs twice on GitHub: once on the Verilog, and again on the finished netlist of SkyWater logic cells, the version a fab would build.</p></div>
+    <div class="panel tbl">
+      <table>
+        <thead><tr><th>Test</th><th class="hide">What it shows</th><th>Design</th><th>Netlist</th></tr></thead>
+        <tbody>
+          <tr><td>KLM1023<div class="d">8D4840D6202CC371C32CE0576098</div></td><td class="hide d">The message the HZN-1 story follows passes, and the chip reads back its ICAO address 4840D6</td><td class="p">✓ pass</td><td class="p">✓ pass</td></tr>
+          <tr><td>Six real broadcasts</td><td class="hide d">Identification, position and velocity messages from real aircraft all pass</td><td class="p">✓ pass</td><td class="p">✓ pass</td></tr>
+          <tr><td>Short message</td><td class="hide d">A 56-bit reply is recognized as short from its first bit and checked over 56 bits</td><td class="p">✓ pass</td><td class="p">✓ pass</td></tr>
+          <tr><td>Every single-bit flip</td><td class="hide d">Flip any one of KLM1023's bits and the chip says BAD, with the same syndrome as the model</td><td class="p">✓ pass</td><td class="p">✓ pass</td></tr>
+          <tr><td>Random messages</td><td class="hide d">30 random messages, half corrupted, match a Python model of the check exactly</td><td class="p">✓ pass</td><td class="p">✓ pass</td></tr>
+          <tr><td>Start and overrun</td><td class="hide d">START clears a half-received message; bits after the last one are ignored</td><td class="p">✓ pass</td><td class="p">✓ pass</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="reveal" aria-labelledby="h-how">
+    <div class="sec-head"><h2 id="h-how">How it works</h2></div>
+    <div class="two">
+      <div>
+        <p>Every Mode S message ends with a <strong>24-bit check code</strong>. The plane computes it by dividing the rest of the message by a fixed number, <span class="mono">0x1FFF409</span>, in a math where adding is the same as flipping bits.</p>
+        <p>The chip does the same division one bit at a time with a <strong>24-bit shift register</strong>. When the top bit and the incoming bit differ, it flips a fixed pattern of bits. After the whole message, including the check code, a remainder of zero means nothing was damaged.</p>
+        <p>If it isn't zero, the leftover is the <strong>syndrome</strong>. Each single wrong bit leaves a different one, so a full decoder can use it to find and fix the bit. The chip lets you read it back.</p>
+        <dl class="pinout">
+          <dt>DATA, STROBE</dt><dd>One message bit per rising edge, through two-flop synchronizers</dd>
+          <dt>START</dt><dd>Clears for the next message</dd>
+          <dt>DONE, OK, BAD</dt><dd>The answer, once the last bit is in</dd>
+          <dt>READ[7:0]</dt><dd>ICAO address, syndrome or bit count, a byte at a time</dd>
+        </dl>
+      </div>
+      <pre aria-label="The heart of the Verilog"><span class="c">// each time a bit arrives</span>
+<span class="k">wire</span> fb = rem[<span class="n">23</span>] ^ bit_in;
+rem <= {rem[<span class="n">22</span>:<span class="n">0</span>], <span class="n">1'b0</span>}
+     ^ (fb ? <span class="n">24'hFFF409</span> : <span class="n">24'd0</span>);
+count <= count + <span class="n">7'd1</span>;
+<span class="k">if</span> (count == last) done <= <span class="n">1'b1</span>;
+
+<span class="c">// the answer</span>
+<span class="k">assign</span> ok  = done && (rem == <span class="n">24'd0</span>);
+<span class="k">assign</span> bad = done && (rem != <span class="n">24'd0</span>);
+
+<span class="c">// the first bit sets the length:</span>
+<span class="c">// formats 16+ are 112 bits, the rest 56</span></pre>
+    </div>
+  </section>
+
+  <section class="reveal next" aria-labelledby="h-next">
+    <h2 id="h-next">From layout to chip</h2>
+    <p>The layout was built on GitHub's servers with the open-source LibreLane flow and the SkyWater SKY130 process kit, through Tiny Tapeout. It runs at 50 MHz with time to spare, checked hot, cold, slow and fast.</p>
+    <p>It also passes Tiny Tapeout's precheck, so it's ready for a shared chip run alongside hundreds of other small designs. It hasn't been manufactured yet. The next blocks on the way to a full HZN-1 would be the bit slicer that turns radio pulses into these bits, and the decoder that turns checked messages into position and speed.</p>
+    <div class="links"><a class="btn ghost" href="../chip/">Explore the full concept chip</a><a class="btn ghost" href="../globe/">See the planes it would hear</a></div>
+  </section>
+
+  <footer><span>Layout: LibreLane, SkyWater SKY130 open PDK and Tiny Tapeout. Messages: public ADS-B examples.</span><b>Made by Raghav Vijayapal</b></footer>
+</main>
+
+<script>
+(() => {
+  const POLY = 0xFFF409;
+  const MSGS = [
+    { id: 'klm', label: 'KLM1023', hex: '8D4840D6202CC371C32CE0576098', what: 'identification' },
+    { id: 'pos', label: 'Position', hex: '8D40621D58C382D690C8AC2863A7', what: 'airborne position' },
+    { id: 'vel', label: 'Velocity', hex: '8D485020994409940838175B284F', what: 'airborne velocity' },
+    { id: 'short', label: 'Short reply', hex: '5D4840D6F8740F', what: '56-bit all-call reply' },
+  ];
+  const FIELDS_LONG = [['Format', 5, 'var(--accent)'], ['Capability', 3, 'var(--violet)'], ['ICAO address', 24, 'var(--good)'], ['Message', 56, 'var(--muted)'], ['Check code', 24, 'var(--amber)']];
+  const FIELDS_SHORT = [['Format', 5, 'var(--accent)'], ['Capability', 3, 'var(--violet)'], ['ICAO address', 24, 'var(--good)'], ['Check code', 24, 'var(--amber)']];
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const $ = id => document.getElementById(id);
+  const hex6 = v => v.toString(16).toUpperCase().padStart(6, '0');
+  const sound = (n, a) => window.HZNSound && HZNSound.play(n, a);
+
+  let msg = MSGS[0], bits = [], flipped = new Set(), run = 0;
+
+  // ---------- pins and register ----------
+  const PINS = [['DONE', 'var(--accent)', ''], ['OK', 'var(--good)', 'ok'], ['BAD', 'var(--bad)', 'bad'], ['LONG', 'var(--violet)', ''], ['BUSY', 'var(--amber)', '']];
+  $('pins').innerHTML = PINS.map(([n, c, k]) => `<span class="pin ${k}" data-p="${n}" style="--c:${c}"><i></i>${n}</span>`).join('');
+  $('reg').innerHTML = '<i></i>'.repeat(24);
+  const regCells = [...$('reg').children];
+  const setPins = s => document.querySelectorAll('.pin').forEach(p => p.classList.toggle('on', !!s[p.dataset.p]));
+  const setReg = r => regCells.forEach((c, i) => c.classList.toggle('one', (r >> (23 - i)) & 1));
+
+  // ---------- message ----------
+  $('msgs').innerHTML = MSGS.map(m => `<button type="button" data-m="${m.id}" aria-pressed="${m === msg}">${m.label}</button>`).join('');
+  $('msgs').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; msg = MSGS.find(m => m.id === b.dataset.m);
+    $('msgs').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); load(); });
+
+  function load() {
+    run++; flipped.clear();
+    bits = [...BigInt('0x' + msg.hex).toString(2).padStart(msg.hex.length * 4, '0')].map(Number);
+    const fields = bits.length === 112 ? FIELDS_LONG : FIELDS_SHORT;
+    const color = []; fields.forEach(([, n, c]) => { for (let i = 0; i < n; i++) color.push(c); });
+    $('bits').innerHTML = bits.map((b, i) => `<button type="button" class="bit" style="--f:${color[i]}" data-i="${i}" aria-label="Bit ${i + 1}">${b}</button>`).join('');
+    $('fields').innerHTML = fields.map(([n, k, c]) => `<span style="--f:${c}"><i></i>${n} · ${k}</span>`).join('');
+    draw(); idle(`<strong>${msg.label}</strong>: a real ${msg.what} message, ${bits.length} bits. Press Run.`);
+  }
+  function draw() { [...$('bits').children].forEach((el, i) => { el.textContent = bits[i]; el.classList.toggle('one', bits[i] === 1); el.classList.toggle('flip', flipped.has(i)); el.classList.remove('cur'); }); }
+  function idle(text) { setReg(0); setPins({}); $('r-n').textContent = '0'; $('r-icao').textContent = '------'; $('r-syn').textContent = '000000'; $('say').innerHTML = text; }
+
+  function flip(i) { run++; bits[i] ^= 1; flipped.has(i) ? flipped.delete(i) : flipped.add(i); draw();
+    idle(flipped.size ? `Flipped bit ${i + 1}. ${flipped.size > 1 ? flipped.size + ' bits differ from the real message.' : ''} Press Run.` : 'Back to the real message. Press Run.'); }
+  $('bits').addEventListener('click', e => { const b = e.target.closest('.bit'); if (b) flip(+b.dataset.i); });
+  $('flip').addEventListener('click', () => flip(1 + Math.floor(Math.random() * (bits.length - 1))));
+  $('reset').addEventListener('click', load);
+
+  // ---------- run: the same steps as the Verilog ----------
+  const tick = ms => new Promise(r => setTimeout(r, ms));
+  $('run').addEventListener('click', async () => {
+    const id = ++run, cells = [...$('bits').children], n = bits.length, long = bits[0] === 1, last = long ? 111 : 55;
+    let rem = 0, head = 0, done = false;
+    draw(); $('say').innerHTML = 'Checking…';
+    for (let i = 0; i < n && !done; i++) {
+      const b = bits[i], fb = ((rem >> 23) & 1) ^ b;
+      rem = ((rem << 1) & 0xFFFFFF) ^ (fb ? POLY : 0);
+      if (i < 32) head = (head * 2 + b) >>> 0;
+      if (i === last) done = true;
+      if (!reduce) {
+        cells.forEach(c => c.classList.remove('cur')); cells[i].classList.add('cur');
+        setReg(rem); setPins({ BUSY: !done, LONG: long });
+        $('r-n').textContent = i + 1;
+        if (i >= 31) $('r-icao').textContent = hex6(head & 0xFFFFFF);
+        if (i % 8 === 7) sound('blip', i >> 3);
+        await tick(n === 112 ? 22 : 40); if (id !== run) return;
+      }
+    }
+    cells.forEach(c => c.classList.remove('cur'));
+    const ok = rem === 0;
+    setReg(rem); setPins({ DONE: 1, OK: ok, BAD: !ok, LONG: long });
+    $('r-n').textContent = n; $('r-icao').textContent = hex6(head & 0xFFFFFF); $('r-syn').textContent = hex6(rem);
+    $('say').innerHTML = ok ? `<strong>OK.</strong> Remainder zero: the message arrived intact.`
+      : `<strong>BAD.</strong> The check code doesn't match, so the chip would drop this message.` + (flipped.size === 1 ? ' The syndrome points at the flipped bit.' : '');
+    sound(ok ? 'answer' : 'blip', ok ? 0 : 5);
+  });
+  load();
+
+  // ---------- magnifier ----------
+  const fig = $('layout'), lens = fig.querySelector('.lens'), Z = 3.2;
+  function move(e) {
+    const r = fig.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+    if (x < 0 || y < 0 || x > r.width || y > r.height) { fig.classList.remove('on'); return; }
+    lens.style.left = x + 'px'; lens.style.top = y + 'px';
+    lens.style.backgroundSize = r.width * Z + 'px ' + r.height * Z + 'px';
+    lens.style.backgroundPosition = (105 - x * Z) + 'px ' + (105 - y * Z) + 'px';
+    fig.classList.add('on');
+  }
+  fig.addEventListener('pointermove', e => { if (e.pointerType === 'mouse' || e.buttons) move(e); });
+  fig.addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse') { fig.setPointerCapture(e.pointerId); move(e); } });
+  ['pointerleave', 'pointerup', 'pointercancel'].forEach(t => fig.addEventListener(t, e => { if (t !== 'pointerup' || e.pointerType !== 'mouse') fig.classList.remove('on'); }));
+
+  // ---------- reveal on scroll ----------
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -8% 0px' });
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+})();
+</script>

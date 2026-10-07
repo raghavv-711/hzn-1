@@ -4,7 +4,7 @@
 (() => {
   const root = new URL('../', document.currentScript.src);   // the site's home, wherever it's hosted
   const path = location.pathname;
-  const page = /\/globe\/?$/.test(path) ? 'globe' : /\/stats\/?$/.test(path) ? 'stats' : /\/(chip|model)\/?$/.test(path) ? 'other' : 'home';
+  const page = /\/globe\/?$/.test(path) ? 'globe' : /\/stats\/?$/.test(path) ? 'stats' : /\/(chip|model|silicon)\/?$/.test(path) ? 'other' : 'home';
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const $ = s => document.querySelector(s);
   // with sound on, the next page opens on top of this one so the audio carries on (see sound.js)

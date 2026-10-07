@@ -1,4 +1,4 @@
-// One navigation for every page: Home · Globe · Dashboard · Chip · Model check.
+// One navigation for every page: Home · Globe · Dashboard · Chip · Silicon · Model check.
 // Put <nav data-sitenav data-page="globe" data-collapse="1100" data-align="left"></nav> where it should appear.
 // Wider than data-collapse it shows as tabs; narrower, as a single Menu button that opens the same list.
 // data-collapse="auto" collapses only when the tabs don't fit in their row; data-icons="false" drops the tab icons.
@@ -10,12 +10,14 @@
     stats: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
     chip: '<path d="m12 3 9 5-9 5-9-5 9-5z"/><path d="m3 13 9 5 9-5"/>',
     model: '<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
+    silicon: '<rect x="5" y="5" width="14" height="14" rx="2"/><path d="M9 9h6v6H9zM9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/>',
   };
   const PAGES = [
     { id: 'home', href: '', label: 'Home', desc: 'The chip, taken apart layer by layer' },
     { id: 'globe', href: 'globe/', label: 'Globe', desc: 'Every flight in the air, with fuel left' },
     { id: 'stats', href: 'stats/', label: 'Dashboard', desc: 'Fuel and CO₂ right now, plus what-ifs' },
     { id: 'chip', href: 'chip/', label: 'Chip', desc: 'Explore HZN-1 in 3D and follow a message' },
+    { id: 'silicon', href: 'silicon/', label: 'Silicon', desc: 'One block built as a real chip layout' },
     { id: 'model', href: 'model/', label: 'Model check', desc: 'How accurate the fuel estimates are' },
   ];
   const icon = id => '<svg viewBox="' + (id === 'home' ? '0 0 32 32' : '0 0 24 24') + '" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICON[id] + '</svg>';

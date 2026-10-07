@@ -3,7 +3,8 @@
     python3 site-src/build_site.py [path/to/fh-data.json]
 
 Pages: docs/globe (Fuel Horizon snapshot), docs/chip (Inside HZN-1 explorer), docs/model (fuel model check),
-docs/stats (hourly fuel & CO2 dashboard).
+docs/stats (hourly fuel & CO2 dashboard), docs/silicon (the real CRC-24 checker layout;
+its images live in docs/silicon and come from the hzn-1-silicon repo's GDS action).
 The landing page (docs/index.html) and docs/assets are edited directly.
 Passing a fresh fh-data.json (from the snapshot bundler) also refreshes the globe's recorded flights.
 """
@@ -51,6 +52,8 @@ DESCRIPTIONS = {  # what search engines and link previews show for each page
             "followed through it step by step.",
     "model": "How accurate Fuel Horizon's fuel estimates are: a per-aircraft model checked against 126 published "
              "fuel-burn figures, within about 5% on figures it never saw.",
+    "silicon": "One block of HZN-1 built as a real SkyWater SKY130 chip layout: a Mode S CRC-24 checker tested on "
+               "real ADS-B messages, which you can run in your browser.",
     "stats": "How much jet fuel is burning in the sky right now, which airlines and aircraft burn it, the last 24 "
              "hours, and what SAF, batteries, hybrids or hydrogen could save. Updated every hour.",
 }
@@ -189,6 +192,8 @@ def build(data_json=None):
     m = rep(m, "__DATA__", (SRC / "model-data.json").read_text().replace("</", "<\\/"))
     m = rep(m, '<div class="eyebrow"><b>Fuel Horizon</b>', '<div class="eyebrow"><a href="../" style="text-decoration:none"><b>HZN-1</b></a><span>·</span><a href="../globe/" style="text-decoration:none"><b>Fuel Horizon</b></a>')
     write("model", m)
+
+    write("silicon", (SRC / "silicon.html").read_text())
     stamp_landing()
 
 
