@@ -525,5 +525,5 @@ function tick(now) {
 }
 requestAnimationFrame(frame);
 // ?debug: lets automated checks advance frames while the tab is in the background
-if (location.search.includes('debug')) window.__hzn = { globe, pointMats, camera, scene, renderer };
+if (location.search.includes('debug')) window.__hzn = { globe, pointMats, camera, scene, renderer, get composer() { return composer; } };
 if (location.search.includes('debug')) window.__tick = (n = 60) => { for (let i = 0; i < n; i++) { const t = last + 16.7; tick(t); last = t; } };

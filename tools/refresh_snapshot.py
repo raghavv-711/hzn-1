@@ -141,7 +141,7 @@ def write_stats(rows, ap, airlines, t):
     eff = sorted(((k, v) for k, v in al.items() if len(v["eff"]) >= 8), key=lambda kv: sum(kv[1]["eff"]) / len(kv[1]["eff"]))
     out = {
         "t": t, "n": len(rows), "modelled": modelled, "burn": round(burn),
-        "history": [[fr["t"], fr["n"], fr["burn"]] for fr in globals().get("_frames", [])],
+        "history": [[fr["t"], fr["n"], fr["burn"], fr.get("modelled", 0)] for fr in globals().get("_frames", [])],
         "airlines": [[k, airlines[k][0], v["n"], round(v["burn"])] for k, v in top_al],
         "efficiency": [[k, airlines[k][0], len(v["eff"]), round(sum(v["eff"]) / len(v["eff"]), 1)] for k, v in eff],
         "routes": [[a, b, ap_name(ap, a), ap_name(ap, b), n] for (a, b), n in routes.most_common(10)],

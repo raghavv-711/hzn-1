@@ -6,11 +6,11 @@
 <script src="../assets/analytics.js" defer></script>
 <script src="../assets/sitenav.js" defer></script>
 <style>@view-transition{navigation:auto}::view-transition-old(root),::view-transition-new(root){animation-duration:.32s}</style>
-<meta property="og:image" content="https://raghavv-711.github.io/hzn-1/assets/og.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:site_name" content="HZN-1">
 <meta name="twitter:card" content="summary_large_image">
+<meta property="og:image" content="https://raghavv-711.github.io/hzn-1/assets/og-stats.jpg">
 <meta name="description" content="How much jet fuel is burning in the sky right now, which airlines and aircraft burn it, the last 24 hours, and what SAF, batteries, hybrids or hydrogen could save. Updated every hour.">
 <meta property="og:description" content="How much jet fuel is burning in the sky right now, which airlines and aircraft burn it, the last 24 hours, and what SAF, batteries, hybrids or hydrogen could save. Updated every hour.">
 <link rel="canonical" href="https://raghavv-711.github.io/hzn-1/stats/">
@@ -18,7 +18,7 @@
 <title>Fuel Horizon Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
 <style>
 /* Layout: one 1040px report column. Headline numbers first, then the last day, then who burns it, then what could change. */
 :root{
@@ -75,7 +75,18 @@ svg text{font-family:var(--f-mono);font-size:11px;fill:var(--muted)}
 .brow .l{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .brow .l small{color:var(--faint);font-family:var(--f-mono);margin-right:6px}
 .brow .track{height:10px;position:relative}
-.brow .fill{position:absolute;left:0;top:0;bottom:0;border-radius:2px 4px 4px 2px;background:var(--accent);min-width:2px}
+.brow .fill{position:absolute;left:0;top:0;bottom:0;border-radius:2px 4px 4px 2px;background:var(--accent);min-width:2px;transform-origin:left center}
+body:not(.settled) .brow .fill{animation:grow .9s cubic-bezier(.2,.7,.2,1) both}
+body:not(.settled) .brow:nth-child(n+4) .fill{animation-delay:.08s}
+body:not(.settled) .brow:nth-child(n+8) .fill{animation-delay:.16s}
+@keyframes grow{from{transform:scaleX(0)}}
+body:not(.settled) .chart path.ln{stroke-dasharray:var(--len);stroke-dashoffset:var(--len);animation:draw 1.3s cubic-bezier(.3,.6,.2,1) forwards}
+body:not(.settled) .chart path.ar{opacity:0;animation:fade .9s .5s ease forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes fade{to{opacity:1}}
+@media (prefers-reduced-motion:reduce){body .brow .fill,body .chart path{animation:none!important;stroke-dasharray:none;opacity:1}}
+.spark{display:block;width:100%;height:26px;margin-top:2px}
+.spark.empty{font-size:11.5px;color:var(--faint);height:auto}
 .brow .v{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums;color:var(--text);font-size:12.5px;white-space:nowrap}
 .brow .v small{color:var(--faint)}
 @media (max-width:560px){.brow{grid-template-columns:minmax(0,110px) minmax(0,1fr) auto;gap:8px}.brow .v small{display:none}}
@@ -108,9 +119,10 @@ footer{display:flex;flex-direction:column;gap:8px;padding-top:22px;border-top:1p
   background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
 .sitebar .logo{display:flex;align-items:center;gap:9px;text-decoration:none;color:var(--text);font:500 14px var(--f-mono);letter-spacing:.06em}
 .sitebar .logo svg{width:22px;height:22px;color:var(--accent)}
+h1,h2{font-family:"Bricolage Grotesque",Geist,ui-sans-serif,system-ui,sans-serif;font-optical-sizing:auto;font-weight:700}
 </style>
 
-<div class="sitebar"><a class="logo" href="../" aria-label="HZN-1 home"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="8" y="8" width="16" height="16" rx="2"/><rect x="12" y="12" width="8" height="8" rx="1"/><path d="M12 8V4M16 8V4M20 8V4M12 28v-4M16 28v-4M20 28v-4M8 12H4M8 16H4M8 20H4M28 12h-4M28 16h-4M28 20h-4"/></svg>HZN-1</a><div data-sitenav data-page="stats" data-collapse="760" data-align="right"></div></div>
+<div class="sitebar"><a class="logo" href="../" aria-label="HZN-1 home"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="7" y="7" width="18" height="18" rx="4"/><path d="M12 7V4M16 7V4M20 7V4M12 28v-3M16 28v-3M20 28v-3M7 12H4M7 16H4M7 20H4M28 12h-3M28 16h-3M28 20h-3"/><path d="M9.5 20.5h13" stroke-linecap="round"/><path d="M13 20.5a3 3 0 0 1 6 0M10.5 20.5a5.5 5.5 0 0 1 11 0" stroke-linecap="round"/><circle cx="16" cy="20.5" r="1.7" fill="currentColor" stroke="none"/></svg>HZN-1</a><div data-sitenav data-page="stats" data-collapse="760" data-align="right"></div></div>
 <main class="wrap">
   <header>
     <div class="eyebrow"><a href="../">HZN-1</a><span>·</span><a href="../globe/">Fuel Horizon</a><span>·</span><span>Dashboard</span></div>
@@ -214,6 +226,22 @@ const el=(tag,a,p)=>{const e=document.createElementNS(NS,tag);for(const k in a)e
 const CO2=3.16, CO2_WTW=3.84; // kg CO2 per kg fuel: burned; burned plus making the fuel
 let S=null;
 
+const REDUCE=matchMedia('(prefers-reduced-motion: reduce)').matches;
+let settled=false; // charts animate in on the first render only
+function spark(vals){ // a tiny trend line for a headline tile (needs at least two hours)
+  if(vals.length<2)return '<div class="spark empty">trend appears as hours are recorded</div>';
+  const W=120,H=26,lo=Math.min(...vals),hi=Math.max(...vals),r=hi-lo||1;
+  const pts=vals.map((v,i)=>[(i/(vals.length-1))*W,H-2-(v-lo)/r*(H-4)]);
+  const d=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+  return '<svg class="spark" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" aria-hidden="true"><path d="'+d+' L'+W+' '+H+' L0 '+H+' Z" fill="var(--accent-soft)"/>'+
+    '<path d="'+d+'" fill="none" stroke="var(--accent)" stroke-width="1.6" vector-effect="non-scaling-stroke"/></svg>';
+}
+function countUp(){
+  const els=[...document.querySelectorAll('#tiles .cnt')],t0=performance.now(),dur=1100;
+  const step=now=>{const k=Math.min(1,(now-t0)/dur),e=1-Math.pow(1-k,3);
+    els.forEach(el=>{el.textContent=fmt(+el.dataset.v*e);});if(k<1)requestAnimationFrame(step);};
+  requestAnimationFrame(step);
+}
 function bars(target,rows,opts){ // rows: [label, sublabel, value, valueText]
   const max=Math.max(...rows.map(r=>r[2]),1e-9);
   $(target).innerHTML=rows.map(r=>'<div class="brow" title="'+esc(r[0])+'"><span class="l">'+(r[1]?'<small>'+esc(r[1])+'</small>':'')+esc(r[0])+'</span>'+
@@ -234,8 +262,9 @@ function line(target,pts,unit,digits){ // a single-series line with a hover cros
   for(let t=Math.ceil(t0/(tstep*3600))*tstep*3600;t<=t1;t+=tstep*3600)el('text',{x:sx(t),y:H-8,'text-anchor':'middle'},svg).textContent=when(t,{hour:'numeric'});
   el('line',{class:'axis',x1:M.l,x2:W-M.r,y1:H-M.b,y2:H-M.b},svg);
   const d=pts.map((p,i)=>(i?'L':'M')+sx(p[0]).toFixed(1)+' '+sy(p[1]).toFixed(1)).join(' ');
-  el('path',{d:d+' L'+sx(t1)+' '+(H-M.b)+' L'+sx(t0)+' '+(H-M.b)+' Z',fill:'var(--accent-soft)',stroke:'none'},svg);
-  el('path',{d,fill:'none',stroke:'var(--accent)','stroke-width':2,'stroke-linejoin':'round','stroke-linecap':'round'},svg);
+  el('path',{class:'ar',d:d+' L'+sx(t1)+' '+(H-M.b)+' L'+sx(t0)+' '+(H-M.b)+' Z',fill:'var(--accent-soft)',stroke:'none'},svg);
+  const ln=el('path',{class:'ln',d,fill:'none',stroke:'var(--accent)','stroke-width':2,'stroke-linejoin':'round','stroke-linecap':'round'},svg);
+  ln.style.setProperty('--len',Math.ceil(ln.getTotalLength()));
   const last=pts[pts.length-1];el('circle',{cx:sx(last[0]),cy:sy(last[1]),r:4,fill:'var(--accent)',stroke:'var(--surface)','stroke-width':2},svg);
   const cross=el('line',{class:'axis',y1:M.t,y2:H-M.b,visibility:'hidden'},svg),dot=el('circle',{r:4,fill:'var(--accent)',stroke:'var(--surface)','stroke-width':2,visibility:'hidden'},svg);
   const tip=document.createElement('div');tip.className='tip';tip.hidden=true;wrap.appendChild(tip);
@@ -281,10 +310,13 @@ function render(){
   $('lede').innerHTML='Every flight the network can see, run through a fuel model of its exact aircraft type. Recorded <strong>'+
     when(S.t,{weekday:'long',hour:'numeric',minute:'2-digit',timeZoneName:'short'})+'</strong>; updated every hour.'+
     ((Date.now()/1000-S.t)/3600>2.5?' <strong style="color:var(--warn)">The hourly update is running late: these numbers are '+Math.round((Date.now()/1000-S.t)/3600)+' hours old.</strong>':'');
-  $('tiles').innerHTML=[[fmt(S.n),'','Planes in the air'],[fmt(S.burn/1000),'t','Jet fuel burned per hour (modelled flights)'],
-    [fmt(co2),'t','CO₂ released per hour'],[fmt(S.modelled/S.n*100),'%','Flights modelled by exact aircraft type']]
-    .map(([v,u,k])=>'<div class="tile"><div class="v">'+v+(u?'<small>'+u+'</small>':'')+'</div><div class="k">'+k+'</div></div>').join('');
-  const hist=S.history.length?S.history:[[S.t,S.n,S.burn]];
+  const hist=S.history.length?S.history:[[S.t,S.n,S.burn,S.modelled]];
+  // headline tiles: the number counts up the first time, with a small line of its last 24 hours underneath
+  const T=[[S.n,'','Planes in the air',h=>h[1]],[S.burn/1000,'t','Jet fuel burned per hour (modelled flights)',h=>h[2]/1000],
+    [co2,'t','CO₂ released per hour',h=>h[2]*CO2/1000],[S.modelled/S.n*100,'%','Flights modelled by exact aircraft type',h=>h[3]&&h[1]?h[3]/h[1]*100:null]];
+  $('tiles').innerHTML=T.map(([v,u,k,fn],i)=>{const series=hist.map(fn).filter(x=>x!=null&&isFinite(x));
+    return '<div class="tile"><div class="v"><span class="cnt" data-v="'+v+'">'+fmt(v)+'</span>'+(u?'<small>'+u+'</small>':'')+'</div>'+spark(series)+'<div class="k">'+k+'</div></div>';}).join('');
+  if(!settled&&!REDUCE)countUp();
   line('cPlanes',hist.map(h=>[h[0],h[1]]),' planes',0);
   line('cBurn',hist.map(h=>[h[0],h[2]/1000]),' t of fuel an hour',0);
   bars('bAirlines',S.airlines.map(a=>[a[1],a[0],a[3],fmt(a[3]/1000,1)+' t/h <small>· '+fmt(a[2])+'</small>']));
@@ -297,6 +329,6 @@ function render(){
 }
 ['safBlend','safPath','batDens','h2Src'].forEach(id=>$(id).addEventListener('input',scenarios));
 let rw=0;new ResizeObserver(()=>{const w=document.body.clientWidth;if(S&&Math.abs(w-rw)>20){rw=w;render();}}).observe(document.body);
-fetch('stats.json?v=80985cb056').then(r=>r.json()).then(d=>{S=d;rw=document.body.clientWidth;render();})
+fetch('stats.json?v=80985cb056').then(r=>r.json()).then(d=>{S=d;rw=document.body.clientWidth;render();setTimeout(()=>{settled=true;document.body.classList.add('settled');},1800);})
   .catch(()=>{$('lede').textContent='Couldn\'t load the latest numbers. Try reloading in a minute.';});
 </script>

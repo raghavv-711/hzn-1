@@ -20,7 +20,6 @@ HEAD = ('<!doctype html>\n<html lang="en">\n<meta charset="utf-8">\n'
         '<script src="../assets/sitenav.js" defer></script>\n'
         '<style>@view-transition{navigation:auto}::view-transition-old(root),::view-transition-new(root){animation-duration:.32s}</style>\n'
         + ''.join(f'<meta {k}="{n}" content="{v}">\n' for k, n, v in [
-            ("property", "og:image", "https://raghavv-711.github.io/hzn-1/assets/og.jpg"),
             ("property", "og:image:width", "1200"), ("property", "og:image:height", "630"),
             ("property", "og:site_name", "HZN-1"), ("name", "twitter:card", "summary_large_image")]))
 LINKS = {  # the published artifact links become relative links inside the site
@@ -62,7 +61,9 @@ def write(name, html):
     out = DOCS / name / "index.html"
     out.parent.mkdir(parents=True, exist_ok=True)
     d = DESCRIPTIONS[name].replace('"', "&quot;")
-    page = (f'<meta name="description" content="{d}">\n<meta property="og:description" content="{d}">\n'
+    img = {"globe": "og-globe.jpg", "stats": "og-stats.jpg"}.get(name, "og.jpg")  # share image for this page
+    page = (f'<meta property="og:image" content="{SITE}assets/{img}">\n'
+            f'<meta name="description" content="{d}">\n<meta property="og:description" content="{d}">\n'
             f'<link rel="canonical" href="{SITE}{name}/">\n<meta property="og:url" content="{SITE}{name}/">\n')
     out.write_text(HEAD + page + localize(html))
     print(f"{out.relative_to(DOCS.parent)}  {out.stat().st_size / 1e3:.0f} kB")
