@@ -7,8 +7,7 @@
   const page = /\/globe\/?$/.test(path) ? 'globe' : /\/stats\/?$/.test(path) ? 'stats' : /\/(chip|model|silicon)\/?$/.test(path) ? 'other' : 'home';
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const $ = s => document.querySelector(s);
-  // with sound on, the next page opens on top of this one so the audio carries on (see sound.js)
-  const next = p => { const u = new URL(p + '?tour', root).href; if (!(window.HZNSound && HZNSound.go && HZNSound.go(u))) location.href = u; };
+  const next = p => { location.href = new URL(p + '?tour', root).href; };
 
   // ---------- caption bar ----------
   const css = document.createElement('style');
@@ -35,17 +34,12 @@
   function show(text, n) {
     if (!hud) {
       hud = document.createElement('div'); hud.className = 'tour p-' + page; hud.setAttribute('role', 'status'); hud.setAttribute('aria-live', 'polite');
-      hud.innerHTML = '<div class="row"><span class="k">Tour</span><button type="button" data-a="sound">Sound</button><button type="button" data-a="pause">Pause</button><button type="button" data-a="skip">Skip ›</button><button type="button" data-a="exit" aria-label="Exit tour">✕</button></div>' +
+      hud.innerHTML = '<div class="row"><span class="k">Tour</span><button type="button" data-a="pause">Pause</button><button type="button" data-a="skip">Skip ›</button><button type="button" data-a="exit" aria-label="Exit tour">✕</button></div>' +
         '<div class="say"></div><div class="bar"><i></i></div>';
       hud.addEventListener('click', e => { const a = e.target.closest('button')?.dataset.a; if (!a) return;
-        if (a === 'sound') { window.HZNSound && HZNSound.toggle(); return; }
         if (a === 'exit') stop(); else if (a === 'skip') skipTo(); else { paused = !paused; e.target.textContent = paused ? 'Resume' : 'Pause'; } });
       document.body.appendChild(hud);
-      const sb = hud.querySelector('[data-a="sound"]');
-      if (window.HZNSound) HZNSound.subscribe(st => { sb.textContent = st === 'off' ? 'Sound off' : st === 'waiting' ? 'Tap for sound' : 'Sound on'; sb.style.color = st === 'off' ? '' : '#f5b041'; });
-      else sb.remove();
     }
-    window.HZNSound && HZNSound.play('step');
     hud.querySelector('.say').textContent = text;
     hud.querySelector('.k').textContent = 'Tour · ' + (OFFSET[page] + n) + ' of ' + TOTAL;
     hud.querySelector('.bar i').style.width = ((OFFSET[page] + n) / TOTAL * 100) + '%';

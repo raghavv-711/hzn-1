@@ -535,7 +535,6 @@ function pathPts(a,b){return a===b?[pointOn(a)]:manhattan(WP[a],WP[b]).map(p=>ne
 function along(pts,t){if(pts.length===1)return pts[0].clone();let L=0;const seg=[];for(let i=0;i<pts.length-1;i++){const l=pts[i].distanceTo(pts[i+1]);seg.push(l);L+=l;}
   let d=t*L;for(let i=0;i<seg.length;i++){if(d<=seg[i])return pts[i].clone().lerp(pts[i+1],seg[i]?d/seg[i]:0);d-=seg[i];}return pts[pts.length-1].clone();}
 function frame(now){
-  if(window.__hznCovered)return; // the next page is showing on top of this one
   const dt=Math.min(.05,(now-last)/1000);last=now;
   // camera tween
   if(camTween){const k=clamp((now-camTween.t0)/camTween.dur,0,1),e=ease(k);camera.position.lerpVectors(camTween.from,camTween.to,e);controls.target.lerpVectors(camTween.tf,camTween.tt,e);if(k>=1)camTween=null;}

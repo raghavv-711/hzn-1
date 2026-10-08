@@ -271,7 +271,6 @@ count <= count + <span class="n">7'd1</span>;
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const $ = id => document.getElementById(id);
   const hex6 = v => v.toString(16).toUpperCase().padStart(6, '0');
-  const sound = (n, a) => window.HZNSound && HZNSound.play(n, a);
 
   let msg = MSGS[0], bits = [], flipped = new Set(), run = 0;
 
@@ -322,7 +321,6 @@ count <= count + <span class="n">7'd1</span>;
         setReg(rem); setPins({ BUSY: !done, LONG: long });
         $('r-n').textContent = i + 1;
         if (i >= 31) $('r-icao').textContent = hex6(head & 0xFFFFFF);
-        if (i % 8 === 7) sound('blip', i >> 3);
         await tick(n === 112 ? 22 : 40); if (id !== run) return;
       }
     }
@@ -332,7 +330,6 @@ count <= count + <span class="n">7'd1</span>;
     $('r-n').textContent = n; $('r-icao').textContent = hex6(head & 0xFFFFFF); $('r-syn').textContent = hex6(rem);
     $('say').innerHTML = ok ? `<strong>OK.</strong> Remainder zero: the message arrived intact.`
       : `<strong>BAD.</strong> The check code doesn't match, so the chip would drop this message.` + (flipped.size === 1 ? ' The syndrome points at the flipped bit.' : '');
-    sound(ok ? 'answer' : 'blip', ok ? 0 : 5);
   });
   load();
 

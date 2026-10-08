@@ -4,9 +4,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
 <script src="../assets/analytics.js?v=d8e57b82e5" defer></script>
-<script src="../assets/sound.js?v=db0ac1f894" defer></script>
-<script src="../assets/sitenav.js?v=b65f09101a" defer></script>
-<script src="../assets/tour.js?v=f2dcfcd296" defer></script>
+<script src="../assets/sitenav.js?v=8356b15cd7" defer></script>
+<script src="../assets/tour.js?v=0e7755df87" defer></script>
 <style>@view-transition{navigation:auto}::view-transition-old(root),::view-transition-new(root){animation-duration:.32s}</style>
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -290,7 +289,6 @@ count <= count + <span class="n">7'd1</span>;
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const $ = id => document.getElementById(id);
   const hex6 = v => v.toString(16).toUpperCase().padStart(6, '0');
-  const sound = (n, a) => window.HZNSound && HZNSound.play(n, a);
 
   let msg = MSGS[0], bits = [], flipped = new Set(), run = 0;
 
@@ -341,7 +339,6 @@ count <= count + <span class="n">7'd1</span>;
         setReg(rem); setPins({ BUSY: !done, LONG: long });
         $('r-n').textContent = i + 1;
         if (i >= 31) $('r-icao').textContent = hex6(head & 0xFFFFFF);
-        if (i % 8 === 7) sound('blip', i >> 3);
         await tick(n === 112 ? 22 : 40); if (id !== run) return;
       }
     }
@@ -351,7 +348,6 @@ count <= count + <span class="n">7'd1</span>;
     $('r-n').textContent = n; $('r-icao').textContent = hex6(head & 0xFFFFFF); $('r-syn').textContent = hex6(rem);
     $('say').innerHTML = ok ? `<strong>OK.</strong> Remainder zero: the message arrived intact.`
       : `<strong>BAD.</strong> The check code doesn't match, so the chip would drop this message.` + (flipped.size === 1 ? ' The syndrome points at the flipped bit.' : '');
-    sound(ok ? 'answer' : 'blip', ok ? 0 : 5);
   });
   load();
 

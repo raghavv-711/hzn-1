@@ -49,14 +49,7 @@
 .sn-item small{font-size:12px;color:#8a98aa;line-height:1.3}
 .sn-item[aria-current="page"]{background:rgba(124,196,255,.1)}
 .sn-item[aria-current="page"] b::after{content:" · you're here";font-weight:400;color:#8a98aa}
-.sn-pop[hidden]{display:none}
-.sn-sound{all:unset;cursor:pointer;position:relative;width:34px;height:34px;margin-left:6px;border-radius:50%;display:grid;place-items:center;color:var(--sn-muted);
-  background:rgba(10,16,24,.66);border:1px solid var(--sn-line);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);flex-shrink:0}
-.sn-sound svg{width:16px;height:16px}
-.sn-sound:hover,.sn-sound[aria-pressed="true"]{color:var(--sn-text)}
-.sn-sound:focus-visible{outline:2px solid var(--sn-accent);outline-offset:2px}
-.sn-sound.waiting::after{content:"";position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;background:#f5b041;animation:snpulse 1.4s ease-in-out infinite}
-@keyframes snpulse{50%{opacity:.25}}`;
+.sn-pop[hidden]{display:none}`;
   document.head.appendChild(css);
 
   document.querySelectorAll('[data-sitenav]').forEach(nav => {
@@ -72,15 +65,8 @@
       '<button class="sn-btn" type="button" aria-expanded="false" aria-haspopup="true">' +
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>' +
         '<span>' + (PAGES.find(p => p.id === here) || PAGES[0]).label + '</span></button>' +
-      '<button class="sn-sound" type="button" aria-pressed="false" aria-label="Sound off" title="Sound: off"></button>' +
       '<div class="sn-pop" role="menu" hidden>' + PAGES.map(p => '<a class="sn-item" role="menuitem" href="' + url(p) + '"' + cur(p) + '><i>' + icon(p.id) + '</i><b>' + p.label + '</b><small>' + p.desc + '</small></a>').join('') + '</div>';
-    const btn = nav.querySelector('.sn-btn'), pop = nav.querySelector('.sn-pop'), snd = nav.querySelector('.sn-sound');
-    const SPK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 6v12l-4.5-3.5H4z"/>';
-    if (window.HZNSound) { snd.addEventListener('click', () => HZNSound.toggle());
-      HZNSound.subscribe(st => { snd.innerHTML = SPK + (st === 'off' ? '<path d="m16 9.5 5 5M21 9.5l-5 5"/>' : '<path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/>') + '</svg>';
-        snd.setAttribute('aria-pressed', String(st !== 'off')); snd.classList.toggle('waiting', st === 'waiting');
-        const t = st === 'off' ? 'Sound: off' : st === 'waiting' ? 'Sound: tap anywhere to start' : 'Sound: on'; snd.title = t; snd.setAttribute('aria-label', t); }); }
-    else snd.remove();
+    const btn = nav.querySelector('.sn-btn'), pop = nav.querySelector('.sn-pop');
     const setOpen = open => { pop.hidden = !open; btn.setAttribute('aria-expanded', String(open));
       if (open) pop.querySelector('.sn-item').focus({ preventScroll: true }); };
     btn.addEventListener('click', e => { e.stopPropagation(); setOpen(pop.hidden); });

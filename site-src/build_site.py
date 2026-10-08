@@ -17,7 +17,7 @@ DOCS = SRC.parent / "docs"
 HEAD = ('<!doctype html>\n<html lang="en">\n<meta charset="utf-8">\n'
         '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n'
         '<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">\n'
-        + ''.join(f'<script src="../assets/{n}.js?v=__V_{n}__" defer></script>\n' for n in ("analytics", "sound", "sitenav", "tour"))
+        + ''.join(f'<script src="../assets/{n}.js?v=__V_{n}__" defer></script>\n' for n in ("analytics", "sitenav", "tour"))
         + '<style>@view-transition{navigation:auto}::view-transition-old(root),::view-transition-new(root){animation-duration:.32s}</style>\n'
         + ''.join(f'<meta {k}="{n}" content="{v}">\n' for k, n, v in [
             ("property", "og:image:width", "1200"), ("property", "og:image:height", "630"),
@@ -59,7 +59,7 @@ DESCRIPTIONS = {  # what search engines and link previews show for each page
 }
 
 
-SHARED = ("analytics", "sound", "sitenav", "tour")  # scripts every page loads
+SHARED = ("analytics", "sitenav", "tour")  # scripts every page loads
 
 
 def versioned(text):
