@@ -75,6 +75,7 @@ def stamp_landing():
     p = DOCS / "index.html"; s = p.read_text()
     for n in SHARED:
         s = re.sub(rf'src="assets/{n}\.js(\?v=[0-9a-f]+)?"', f'src="assets/{n}.js?v={version(DOCS / "assets" / f"{n}.js")}"', s)
+    s = re.sub(r'(<meta property="og:image" content="[^"]*/assets/og\.jpg)(\?v=[0-9a-f]+)?"', lambda m: m.group(1) + "?v=" + version(DOCS / "assets" / "og.jpg") + '"', s)
     p.write_text(s)
 
 
@@ -82,10 +83,14 @@ def write(name, html):
     out = DOCS / name / "index.html"
     out.parent.mkdir(parents=True, exist_ok=True)
     d = DESCRIPTIONS[name].replace('"', "&quot;")
-    img = {"globe": "og-globe.jpg", "stats": "og-stats.jpg"}.get(name, "og.jpg")  # share image for this page
+    img = {"globe": "og-globe.jpg", "stats": "og-stats.jpg", "silicon": "og-silicon.jpg", "drivers": "og-drivers.jpg"}.get(name, "og.jpg")  # share image for this page
+    img += "?v=" + version(DOCS / "assets" / img.split("?")[0])  # so link previews pick up a changed image
     page = (f'<meta property="og:image" content="{SITE}assets/{img}">\n'
             f'<meta name="description" content="{d}">\n<meta property="og:description" content="{d}">\n'
             f'<link rel="canonical" href="{SITE}{name}/">\n<meta property="og:url" content="{SITE}{name}/">\n')
+    t = re.search(r"<title>(.*?)</title>", html)
+    if t:
+        page += f'<meta property="og:title" content="{t.group(1)}">\n'
     out.write_text(versioned(HEAD) + page + localize(html))
     print(f"{out.relative_to(DOCS.parent)}  {out.stat().st_size / 1e3:.0f} kB")
 
