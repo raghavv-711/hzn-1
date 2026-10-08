@@ -490,9 +490,20 @@ function subsolar(ms){const d=new Date(ms),doy=(ms-Date.UTC(d.getUTCFullYear(),0
 let sunAt=-1;
 function updateSun(ms){if(Math.abs(ms-sunAt)<60000)return;sunAt=ms;sunU.value.copy(subsolar(ms));}
 earthMats.forEach((m,i)=>scene.add(new THREE.Mesh(new THREE.SphereGeometry(1,96,160,i*Math.PI,Math.PI),m)));
-scene.add(new THREE.Mesh(new THREE.SphereGeometry(1.08,64,64),new THREE.ShaderMaterial({side:THREE.BackSide,blending:THREE.AdditiveBlending,transparent:true,depthWrite:false,
-  vertexShader:`varying vec3 vN;void main(){vN=normalize(normalMatrix*normal);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
-  fragmentShader:`varying vec3 vN;void main(){float i=pow(clamp(.62-dot(vN,vec3(0.,0.,1.)),0.,1.),4.);gl_FragColor=vec4(vec3(.35,.6,1.)*i*.9,i);}`})));
+// atmosphere: a soft halo around the limb, brighter and bluer on the side the sun is lighting, dim on the night side
+scene.add(new THREE.Mesh(new THREE.SphereGeometry(1.08,96,96),new THREE.ShaderMaterial({side:THREE.BackSide,blending:THREE.AdditiveBlending,transparent:true,depthWrite:false,uniforms:{sun:sunU},
+  vertexShader:`varying vec3 vN;varying vec3 vW;void main(){vN=normalize(normalMatrix*normal);vW=normalize(position);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+  fragmentShader:`uniform vec3 sun;varying vec3 vN;varying vec3 vW;void main(){float i=pow(clamp(.62-dot(vN,vec3(0.,0.,1.)),0.,1.),4.);
+    float day=smoothstep(-.35,.45,dot(vW,sun));vec3 c=mix(vec3(.16,.26,.55),vec3(.38,.66,1.),day)*(.45+.65*day);
+    c+=vec3(1.,.55,.25)*exp(-pow(dot(vW,sun)+.05,2.)/.012)*.35*i;  // a faint warm band where day turns to night
+    gl_FragColor=vec4(c*i*.95,i);}`})));
+// stars: a few thousand points on a far sphere, fixed in space, so they drift past as the globe turns
+{const N=2600,pos=new Float32Array(N*3),col=new Float32Array(N*3),R=(()=>{let x=7;return()=>(x=(x*16807)%2147483647)/2147483647;})();
+  for(let i=0;i<N;i++){const u=R()*2-1,t=R()*Math.PI*2,r=Math.sqrt(1-u*u),d=40+R()*10;pos.set([r*Math.cos(t)*d,u*d,r*Math.sin(t)*d],i*3);
+    const b=.25+Math.pow(R(),3)*.75,w=R();col.set([b*(.82+.18*w),b*(.88+.1*w),b],i*3);}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));g.setAttribute('color',new THREE.BufferAttribute(col,3));
+  const stars=new THREE.Points(g,new THREE.PointsMaterial({size:1.6,sizeAttenuation:false,vertexColors:true,transparent:true,opacity:.85,depthWrite:false}));
+  stars.renderOrder=-10;scene.add(stars);}
 
 // ---------- close-up imagery: Sentinel-2 cloudless tiles (10 m per pixel), streamed in only for the area in view ----------
 // Zoomed out, the globe uses its two 6,144-pixel NASA images (about 3 km per pixel). Closer in, 256-pixel Web Mercator tiles
