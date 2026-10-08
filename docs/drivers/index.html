@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<script src="../assets/analytics.js?v=d8e57b82e5" defer></script>
+<script src="../assets/sitenav.js?v=966811d184" defer></script>
+<script src="../assets/tour.js?v=03d95d93fa" defer></script>
+<style>@view-transition{navigation:auto}::view-transition-old(root),::view-transition-new(root){animation-duration:.32s}</style>
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:site_name" content="HZN-1">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:image" content="https://hzn1.com/assets/og.jpg">
+<meta name="description" content="A concept for ride-hail drivers: estimate fuel left from trips, predict the next fill-up and steer it to a partner station that pays for the visit. Watch a simulated shift and the economics.">
+<meta property="og:description" content="A concept for ride-hail drivers: estimate fuel left from trips, predict the next fill-up and steer it to a partner station that pays for the visit. Watch a simulated shift and the economics.">
+<link rel="canonical" href="https://hzn1.com/drivers/">
+<meta property="og:url" content="https://hzn1.com/drivers/">
+<title>Fuel Horizon for Drivers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* A pitch page: the idea, a simulated shift you can watch, how the estimate works, who pays whom, what exists today */
+:root{
+  --bg:#070b11; --surface:#0d141d; --raise:#121b27; --line:rgba(146,176,208,.16); --line-strong:rgba(146,176,208,.3);
+  --text:#e6edf5; --muted:#8c9bad; --faint:#5f6d7e;
+  --accent:#7cc4ff; --amber:#f5b041; --good:#4fd1c5; --bad:#ff6b6b; --violet:#b69cff;
+  --f-sans:"Geist",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"Geist Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.55 var(--f-sans);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding:48px 20px 72px;display:flex;flex-direction:column;gap:64px}
+a{color:var(--accent);text-underline-offset:3px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+h1,h2,h3{margin:0;letter-spacing:-.022em;text-wrap:balance;font-family:"Bricolage Grotesque",Geist,ui-sans-serif,system-ui,sans-serif;font-optical-sizing:auto;font-weight:700}
+h1{font-size:clamp(30px,5vw,50px);line-height:1.06;max-width:18ch}
+h2{font-size:24px;line-height:1.2}
+h3{font-size:16px;line-height:1.3}
+p{margin:0;max-width:70ch}
+.eyebrow{font:500 12px/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.eyebrow a{color:var(--accent);text-decoration:none}
+.mono,.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+header{display:flex;flex-direction:column;gap:18px}
+.lede{font-size:17px;color:var(--muted);max-width:66ch}
+.lede strong{color:var(--text);font-weight:500}
+.tag{display:inline-flex;align-items:center;gap:8px;align-self:flex-start;padding:6px 12px;border-radius:999px;font:500 12.5px/1 var(--f-mono);letter-spacing:.04em;color:var(--amber);background:rgba(245,176,65,.1);border:1px solid rgba(245,176,65,.3)}
+.tag i{width:7px;height:7px;border-radius:50%;background:var(--amber)}
+.three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media (max-width:820px){.three{grid-template-columns:minmax(0,1fr)}}
+.pt{padding:16px 18px;border-radius:14px;background:var(--surface);border:1px solid var(--line);display:flex;flex-direction:column;gap:6px}
+.pt b{font-size:14.5px;font-weight:600}
+.pt span{font-size:13.5px;color:var(--muted)}
+.pt .k{font:500 11px/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--c,var(--accent))}
+
+section{display:flex;flex-direction:column;gap:16px}
+.sec-head{display:flex;flex-direction:column;gap:8px}
+.sec-head p{color:var(--muted);font-size:15px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px}
+.btn{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;font-size:13.5px;font-weight:500;background:var(--text);color:#06121c;white-space:nowrap}
+.btn.ghost{background:none;color:var(--text);border:1px solid var(--line-strong)}
+.btn:hover{filter:brightness(1.08)}.btn.ghost:hover{background:rgba(255,255,255,.05)}
+.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn svg{width:14px;height:14px}
+.seg{display:inline-flex;flex-wrap:wrap;padding:3px;border-radius:10px;background:var(--raise);border:1px solid var(--line);gap:2px}
+.seg button{all:unset;cursor:pointer;padding:7px 12px;border-radius:7px;font-size:13px;color:var(--muted);white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.seg button:focus-visible{outline:2px solid var(--accent)}
+select{background:var(--raise);color:var(--text);border:1px solid var(--line);border-radius:9px;font:13px var(--f-sans);padding:7px 9px}
+
+/* the simulated shift */
+.sim-top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center}
+.sim-top .grp{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.sim{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start}
+@media (max-width:900px){.sim{grid-template-columns:minmax(0,1fr)}}
+.map{position:relative;border-radius:12px;overflow:hidden;background:#0a1118;border:1px solid var(--line)}
+.map svg{display:block;width:100%;height:auto}
+.map .legend{position:absolute;left:10px;bottom:10px;display:flex;gap:10px;flex-wrap:wrap;padding:6px 10px;border-radius:9px;background:rgba(7,11,17,.82);font-size:11.5px;color:var(--muted)}
+.map .legend span{display:inline-flex;align-items:center;gap:6px}
+.map .legend i{width:9px;height:9px;border-radius:50%;background:var(--c)}
+@media (max-width:640px){.map .legend{position:static;border-radius:0;background:none;padding:8px 10px;border-top:1px solid var(--line)}}
+.hud{display:flex;flex-direction:column;gap:12px}
+.hud .row{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.lbl{font:500 11px/1 var(--f-mono);letter-spacing:.07em;text-transform:uppercase;color:var(--faint)}
+.clock{font:600 26px/1 var(--f-mono);letter-spacing:-.02em}
+.status{font-size:13.5px;color:var(--muted);min-height:20px}
+.status b{color:var(--text);font-weight:500}
+.gauge{position:relative;height:12px;border-radius:7px;background:var(--raise);overflow:hidden;border:1px solid var(--line)}
+.gauge i{position:absolute;left:0;top:0;bottom:0;border-radius:7px;background:linear-gradient(90deg,var(--bad),var(--amber) 30%,var(--good) 60%);transition:width .2s}
+.gauge u{position:absolute;top:-2px;bottom:-2px;left:15%;width:2px;background:var(--text);opacity:.55}
+.fuel{font:500 13px/1.4 var(--f-mono);color:var(--muted)}
+.fuel b{color:var(--text);font-weight:600}
+.pred{font-size:13px;color:var(--muted);padding:10px 12px;border-radius:10px;background:var(--raise);border:1px solid var(--line)}
+.pred b{color:var(--text);font-weight:500}
+.nudge{display:flex;flex-direction:column;gap:6px;padding:12px 14px;border-radius:12px;border:1px solid rgba(79,209,197,.45);background:linear-gradient(180deg,rgba(79,209,197,.14),rgba(79,209,197,.04));animation:pop .35s cubic-bezier(.3,.7,.2,1.3)}
+.nudge .k{font:500 11px/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--good)}
+.nudge p{font-size:13.5px;color:var(--text)}
+.nudge small{font-size:12px;color:var(--muted)}
+.nudge.warn{border-color:rgba(255,107,107,.45);background:linear-gradient(180deg,rgba(255,107,107,.13),rgba(255,107,107,.03))}
+.nudge.warn .k{color:var(--bad)}
+@keyframes pop{from{transform:scale(.96);opacity:0}}
+.tally{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;border-top:1px solid var(--line);padding-top:12px}
+.tally div{display:flex;flex-direction:column;gap:4px}
+.tally b{font:600 16px/1 var(--f-mono)}
+.cmp{display:none;flex-direction:column;gap:12px}
+.cmp.on{display:flex}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{font:500 11px/1 var(--f-mono);letter-spacing:.07em;text-transform:uppercase;color:var(--faint);text-align:right;padding:0 12px 10px}
+th:first-child,td:first-child{text-align:left}
+td{padding:11px 12px;border-top:1px solid var(--line);text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+td:first-child{font-family:var(--f-sans);color:var(--muted)}
+td.win{color:var(--good)}
+.tbl{overflow-x:auto}
+.note{font-size:12.5px;color:var(--faint)}
+
+/* how it works */
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+@media (max-width:820px){.two{grid-template-columns:minmax(0,1fr)}}
+.two p{color:var(--muted)}
+.two p+p{margin-top:12px}
+.two p strong{color:var(--text);font-weight:500}
+.formula{font:13.5px/1.7 var(--f-mono);color:#c7d3e0;padding:16px;border-radius:12px;background:#05080d;border:1px solid var(--line)}
+.formula .c{color:var(--faint)}.formula .h{color:var(--amber)}
+.inputs{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:13.5px;margin-top:14px}
+.inputs dt{font-family:var(--f-mono);color:var(--accent)}
+.inputs dd{margin:0;color:var(--muted)}
+
+/* money flow + calculator */
+.flow{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:10px;align-items:center}
+.flow .node{padding:14px;border-radius:12px;background:var(--surface);border:1px solid var(--line);text-align:center;display:flex;flex-direction:column;gap:4px}
+.flow .node b{font-size:14.5px}
+.flow .node span{font-size:12.5px;color:var(--muted)}
+.flow .arr{display:flex;flex-direction:column;align-items:center;gap:2px;font:500 11.5px/1.3 var(--f-mono);color:var(--good);text-align:center;min-width:92px}
+.flow .arr svg{width:46px;height:12px}
+@media (max-width:760px){.flow{grid-template-columns:1fr}.flow .arr{flex-direction:row;justify-content:center}.flow .arr svg{transform:rotate(90deg);width:28px}}
+.calc{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+@media (max-width:820px){.calc{grid-template-columns:minmax(0,1fr)}}
+.sl{display:flex;flex-direction:column;gap:6px}
+.sl .row{display:flex;justify-content:space-between;font-size:13.5px;color:var(--muted)}
+.sl .row b{color:var(--text);font:500 13.5px var(--f-mono)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.outs{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.out{padding:14px;border-radius:12px;background:var(--raise);border:1px solid var(--line);display:flex;flex-direction:column;gap:6px}
+.out b{font:600 22px/1 var(--f-mono);letter-spacing:-.02em}
+.out span{font-size:12.5px;color:var(--muted)}
+
+.exists{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:820px){.exists{grid-template-columns:1fr}}
+.exists .panel{display:flex;flex-direction:column;gap:10px}
+.exists ul{margin:0;padding-left:18px;color:var(--muted);font-size:14px;display:flex;flex-direction:column;gap:6px}
+.exists li b{color:var(--text);font-weight:500}
+.gap{border:1px solid rgba(124,196,255,.3);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:10px;background:radial-gradient(120% 140% at 0% 0%,rgba(124,196,255,.09),transparent 60%),var(--surface)}
+.gap p{color:var(--muted)}
+.gap p strong{color:var(--text);font-weight:500}
+footer{border-top:1px solid var(--line);padding-top:22px;display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
+footer b{color:var(--text);font-weight:500;font-size:13.5px}
+footer .src a{color:var(--muted)}
+
+.reveal{opacity:0;transform:translateY(18px);transition:opacity .8s cubic-bezier(.2,.7,.2,1),transform .8s cubic-bezier(.2,.7,.2,1)}
+.reveal.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}.nudge{animation:none}}
+
+.sitebar{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:12px;min-height:calc(65px + env(safe-area-inset-top,0px));padding:env(safe-area-inset-top,0px) 16px 0;
+  background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.sitebar .logo{display:flex;align-items:center;gap:11px;text-decoration:none;color:var(--text);font:500 16px var(--f-mono);letter-spacing:.06em}
+.sitebar .logo svg{width:34px;height:34px;color:var(--accent);filter:drop-shadow(0 0 8px rgba(124,196,255,.3))}
+</style>
+
+<div class="sitebar"><a class="logo" href="../" aria-label="HZN-1 home"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="7" y="7" width="18" height="18" rx="4"/><path d="M12 7V4M16 7V4M20 7V4M12 28v-3M16 28v-3M20 28v-3M7 12H4M7 16H4M7 20H4M28 12h-3M28 16h-3M28 20h-3"/><path d="M9.5 20.5h13" stroke-linecap="round"/><path d="M13 20.5a3 3 0 0 1 6 0M10.5 20.5a5.5 5.5 0 0 1 11 0" stroke-linecap="round"/><circle cx="16" cy="20.5" r="1.7" fill="currentColor" stroke="none"/></svg>HZN-1</a><div data-sitenav data-page="drivers"></div></div>
+<main class="wrap">
+  <header>
+    <div class="eyebrow"><a href="../">HZN-1</a><span>·</span><a href="../globe/">Fuel Horizon</a><span>·</span><span>For drivers</span></div>
+    <h1>Fuel Horizon for ride-hail drivers</h1>
+    <p class="lede">Ride-hail apps already know <strong>which car a driver has and every mile it drives</strong>. That's enough to estimate fuel left with no sensor, predict when the driver will need to fill up, and point them to a partner station near their next drop-off before the warning light ever comes on. Stations pay for the visit; drivers save on every gallon.</p>
+    <span class="tag"><i></i>Concept · simulated city and prices</span>
+    <div class="three">
+      <div class="pt" style="--c:var(--good)"><span class="k">Drivers</span><b>Cheaper fuel, shorter detours</b><span>A discount at a station near where a trip ends, planned before the tank gets low.</span></div>
+      <div class="pt" style="--c:var(--accent)"><span class="k">Stations</span><b>Customers who were going to fill up anyway</b><span>Pay only when a driver they were sent to actually buys fuel.</span></div>
+      <div class="pt" style="--c:var(--violet)"><span class="k">The app</span><b>A commission and happier drivers</b><span>Revenue from stations, and a perk that keeps drivers on the platform.</span></div>
+    </div>
+  </header>
+
+  <section class="reveal" aria-labelledby="h-shift">
+    <div class="sec-head"><h2 id="h-shift">Watch a shift</h2>
+      <p>One driver, an 8-hour evening shift in a made-up city. Switch between how refuelling works today and with Fuel Horizon, or compare both on the same shift.</p></div>
+    <div class="panel" style="display:flex;flex-direction:column;gap:14px">
+      <div class="sim-top">
+        <div class="grp">
+          <div class="seg" id="mode" role="group" aria-label="How the driver refuels">
+            <button type="button" data-m="0" aria-pressed="false">Today</button>
+            <button type="button" data-m="1" aria-pressed="true">With Fuel Horizon</button>
+          </div>
+          <select id="car" aria-label="Vehicle"></select>
+        </div>
+        <div class="grp">
+          <button class="btn ghost" id="play" type="button">Pause</button>
+          <div class="seg" id="speed" role="group" aria-label="Speed"><button type="button" data-s="1" aria-pressed="true">1×</button><button type="button" data-s="4" aria-pressed="false">4×</button></div>
+          <button class="btn ghost" id="again" type="button">New shift</button>
+          <button class="btn" id="compare" type="button">Compare both</button>
+        </div>
+      </div>
+      <div class="sim">
+        <div class="map">
+          <svg id="city" viewBox="0 0 960 600" role="img" aria-label="Map of a simulated city with a driver's car, trips and fuel stations"></svg>
+          <div class="legend"><span style="--c:var(--good)"><i></i>Partner station</span><span style="--c:#5f6d7e"><i></i>Other station</span><span style="--c:var(--accent)"><i></i>On a trip</span><span style="--c:var(--amber)"><i></i>Heading to fuel</span></div>
+        </div>
+        <div class="hud">
+          <div class="row"><div><div class="lbl">Shift · 4 PM to midnight</div><div class="clock" id="clock">4:00 PM</div></div><div style="text-align:right"><div class="lbl">Trips</div><div class="clock" id="trips">0</div></div></div>
+          <div class="status" id="status">Starting the shift…</div>
+          <div><div class="row" style="margin-bottom:6px"><span class="lbl">Fuel (estimated)</span><span class="lbl">15% line</span></div>
+            <div class="gauge"><i id="gauge"></i><u></u></div>
+            <div class="fuel" id="fuel" style="margin-top:6px"></div></div>
+          <div class="pred" id="pred"></div>
+          <div id="nudge"></div>
+          <div class="tally">
+            <div><span class="lbl">Miles</span><b id="t-mi">0</b></div>
+            <div><span class="lbl">Spent on fuel</span><b id="t-spent">$0.00</b></div>
+            <div><span class="lbl">Refuel detour</span><b id="t-det">0.0 mi</b></div>
+            <div><span class="lbl">Saved</span><b id="t-saved">$0.00</b></div>
+          </div>
+        </div>
+      </div>
+      <div class="cmp" id="cmp">
+        <h3 id="cmp-title">Same shift, both ways</h3>
+        <div class="tbl"><table><thead><tr><th></th><th>Today</th><th>With Fuel Horizon</th></tr></thead><tbody id="cmp-body"></tbody></table></div>
+        <p class="note" id="cmp-note"></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="reveal" aria-labelledby="h-how">
+    <div class="sec-head"><h2 id="h-how">How the estimate works</h2>
+      <p>The same idea as the planes on the globe: you don't need a fuel sensor if you know the vehicle and how it's moving.</p></div>
+    <div class="two">
+      <div>
+        <p><strong>Start from the last fill-up.</strong> The driver taps “filled up” or pays with the app's card, so the app knows the tank was full at that moment.</p>
+        <p><strong>Subtract every mile.</strong> GPS already records each trip. Divide by the car's real-world fuel economy, adjusted for city crawl, highway stretches and time spent idling.</p>
+        <p><strong>Learn each car.</strong> Every fill-up shows how many gallons actually went in, so the estimate for that driver gets more accurate week by week, just as the aircraft model was calibrated against published figures.</p>
+        <p><strong>Predict, then nudge.</strong> From the last hour of driving, project when the tank hits 15%. If that's within the hour, suggest the partner station closest to where the next drop-off ends.</p>
+        <dl class="inputs">
+          <dt>Vehicle</dt><dd>Make and model from the driver's registration: tank size and fuel economy</dd>
+          <dt>Trips</dt><dd>GPS miles, speed and idle time, already recorded for fares</dd>
+          <dt>Fill-ups</dt><dd>A tap in the app or a card transaction resets the tank</dd>
+          <dt>Stations</dt><dd>Partner locations, prices and current offers</dd>
+        </dl>
+      </div>
+      <div class="formula"><span class="c">// fuel left, no sensor</span>
+fuel = <span class="h">tank</span>                    <span class="c">// at the last fill-up</span>
+     − miles_city / <span class="h">mpg_city</span>
+     − miles_hwy  / <span class="h">mpg_hwy</span>
+     − idle_hours × <span class="h">idle_gal_per_h</span>
+
+<span class="c">// when will it reach 15%?</span>
+rate    = gallons used in the last hour
+minutes = (fuel − 0.15 × tank) / rate × 60
+
+<span class="c">// nudge when it's close</span>
+if minutes &lt; 60:
+  station = partner nearest the next drop-off
+  offer   = price − discount
+
+<span class="c">// after each fill-up, learn the car</span>
+mpg ← mpg × (estimated gallons / actual gallons)</div>
+    </div>
+  </section>
+
+  <section class="reveal" aria-labelledby="h-money">
+    <div class="sec-head"><h2 id="h-money">Who pays whom</h2>
+      <p>Stations pay a small fee only for fuel actually bought by a driver they were sent to. Part of it comes back to the driver as a discount. Move the sliders; the numbers are illustrative, not from any company.</p></div>
+    <div class="flow" aria-label="Money flow">
+      <div class="node"><b>Partner station</b><span>gets a full-tank customer</span></div>
+      <div class="arr"><span id="f-fee">15¢/gal fee</span><svg viewBox="0 0 46 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h40M36 1l6 5-6 5"/></svg></div>
+      <div class="node"><b>Ride-hail app</b><span id="f-keep">keeps 5¢/gal</span></div>
+      <div class="arr"><span id="f-disc">10¢/gal discount</span><svg viewBox="0 0 46 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h40M36 1l6 5-6 5"/></svg></div>
+      <div class="node"><b>Driver</b><span>pays less at the pump</span></div>
+    </div>
+    <div class="panel calc">
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="sl"><div class="row"><span>Active drivers in one city</span><b id="v-drv"></b></div><input type="range" id="s-drv" min="2000" max="60000" step="1000" value="20000"></div>
+        <div class="sl"><div class="row"><span>Share who follow the nudges</span><b id="v-fol"></b></div><input type="range" id="s-fol" min="5" max="80" step="5" value="35"></div>
+        <div class="sl"><div class="row"><span>Fill-ups per driver per week</span><b id="v-fil"></b></div><input type="range" id="s-fil" min="1" max="5" step=".5" value="2.5"></div>
+        <div class="sl"><div class="row"><span>Gallons per fill-up</span><b id="v-gal"></b></div><input type="range" id="s-gal" min="6" max="20" step="1" value="11"></div>
+        <div class="sl"><div class="row"><span>Fee the station pays (per gallon)</span><b id="v-fee"></b></div><input type="range" id="s-fee" min="5" max="40" step="1" value="15"></div>
+        <div class="sl"><div class="row"><span>Discount passed to the driver</span><b id="v-dis"></b></div><input type="range" id="s-dis" min="0" max="40" step="1" value="10"></div>
+      </div>
+      <div class="outs">
+        <div class="out"><span>Gallons steered to partners each month</span><b id="o-gal"></b></div>
+        <div class="out"><span>Fuel sales for partner stations each month</span><b id="o-rev"></b></div>
+        <div class="out"><span>The app's net commission each month</span><b id="o-app"></b></div>
+        <div class="out"><span>Each participating driver saves per year</span><b id="o-drv"></b></div>
+        <p class="note" style="grid-column:1/-1">Fuel sales assume $3.45 a gallon. Stations also tend to sell snacks, drinks and car washes to those visitors, which isn't counted here.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="reveal" aria-labelledby="h-exists">
+    <div class="sec-head"><h2 id="h-exists">What exists today</h2>
+      <p>Fuel perks for ride-hail drivers aren't new. What's missing is the prediction.</p></div>
+    <div class="exists">
+      <div class="panel"><h3>India</h3><ul>
+        <li><b>Uber and Indian Oil</b> offered drivers discounts and loyalty points on petrol, diesel and CNG at IOCL pumps.</li>
+        <li><b>Ola</b> ran cashback and fuel cards with Indian Oil, and fuel e-vouchers with BPCL.</li>
+        <li><b>Rapido and HPCL</b> announced fuel and maintenance benefits for its captains in 2025.</li>
+        <li>State-run oil companies run their own station networks, so one deal can cover thousands of pumps.</li></ul></div>
+      <div class="panel"><h3>United States</h3><ul>
+        <li><b>Uber</b> links drivers to Shell Fuel Rewards and Upside cash back from the Driver app, and boosted both during the 2026 price spike.</li>
+        <li><b>Lyft</b> has a standing Upside deal: cents per gallon back, more for higher driver tiers.</li>
+        <li><b>Upside</b> is paid by stations for the extra sales it brings and shares that with drivers.</li>
+        <li>Most branded US stations are independently owned, so deals are signed station by station or through networks like Upside.</li></ul></div>
+    </div>
+    <div class="gap">
+      <h3>The gap</h3>
+      <p>Every program today is <strong>passive cash back</strong>: the driver earns it after happening to fill up at a participating station. None of them <strong>predicts when a driver will need fuel</strong> and puts the right station in front of them at the right moment, on the way to where their next trip ends. That timing is what makes a visit worth paying for, and it's the part Fuel Horizon already does for every plane in the sky.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn ghost" href="../globe/">See the aircraft version</a><a class="btn ghost" href="../model/">How accurate the fuel model is</a></div>
+    </div>
+  </section>
+
+  <footer>
+    <div style="display:flex;flex-direction:column;gap:6px;max-width:70ch">
+      <span>A concept by Raghav Vijayapal. The city, trips and prices on this page are simulated. Not affiliated with or endorsed by Uber, Lyft, Upside, Shell, Indian Oil, BPCL, HPCL, Ola or Rapido.</span>
+      <span class="src">Sources: <a href="https://www.uber.com/us/en/blog/upside-redeeming-rewards/" target="_blank" rel="noopener">Uber</a>, <a href="https://www.uber.com/us/en/blog/gas-savings-for-delivery-drivers/" target="_blank" rel="noopener">Uber gas savings</a>, <a href="https://www.lyft.com/hub/posts/gas-up-for-wayyyyy-less" target="_blank" rel="noopener">Lyft</a>, <a href="https://www.thenewsminute.com/atom/uber-partners-indian-oil-offer-discount-drivers-fuel-iocl-stations-102732" target="_blank" rel="noopener">Uber and Indian Oil</a>, <a href="https://www.medianama.com/2015/09/223-ola-driver-cashbacks/" target="_blank" rel="noopener">Ola cashbacks</a>, <a href="https://www.mobilityoutlook.com/news/rapido-partners-with-hpcl-to-offer-fuel-maintenance-benefits-for-captains/" target="_blank" rel="noopener">Rapido and HPCL</a>.</span>
+    </div>
+    <b>Made by Raghav Vijayapal</b>
+  </footer>
+</main>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const money = v => '$' + v.toFixed(2);
+  const fmtInt = v => Math.round(v).toLocaleString('en-US');
+
+  // ---------- the city: a grid of streets, half a mile per block ----------
+  const COLS = 14, ROWS = 9, X0 = 40, Y0 = 40, DX = (920 - 40) / (COLS - 1), DY = (560 - 40) / (ROWS - 1), BLOCK_MI = .5;
+  const px = g => [X0 + g[0] * DX, Y0 + g[1] * DY];
+  const BASE = 3.45, DISCOUNT = .20;
+  const STATIONS = [
+    { id: 'A', g: [3, 2], partner: true, price: 3.45 }, { id: 'B', g: [9, 6], partner: true, price: 3.45 }, { id: 'C', g: [12, 1], partner: true, price: 3.49 },
+    { id: 'D', g: [6, 4], partner: false, price: 3.39 }, { id: 'E', g: [1, 7], partner: false, price: 3.55 }, { id: 'F', g: [11, 4], partner: false, price: 3.59 },
+  ];
+  const CARS = [
+    { name: 'Honda Accord', tank: 14.8, mpg: 30, idle: .3 },
+    { name: 'Toyota Camry Hybrid', tank: 13.2, mpg: 46, idle: .05 },
+    { name: 'Toyota Highlander', tank: 17.9, mpg: 22, idle: .4 },
+    { name: 'Chevrolet Suburban', tank: 24, mpg: 16, idle: .6 },
+  ];
+  const SHIFT = 480, START_H = 16;
+
+  function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  const man = (a, b) => Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]);
+  const rnd = p => [Math.round(p[0]), Math.round(p[1])];
+  function route(a, b, R) { const mid = R() < .5 ? [b[0], a[1]] : [a[0], b[1]]; const pts = [a.slice()];
+    if (mid[0] !== a[0] || mid[1] !== a[1]) pts.push(mid); if (b[0] !== mid[0] || b[1] !== mid[1]) pts.push(b.slice()); if (pts.length === 1) pts.push(b.slice()); return pts; }
+  function pickNear(from, lo, hi, R) { for (let k = 0; k < 200; k++) { const g = [Math.floor(R() * COLS), Math.floor(R() * ROWS)], d = man(g, from); if (d >= lo && d <= hi) return g; } return [clamp(from[0] + lo, 0, COLS - 1), from[1]]; }
+  // starting fuel chosen so a fill-up falls around the middle of the shift
+  const startFrac = c => clamp(.15 + (130 * .55 / c.mpg) / c.tank, .2, .9);
+
+  // ---------- one driver's shift ----------
+  function makeSim(seed, car, smart) {
+    const S = { R: rng(seed), car, smart, t: 0, pos: [7, 4], path: [], state: 'idle', wait: 1.5, mph: 18, trips: 0, miles: 0, trip: null,
+      fills: [], detMi: 0, offMin: 0, hist: [], station: null, refuelLeft: 0, nudge: null, trail: [[7, 4]], ended: false };
+    S.fuel = car.tank * startFrac(car); S.minFrac = S.fuel / car.tank; return S;
+  }
+  function minutesTo15(S) {
+    const c = S.car, old = S.hist.find(h => S.t - h[0] <= 60);
+    let rate = old && S.t - old[0] > 20 ? (old[1] - S.fuel) / (S.t - old[0]) : 0;  // gallons a minute over the last hour
+    if (!(rate > 0)) rate = 18 * .6 / c.mpg / 60;
+    return (S.fuel - .15 * c.tank) / rate;
+  }
+  function goStation(S, st, why) {
+    S.station = st; S.state = 'toStation'; S.path = route(rnd(S.pos), st.g, S.R); S.mph = 16 + S.R() * 6;
+    S.nudge = { st, why, at: S.t, mi: man(rnd(S.pos), st.g) * BLOCK_MI, frac: S.fuel / S.car.tank };
+  }
+  function afterDrop(S) {
+    const c = S.car, frac = S.fuel / c.tank;
+    // with Fuel Horizon: once a fill-up is due within ~90 minutes, wait for a drop-off that ends near a partner
+    // station (within a mile), and only go out of the way if the tank is about to get low
+    if (S.smart) { const mins = minutesTo15(S); if (mins < 120) { const st = STATIONS.filter(s => s.partner).sort((a, b) => man(rnd(S.pos), a.g) - man(rnd(S.pos), b.g))[0], d = man(rnd(S.pos), st.g);
+      if (d <= (mins > 50 ? 1 : 2) || mins < 20) { S.predMin = mins; goStation(S, st, 'predicted'); return; } } }
+    else if (frac < .12) { const st = STATIONS.slice().sort((a, b) => man(rnd(S.pos), a.g) - man(rnd(S.pos), b.g))[0]; goStation(S, st, 'warning'); return; }
+    S.state = 'idle'; S.wait = 1 + S.R() * 4;
+  }
+  function newTrip(S) {
+    const here = rnd(S.pos), pu = pickNear(here, 1, 6, S.R), dr = pickNear(pu, 3, 14, S.R);
+    S.trip = { pu, dr }; S.state = 'toPickup'; S.path = route(here, pu, S.R); S.mph = 14 + S.R() * 10;
+  }
+  function arrive(S) {
+    if (S.state === 'toPickup') { S.state = 'onTrip'; S.path = route(S.trip.pu, S.trip.dr, S.R); S.mph = 14 + S.R() * 12; }
+    else if (S.state === 'onTrip') { S.trips++; S.trip = null; afterDrop(S); }
+    else if (S.state === 'toStation') { S.state = 'refuel'; S.refuelLeft = 6 + S.R() * 3; }
+  }
+  function finishRefuel(S) {
+    const c = S.car, st = S.station, gal = c.tank - S.fuel, price = st.price - (S.smart && st.partner ? DISCOUNT : 0);
+    S.fills.push({ st, gal, price, cost: gal * price, frac: S.fuel / c.tank, why: S.nudge && S.nudge.why });
+    S.fuel = c.tank; S.station = null; S.state = 'idle'; S.wait = 1 + S.R() * 2; S.doneNudge = S.nudge; S.nudge = null;
+  }
+  function step(S, dt) {
+    if (S.ended) return;
+    const c = S.car; S.t = Math.min(SHIFT, S.t + dt);
+    if (S.state === 'toStation' || S.state === 'refuel') S.offMin += dt;
+    if (S.state === 'idle') { S.fuel -= c.idle * dt / 60; S.wait -= dt; if (S.wait <= 0 && S.t < SHIFT - 8) newTrip(S); }
+    else if (S.state === 'refuel') { S.refuelLeft -= dt; if (S.refuelLeft <= 0) finishRefuel(S); }
+    else {
+      let blocks = S.mph / 60 / BLOCK_MI * dt;
+      while (blocks > 1e-9 && S.path.length > 1) {
+        const a = S.pos, b = S.path[1], d = Math.abs(b[0] - a[0]) + Math.abs(b[1] - a[1]), go = Math.min(d, blocks), f = d ? go / d : 1;
+        S.pos = [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f]; if (go >= d - 1e-9) { S.pos = b.slice(); S.path.shift(); }
+        blocks -= go; const mi = go * BLOCK_MI; S.miles += mi; S.fuel -= mi / c.mpg; if (S.state === 'toStation') S.detMi += mi;
+      }
+      if (S.path.length <= 1) arrive(S);
+    }
+    const last = S.hist[S.hist.length - 1]; if (!last || S.t - last[0] >= 3) { S.hist.push([S.t, S.fuel]); if (S.hist.length > 40) S.hist.shift(); }
+    const tl = S.trail[S.trail.length - 1]; if (Math.hypot(tl[0] - S.pos[0], tl[1] - S.pos[1]) > .35) S.trail.push(S.pos.slice());
+    S.minFrac = Math.min(S.minFrac, Math.max(0, S.fuel) / c.tank);
+    if (S.t >= SHIFT) S.ended = true;
+  }
+  const runAll = (seed, car, smart) => { const S = makeSim(seed, car, smart); while (!S.ended) step(S, .5); return S; };
+  if (/[?&]debug\b/.test(location.search)) window.__drv = { runAll, CARS };
+
+  // ---------- drawing ----------
+  const NS = 'http://www.w3.org/2000/svg', svg = $('city');
+  const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); (parent || svg).appendChild(e); return e; };
+  (function drawCity() {
+    const R = rng(7);
+    el('rect', { x: 0, y: 0, width: 960, height: 600, fill: '#0a1118' });
+    el('path', { d: 'M0 452 C 120 430, 210 520, 330 600 L0 600Z', fill: '#0d2235' });  // a bit of water
+    for (let i = 0; i < COLS - 1; i++) for (let j = 0; j < ROWS - 1; j++) {
+      const [x, y] = px([i, j]), park = (i === 5 && j === 1) || (i === 9 && j === 3);
+      el('rect', { x: x + 5, y: y + 5, width: DX - 10, height: DY - 10, rx: 4, fill: park ? '#10251c' : `rgb(${18 + R() * 8 | 0},${25 + R() * 8 | 0},${34 + R() * 9 | 0})` });
+    }
+    for (let i = 0; i < COLS; i++) { const [x] = px([i, 0]); el('line', { x1: x, y1: Y0, x2: x, y2: Y0 + (ROWS - 1) * DY, stroke: '#1c2a38', 'stroke-width': i % 4 === 0 ? 5 : 3 }); }
+    for (let j = 0; j < ROWS; j++) { const [, y] = px([0, j]); el('line', { x1: X0, y1: y, x2: X0 + (COLS - 1) * DX, y2: y, stroke: '#1c2a38', 'stroke-width': j % 4 === 0 ? 5 : 3 }); }
+  })();
+  const gTrail = el('polyline', { fill: 'none', stroke: 'rgba(124,196,255,.16)', 'stroke-width': 2.5, 'stroke-linejoin': 'round' });
+  const gRoute = el('polyline', { fill: 'none', 'stroke-width': 4, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
+  const gPins = el('g', {});
+  const stationEls = STATIONS.map(st => {
+    const [x, y] = px(st.g), g = el('g', { transform: `translate(${x},${y})` });
+    el('circle', { r: 15, fill: st.partner ? 'rgba(79,209,197,.16)' : 'rgba(95,109,126,.18)' }, g);
+    el('circle', { r: 9, fill: st.partner ? '#4fd1c5' : '#5f6d7e', stroke: '#0a1118', 'stroke-width': 2 }, g);
+    const t = el('text', { x: 0, y: 4, 'text-anchor': 'middle', 'font-size': 10, 'font-weight': 700, fill: '#06121c', 'font-family': 'Geist, sans-serif' }, g); t.textContent = st.id;
+    const lab = el('text', { x: 14, y: -12, 'font-size': 11.5, fill: st.partner ? '#4fd1c5' : '#8c9bad', 'font-family': 'Geist Mono, monospace' }, g);
+    lab.textContent = '$' + st.price.toFixed(2) + (st.partner ? ' · −20¢' : '');
+    return g;
+  });
+  const car = el('g', {});
+  el('circle', { r: 16, fill: 'rgba(124,196,255,.18)' }, car);
+  const carDot = el('circle', { r: 8, fill: '#e6edf5', stroke: '#7cc4ff', 'stroke-width': 3 }, car);
+
+  function pin(g, label, color) { const [x, y] = px(g), p = el('g', { transform: `translate(${x},${y})` }, gPins);
+    el('path', { d: 'M0 0 C -8 -9 -9 -14 -9 -18 a 9 9 0 0 1 18 0 c 0 4 -1 9 -9 18z', fill: color }, p);
+    const t = el('text', { x: 0, y: -15, 'text-anchor': 'middle', 'font-size': 10, 'font-weight': 700, fill: '#06121c', 'font-family': 'Geist, sans-serif' }, p); t.textContent = label; }
+
+  // ---------- the live simulation ----------
+  let seed = 11, carIdx = 0, smart = true, speed = 1, playing = true, sim, lastFrame = 0, lastHud = 0, visible = false;
+  const carSel = $('car'); carSel.innerHTML = CARS.map((c, i) => `<option value="${i}">${c.name} · ${c.mpg} mpg</option>`).join('');
+  function reset() { sim = makeSim(seed, CARS[carIdx], smart); $('nudge').innerHTML = ''; draw(); hud(true); }
+  function clock(t) { const m = START_H * 60 + t, h = Math.floor(m / 60) % 24, mm = Math.floor(m % 60); return ((h + 11) % 12 + 1) + ':' + String(mm).padStart(2, '0') + (h < 12 ? ' AM' : ' PM'); }
+  function draw() {
+    const S = sim, [x, y] = px(S.pos);
+    car.setAttribute('transform', `translate(${x},${y})`);
+    gTrail.setAttribute('points', S.trail.concat([S.pos]).map(p => px(p).join(',')).join(' '));
+    const col = S.state === 'toStation' ? '#f5b041' : S.state === 'onTrip' ? '#7cc4ff' : 'rgba(230,237,245,.45)';
+    gRoute.setAttribute('stroke', col); gRoute.setAttribute('stroke-dasharray', S.state === 'toPickup' ? '6 7' : '');
+    gRoute.setAttribute('points', (S.path.length > 1 ? [S.pos].concat(S.path.slice(1)) : []).map(p => px(p).join(',')).join(' '));
+    carDot.setAttribute('stroke', col === 'rgba(230,237,245,.45)' ? '#7cc4ff' : col);
+    while (gPins.firstChild) gPins.firstChild.remove();
+    if (S.trip) { if (S.state === 'toPickup') pin(S.trip.pu, 'P', '#e6edf5'); pin(S.trip.dr, 'D', '#7cc4ff'); }
+    stationEls.forEach((g, i) => g.setAttribute('opacity', S.station && S.station !== STATIONS[i] ? .45 : 1));
+  }
+  function hud(force) {
+    const S = sim, c = S.car, frac = Math.max(0, S.fuel) / c.tank;
+    $('clock').textContent = clock(S.t); $('trips').textContent = S.trips;
+    $('gauge').style.width = (frac * 100).toFixed(1) + '%';
+    $('fuel').innerHTML = '<b>' + Math.round(frac * 100) + '%</b> · ' + Math.max(0, S.fuel).toFixed(1) + ' of ' + c.tank + ' gal · about <b>' + fmtInt(Math.max(0, S.fuel) * c.mpg) + ' mi</b> left';
+    const st = S.ended ? '<b>Shift over.</b> Press Compare both to see the difference.' : S.state === 'idle' ? 'Waiting for the next request'
+      : S.state === 'toPickup' ? 'Heading to a pickup' : S.state === 'onTrip' ? '<b>On a trip</b> · ' + (man(rnd(S.pos), S.trip.dr) * BLOCK_MI).toFixed(1) + ' mi to the drop-off'
+      : S.state === 'toStation' ? '<b>Heading to station ' + S.station.id + '</b>' + (S.station.partner && S.smart ? ' (partner)' : '')
+      : '<b>Filling up</b> at station ' + S.station.id;
+    $('status').innerHTML = st;
+    if (S.smart) { const m = minutesTo15(S); $('pred').innerHTML = S.state === 'toStation' || S.state === 'refuel' ? 'Fuel Horizon timed this stop for a drop-off near a partner station, before the tank got low.'
+        : m > 0 ? 'Predicted to reach 15% in <b>' + (m > 180 ? 'over 3 hours' : 'about ' + Math.round(m) + ' min') + '</b>' + (m < 180 ? ', around <b>' + clock(S.t + m) + '</b>' : '') + '.' : 'Below 15%.'; }
+    else $('pred').innerHTML = 'No prediction. The driver refuels when the low-fuel light comes on (about 12%), at whichever station is closest.';
+    const n = S.nudge || (S.doneNudge && S.t - S.doneNudge.at < 40 ? S.doneNudge : null);
+    const key = n ? n.at + (S.nudge ? 'a' : 'd') : '';
+    if (key !== $('nudge')._k || force) { $('nudge')._k = key;
+      $('nudge').innerHTML = !n ? '' : n.why === 'predicted'
+        ? '<div class="nudge"><span class="k">Fuel Horizon nudge · ' + clock(n.at) + '</span><p>You\'ll hit 15% in about ' + Math.round(S.predMin || 45) + ' min. Partner station ' + n.st.id + ' is ' + n.mi.toFixed(1) + ' mi from your drop-off.</p><small>$' + (n.st.price - DISCOUNT).toFixed(2) + ' a gallon with the driver discount (20¢ off). Tank at ' + Math.round(n.frac * 100) + '% when planned.</small></div>'
+        : '<div class="nudge warn"><span class="k">Low-fuel light · ' + clock(n.at) + '</span><p>Tank at ' + Math.round(n.frac * 100) + '%. Nearest station is ' + n.st.id + ', ' + n.mi.toFixed(1) + ' mi away.</p><small>$' + n.st.price.toFixed(2) + ' a gallon, no discount.</small></div>'; }
+    const spent = S.fills.reduce((a, f) => a + f.cost, 0), saved = S.fills.reduce((a, f) => a + (f.st.partner && S.smart ? DISCOUNT * f.gal : 0), 0);
+    $('t-mi').textContent = fmtInt(S.miles); $('t-spent').textContent = money(spent); $('t-det').textContent = S.detMi.toFixed(1) + ' mi'; $('t-saved').textContent = money(saved);
+  }
+  function frame(now) {
+    const dt = lastFrame ? Math.min((now - lastFrame) / 1000, .1) : 0; lastFrame = now;
+    if (playing && visible && !sim.ended) { step(sim, dt * 4 * speed); draw(); if (now - lastHud > 120) { lastHud = now; hud(); } if (sim.ended) hud(true); }
+    requestAnimationFrame(frame);
+  }
+
+  // ---------- comparing both on the same shift ----------
+  function compare() {
+    const c = CARS[carIdx], A = runAll(seed, c, false), B = runAll(seed, c, true);
+    const f = S => S.fills[0], avg = S => S.fills.length ? S.fills.reduce((a, x) => a + x.cost, 0) / S.fills.reduce((a, x) => a + x.gal, 0) : null;
+    const rows = [
+      ['Fill-ups this shift', A.fills.length, B.fills.length, null],
+      ['Price paid per gallon', avg(A), avg(B), v => v == null ? 'none' : money(v), 'low'],
+      ['Cost of the fill-up', f(A) ? f(A).cost : null, f(B) ? f(B).cost : null, v => v == null ? 'none' : money(v)],
+      ['Miles driven to the station', A.detMi, B.detMi, v => v.toFixed(1) + ' mi', 'low'],
+      ['Minutes off the app to refuel', A.offMin, B.offMin, v => Math.round(v) + ' min', 'low'],
+      ['Lowest fuel level', A.minFrac * 100, B.minFrac * 100, v => Math.round(v) + '%', 'high'],
+      ['Trips completed', A.trips, B.trips, null, 'high'],
+    ];
+    $('cmp-body').innerHTML = rows.map(([k, a, b, fm, better]) => { fm = fm || (v => v); const win = better && a != null && b != null && (better === 'low' ? b < a - 1e-6 : b > a + 1e-6);
+      return '<tr><td>' + k + '</td><td>' + fm(a) + '</td><td' + (win ? ' class="win"' : '') + '>' + fm(b) + '</td></tr>'; }).join('');
+    const pa = avg(A), pb = avg(B);
+    const weeklyMiles = 900, fillsYr = 50 * weeklyMiles / (c.mpg * c.tank * .85), galPerFill = c.tank * .85;
+    $('cmp-title').textContent = 'Same shift, both ways · ' + c.name;
+    const hrs = Math.round((A.offMin - B.offMin) * fillsYr / 60);
+    $('cmp-note').innerHTML = (pa && pb ? 'At this gap, a full-time driver (about 900 miles a week, ' + fillsYr.toFixed(0) + ' fill-ups a year) would save about <b style="color:var(--text)">' + money((pa - pb) * galPerFill * fillsYr) + ' a year</b> on fuel'
+        + (hrs > 0 ? ', plus about ' + hrs + ' hours a year less spent detouring to refuel' : '') + '. ' : 'This car didn\'t need fuel during the shift. ')
+      + 'One simulated shift; press New shift for different trips.';
+    // and the average over many shifts, so one lucky run doesn't carry the story
+    let n = 0, sp = 0, da = 0, db = 0, la = 0, lb = 0;
+    for (let k = 1; k <= 60; k++) { const a = runAll(seed * 61 + k, c, false), b = runAll(seed * 61 + k, c, true); la += a.minFrac; lb += b.minFrac;
+      if (a.fills.length && b.fills.length) { n++; sp += a.fills[0].price - b.fills[0].price; da += a.detMi; db += b.detMi; } }
+    if (n) $('cmp-note').innerHTML += '<br>Across 60 simulated shifts with this car: <b style="color:var(--text)">' + Math.round(sp / n * 100) + '¢ a gallon cheaper</b>, '
+      + (Math.abs(1 - db / da) < .03 ? 'about the same distance driven to refuel' : Math.round(Math.abs(1 - db / da) * 100) + '% ' + (db < da ? 'fewer' : 'more') + ' miles driven to refuel') + ', and the tank\'s lowest point averaged ' + Math.round(lb / 60 * 100) + '% instead of ' + Math.round(la / 60 * 100) + '%.';
+    $('cmp').classList.add('on');
+  }
+
+  // ---------- controls ----------
+  const press = (grp, b) => grp.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  $('mode').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; press($('mode'), b); smart = b.dataset.m === '1'; reset(); });
+  $('speed').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; press($('speed'), b); speed = +b.dataset.s; });
+  carSel.addEventListener('change', () => { carIdx = +carSel.value; reset(); $('cmp').classList.remove('on'); });
+  $('play').addEventListener('click', () => { if (sim.ended) { reset(); playing = true; } else playing = !playing; $('play').textContent = playing ? 'Pause' : 'Play'; });
+  $('again').addEventListener('click', () => { seed = 1 + Math.floor(Math.random() * 1e6); reset(); playing = true; $('play').textContent = 'Pause'; $('cmp').classList.remove('on'); });
+  $('compare').addEventListener('click', compare);
+  new IntersectionObserver(es => { visible = es[0].isIntersecting; }, { threshold: .15 }).observe($('city'));
+  reset(); requestAnimationFrame(frame);
+
+  // ---------- the money calculator ----------
+  const S_ = id => +$(id).value;
+  function calc() {
+    const drv = S_('s-drv'), fol = S_('s-fol') / 100, fil = S_('s-fil'), gal = S_('s-gal'), fee = S_('s-fee'), dis = Math.min(S_('s-dis'), fee);
+    if (S_('s-dis') > fee) $('s-dis').value = fee;
+    $('v-drv').textContent = fmtInt(drv); $('v-fol').textContent = Math.round(fol * 100) + '%'; $('v-fil').textContent = fil; $('v-gal').textContent = gal + ' gal';
+    $('v-fee').textContent = fee + '¢'; $('v-dis').textContent = dis + '¢';
+    $('f-fee').textContent = fee + '¢/gal fee'; $('f-keep').textContent = 'keeps ' + (fee - dis) + '¢/gal'; $('f-disc').textContent = dis + '¢/gal discount';
+    const gm = drv * fol * fil * gal * 4.33;
+    $('o-gal').textContent = fmtInt(gm); $('o-rev').textContent = '$' + fmtInt(gm * BASE); $('o-app').textContent = '$' + fmtInt(gm * (fee - dis) / 100);
+    $('o-drv').textContent = '$' + fmtInt(fil * 52 * gal * dis / 100);
+  }
+  ['s-drv', 's-fol', 's-fil', 's-gal', 's-fee', 's-dis'].forEach(id => $(id).addEventListener('input', calc)); calc();
+
+  // ---------- reveal on scroll ----------
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -8% 0px' });
+  document.querySelectorAll('.reveal').forEach(x => io.observe(x));
+})();
+</script>

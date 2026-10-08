@@ -19,8 +19,8 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <script src="assets/analytics.js?v=d8e57b82e5" defer></script>
-<script src="assets/sitenav.js?v=8356b15cd7" defer></script>
-<script src="assets/tour.js?v=0e7755df87" defer></script>
+<script src="assets/sitenav.js?v=966811d184" defer></script>
+<script src="assets/tour.js?v=03d95d93fa" defer></script>
 <style>@view-transition{navigation:auto}::view-transition-old(root),::view-transition-new(root){animation-duration:.32s}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -55,6 +55,7 @@ a{color:inherit}
 .reveal .ch.in .copy>:nth-child(3),.reveal .ch.in .cards>:nth-child(3){transition-delay:.16s}
 .reveal .ch.in .copy>:nth-child(4),.reveal .ch.in .cards>:nth-child(4){transition-delay:.24s}
 .reveal .ch.in .cards>:nth-child(5){transition-delay:.32s}
+.reveal .ch.in .cards>:nth-child(6){transition-delay:.4s}
 .reveal .ch.in .copy>:nth-child(n+5){transition-delay:.3s}
 #labels{position:fixed;inset:0;pointer-events:none;z-index:2;overflow:hidden}
 .lbl{position:absolute;left:0;top:0;font:500 11.5px/1 var(--f-mono);letter-spacing:.03em;color:var(--ink);white-space:nowrap;
@@ -193,9 +194,10 @@ footer p{margin:0;max-width:70ch}
 footer a{color:var(--muted)}
 .card.wide{grid-column:1/-1;flex-direction:row;align-items:stretch;gap:22px;min-height:0}
 .card.wide .txt{flex:1;display:flex;flex-direction:column;gap:10px;min-width:0}
+.card.wide .thumb{width:min(40%,360px);height:auto;align-self:center;aspect-ratio:3/2;border-radius:12px;border:1px solid rgba(160,190,225,.18);box-shadow:0 12px 40px -12px rgba(245,176,65,.3)}
 .card.wide img{width:min(40%,360px);height:auto;align-self:center;aspect-ratio:3/2;object-fit:cover;border-radius:12px;border:1px solid rgba(160,190,225,.18);box-shadow:0 12px 40px -12px rgba(79,209,197,.35)}
 .card .live{display:inline-flex;align-items:center;gap:7px}.card .live::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--c);box-shadow:0 0 10px var(--c)}
-@media (max-width:860px){.cards{grid-template-columns:minmax(0,1fr)}.card{min-height:0}.card.wide{flex-direction:column}.card.wide img{width:100%;aspect-ratio:2.4/1;order:-1}}
+@media (max-width:860px){.cards{grid-template-columns:minmax(0,1fr)}.card{min-height:0}.card.wide{flex-direction:column}.card.wide img{width:100%;aspect-ratio:2.4/1;order:-1}.card.wide .thumb{width:100%;aspect-ratio:2.4/1;order:-1}}
 
 /* phone: the chip sits in the top part of the screen and the copy rides in a glass card at the bottom */
 @media (max-width:760px), (max-aspect-ratio:21/20){
@@ -340,6 +342,7 @@ footer a{color:var(--muted)}
       <a class="card" href="chip/" style="--c:var(--amber)"><span class="k">Inside HZN-1</span><h3>Chip explorer</h3><p>Rotate the chip yourself, click any layer or room, and step through a real aircraft message, including breaking its checksum.</p><span class="go">Explore the chip <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
       <a class="card" href="stats/" style="--c:var(--violet)"><span class="k">Updated hourly</span><h3>Fuel &amp; CO₂ dashboard</h3><p>How much jet fuel is burning right now, the last 24 hours, which airlines and aircraft burn it, and what SAF, batteries, hybrids or hydrogen could save.</p><span class="go">Open the dashboard <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
       <a class="card" href="model/" style="--c:var(--teal)"><span class="k">Validation</span><h3>Model check</h3><p>How the fuel model compares with 126 published figures, before and after calibration, with every number in a table.</p><span class="go">See the check <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
+      <a class="card wide" href="drivers/" style="--c:var(--amber)"><div class="txt"><span class="k">New concept</span><h3>Fuel Horizon for drivers</h3><p>The same fuel estimate, for ride-hail cars: predict when a driver needs fuel and send them to a partner station near their next drop-off, which pays for the visit. Watch a simulated shift and the economics.</p><span class="go">See the concept <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div><svg class="thumb" viewBox="0 0 360 240" aria-hidden="true"><rect width="360" height="240" fill="#0a1118"/><line x1="20" y1="16" x2="20" y2="224" stroke="#1c2a38" stroke-width="3"/><line x1="60" y1="16" x2="60" y2="224" stroke="#1c2a38" stroke-width="3"/><line x1="100" y1="16" x2="100" y2="224" stroke="#1c2a38" stroke-width="3"/><line x1="140" y1="16" x2="140" y2="224" stroke="#1c2a38" stroke-width="3"/><line x1="180" y1="16" x2="180" y2="224" stroke="#1c2a38" stroke-width="3"/><line x1="220" y1="16" x2="220" y2="224" stroke="#1c2a38" stroke-width="3"/><line x1="260" y1="16" x2="260" y2="224" stroke="#1c2a38" stroke-width="3"/><line x1="300" y1="16" x2="300" y2="224" stroke="#1c2a38" stroke-width="3"/><line x1="340" y1="16" x2="340" y2="224" stroke="#1c2a38" stroke-width="3"/><line x1="20" y1="16" x2="340" y2="16" stroke="#1c2a38" stroke-width="3"/><line x1="20" y1="68" x2="340" y2="68" stroke="#1c2a38" stroke-width="3"/><line x1="20" y1="120" x2="340" y2="120" stroke="#1c2a38" stroke-width="3"/><line x1="20" y1="172" x2="340" y2="172" stroke="#1c2a38" stroke-width="3"/><line x1="20" y1="224" x2="340" y2="224" stroke="#1c2a38" stroke-width="3"/><polyline points="60,172 60,120 180,120 180,68" fill="none" stroke="#7cc4ff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><polyline points="180,68 260,68" fill="none" stroke="#f5b041" stroke-width="5" stroke-dasharray="2 9" stroke-linecap="round"/><circle cx="180" cy="68" r="9" fill="#e6edf5" stroke="#7cc4ff" stroke-width="3"/><circle cx="260" cy="68" r="16" fill="rgba(79,209,197,.2)"/><circle cx="260" cy="68" r="9" fill="#4fd1c5"/><text x="278" y="58" font-size="13" fill="#4fd1c5" font-family="monospace">−20¢</text><rect x="24" y="196" width="140" height="10" rx="5" fill="#121b27"/><rect x="24" y="196" width="34" height="10" rx="5" fill="#f5b041"/></svg></a>
       <a class="card wide" href="silicon/" style="--c:var(--teal)"><div class="txt"><span class="k live">Real silicon</span><h3>One block, built for real</h3><p>The checker that throws away damaged aircraft broadcasts, as an actual SkyWater 130 nm chip layout. Tested on real ADS-B messages, including KLM1023, and you can run it in your browser.</p><span class="go">See the layout <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div><img src="silicon/layout-zoom.webp" width="960" height="640" alt="Close-up of the real chip layout: rows of colored logic cells" loading="lazy" decoding="async"></a>
     </div>
     <footer>

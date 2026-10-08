@@ -11,6 +11,7 @@ The public website lives in [`docs/`](docs/) and is plain static files, so GitHu
 | [`docs/chip/`](docs/chip/) | Inside HZN-1, the interactive chip explorer |
 | [`docs/model/`](docs/model/) | Fuel model check against 126 published figures |
 | [`docs/stats/`](docs/stats/) | Hourly fuel & CO₂ dashboard with what-if scenarios (sources in [`site-src/scenario-sources.md`](site-src/scenario-sources.md)) |
+| [`docs/drivers/`](docs/drivers/) | Concept: Fuel Horizon for ride-hail drivers, with a simulated shift and the economics (source: `site-src/drivers.html`) |
 | [`docs/silicon/`](docs/silicon/) | Real silicon: the Mode S CRC-24 checker as a SKY130 layout, with an in-browser run. Design, tests and GDS live in [raghavv-711/hzn-1-silicon](https://github.com/raghavv-711/hzn-1-silicon); `layout.png` comes from its `gds_render` artifact |
 
 The globe also has a 24-hour replay, search by flight number or registration, airport boards, "Ask the globe"

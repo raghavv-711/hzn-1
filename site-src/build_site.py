@@ -54,6 +54,8 @@ DESCRIPTIONS = {  # what search engines and link previews show for each page
              "fuel-burn figures, within about 5% on figures it never saw.",
     "silicon": "One block of HZN-1 built as a real SkyWater SKY130 chip layout: a Mode S CRC-24 checker tested on "
                "real ADS-B messages, which you can run in your browser.",
+    "drivers": "A concept for ride-hail drivers: estimate fuel left from trips, predict the next fill-up and steer it "
+               "to a partner station that pays for the visit. Watch a simulated shift and the economics.",
     "stats": "How much jet fuel is burning in the sky right now, which airlines and aircraft burn it, the last 24 "
              "hours, and what SAF, batteries, hybrids or hydrogen could save. Updated every hour.",
 }
@@ -194,6 +196,7 @@ def build(data_json=None):
     write("model", m)
 
     write("silicon", (SRC / "silicon.html").read_text())
+    write("drivers", (SRC / "drivers.html").read_text())
     stamp_landing()
 
 

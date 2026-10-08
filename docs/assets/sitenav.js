@@ -1,4 +1,4 @@
-// One navigation for every page: Home · Globe · Dashboard · Chip · Silicon · Model check.
+// One navigation for every page: Home · Globe · Dashboard · Chip · Silicon · Drivers · Model check.
 // Put <div data-sitenav data-page="globe"></div> anywhere on the page. It's docked in the same place on every page,
 // top right, so switching pages never moves it: full tabs on wide windows, one Menu button below COLLAPSE pixels.
 // Pages keep the top 65px of their right side clear for it (12px gap + 41px bar + 12px).
@@ -10,15 +10,17 @@
     stats: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
     chip: '<path d="m12 3 9 5-9 5-9-5 9-5z"/><path d="m3 13 9 5 9-5"/>',
     model: '<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
+    drivers: '<path d="M5 16V11l2-5h10l2 5v5"/><path d="M3 16h18v3H3z"/><circle cx="7.5" cy="19" r="1.5"/><circle cx="16.5" cy="19" r="1.5"/><path d="M5 11h14"/>',
     silicon: '<rect x="5" y="5" width="14" height="14" rx="2"/><path d="M9 9h6v6H9zM9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/>',
   };
-  const COLLAPSE = 1080;
+  const COLLAPSE = 1160;
   const PAGES = [
     { id: 'home', href: '', label: 'Home', desc: 'The chip, taken apart layer by layer' },
     { id: 'globe', href: 'globe/', label: 'Globe', desc: 'Every flight in the air, with fuel left' },
     { id: 'stats', href: 'stats/', label: 'Dashboard', desc: 'Fuel and CO₂ right now, plus what-ifs' },
     { id: 'chip', href: 'chip/', label: 'Chip', desc: 'Explore HZN-1 in 3D and follow a message' },
     { id: 'silicon', href: 'silicon/', label: 'Silicon', desc: 'One block built as a real chip layout' },
+    { id: 'drivers', href: 'drivers/', label: 'Drivers', desc: 'A fuel-rewards concept for ride-hail drivers' },
     { id: 'model', href: 'model/', label: 'Model check', desc: 'How accurate the fuel estimates are' },
   ];
   const icon = id => '<svg viewBox="' + (id === 'home' ? '0 0 32 32' : '0 0 24 24') + '" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICON[id] + '</svg>';
