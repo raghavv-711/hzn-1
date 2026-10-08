@@ -218,7 +218,14 @@ body.replaying #card,body.replaying #tip{display:none!important}
 .zoom button{all:unset;cursor:pointer;width:32px;height:32px;display:grid;place-items:center;border-radius:8px}
 .zoom button:hover{background:rgba(255,255,255,.08)}
 .zoom svg{width:16px;height:16px}
-#attrib{position:fixed;right:16px;bottom:calc(18px + env(safe-area-inset-bottom,0px));max-width:220px;text-align:right;font-size:10.5px;line-height:1.3;color:var(--muted);text-shadow:0 1px 3px rgba(0,0,0,.8)}
+#attrib{position:fixed;right:16px;bottom:calc(18px + env(safe-area-inset-bottom,0px));display:flex;align-items:center;gap:10px;color:var(--muted);text-shadow:0 1px 3px rgba(0,0,0,.8);z-index:4}
+#attrib .made{font-size:13.5px;font-weight:500;color:var(--text);letter-spacing:-.005em}
+#attrib .cred-btn{all:unset;cursor:pointer;font-size:11.5px;color:var(--muted);padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:var(--panel);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);text-shadow:none}
+#attrib .cred-btn:hover,#attrib .cred-btn[aria-expanded="true"]{color:var(--text)}
+#attrib .cred-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#attrib .cred-pop{position:absolute;right:0;bottom:calc(100% + 8px);width:min(300px,calc(100vw - 32px));padding:12px 14px;font-size:12px;line-height:1.45;text-align:left;text-shadow:none;display:flex;flex-direction:column;gap:6px}
+#attrib .cred-pop b{color:var(--text);font-weight:600;font-size:12.5px}
+#attrib .cred-pop p{margin:0}
 
 #labels{position:fixed;inset:0;pointer-events:none;overflow:hidden}
 .city{position:absolute;left:0;top:0;display:flex;align-items:center;gap:5px;font-size:12.5px;font-weight:500;color:#fff;white-space:nowrap;text-shadow:0 0 2px #000,0 1px 2px rgba(0,0,0,.85)}
@@ -252,7 +259,8 @@ body.replaying #card,body.replaying #tip{display:none!important}
   .summary{white-space:normal;text-align:center}
   .key{width:auto;max-width:calc(100vw - 32px)}
   .zoom{display:none}
-  #attrib{top:auto;bottom:calc(174px + env(safe-area-inset-bottom,0px));left:16px;right:16px;max-width:none;text-align:left}
+  #attrib{top:auto;bottom:calc(174px + env(safe-area-inset-bottom,0px));left:16px;right:auto}
+  #attrib .cred-pop{right:auto;left:0}
   body.card-open #attrib{display:none}
   .replay{left:16px;right:16px;transform:none;width:auto;bottom:calc(132px + env(safe-area-inset-bottom,0px))}
   body.replaying #attrib{display:none}
@@ -343,7 +351,16 @@ body.replaying #card,body.replaying #tip{display:none!important}
   <button id="zIn" aria-label="Zoom in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
   <button id="zOut" aria-label="Zoom out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14"/></svg></button>
 </div>
-<div id="attrib">Earth imagery: NASA Visible Earth and Black Marble<br>Close-up: <a href="https://cloudless.eox.at" target="_blank" rel="noopener">EOxCloudless</a> by EOX IT Services GmbH (contains modified Copernicus Sentinel data 2024)<br>Made by Raghav Vijayapal</div>
+<div id="attrib">
+  <div class="cred-pop glass" id="credPop" role="dialog" aria-label="Credits" hidden>
+    <b>Credits</b>
+    <p>Earth imagery: NASA Visible Earth and Black Marble.</p>
+    <p>Close-up imagery: <a href="https://cloudless.eox.at" target="_blank" rel="noopener">EOxCloudless</a> by EOX IT Services GmbH (contains modified Copernicus Sentinel data 2024).</p>
+    <p>Flights: OpenSky Network, adsb.lol, VRS standing data. Aircraft and airlines: ADS-B Exchange, OpenFlights. Borders: Natural Earth.</p>
+  </div>
+  <span class="made">Made by Raghav Vijayapal</span>
+  <button class="cred-btn" id="credBtn" type="button" aria-expanded="false" aria-controls="credPop">Credits</button>
+</div>
 <div id="tip" class="glass" hidden></div>
 <div id="toast" class="toast glass" role="status" hidden></div>
 
@@ -1184,6 +1201,12 @@ function replayTick(now){
   replayDraw();
 }
 
+// ---------- credits: one small button by the maker's name opens the full list ----------
+{const btn=$('credBtn'),pop=$('credPop');
+  const setCred=open=>{pop.hidden=!open;btn.setAttribute('aria-expanded',String(open));};
+  btn.addEventListener('click',e=>{e.stopPropagation();setCred(pop.hidden);});
+  document.addEventListener('pointerdown',e=>{if(!pop.hidden&&!$('attrib').contains(e.target))setCred(false);},true);
+  addEventListener('keydown',e=>{if(e.key==='Escape'&&!pop.hidden)setCred(false);});}
 // ---------- resize + loop ----------
 function resize(){const w=innerWidth,h=innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
   borderMat.resolution.set(w,h);stateMat.resolution.set(w,h);
