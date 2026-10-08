@@ -462,7 +462,7 @@ const labelPos = (v, el, alpha) => {
 
 function frame(now) {
   requestAnimationFrame(frame);
-  if (document.hidden) { last = now; return; }
+  if (document.hidden || window.__hznCovered) { last = now; return; }  // hidden, or covered by the narrated tour's frame
   tick(now);
 }
 function tick(now) {
