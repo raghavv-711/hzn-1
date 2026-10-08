@@ -83,6 +83,9 @@ button{font:inherit;color:inherit}
 
 .about-btn{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 14px 0 11px;border-radius:999px;font:500 13px var(--f-sans);color:var(--text);cursor:pointer;flex-shrink:0;pointer-events:auto}
 .about-btn svg{width:15px;height:15px;color:var(--accent)}
+#meBtn.busy svg{animation:mespin 1.2s linear infinite}
+@keyframes mespin{to{transform:rotate(360deg)}}
+.top>#meBtn{flex-shrink:0;white-space:nowrap}
 .about-btn:hover{border-color:var(--line-2)}
 .info{position:fixed;inset:0;z-index:20;display:grid;place-items:center;padding:24px 16px;background:rgba(3,6,10,.55);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
 .about{position:relative;width:min(580px,100%);max-height:100%;overflow-y:auto;overscroll-behavior:contain;padding:26px 28px;display:flex;flex-direction:column;gap:18px;font-size:14px;color:var(--muted);background:rgba(13,19,27,.94)}
@@ -248,7 +251,10 @@ body.replaying #card,body.replaying #tip{display:none!important}
   .area{max-width:none;flex:1 1 100%}
   .spacer{display:none}
   .brand{display:none}
-  #infoBtn{margin-left:auto}
+  #infoBtn{margin-left:0}
+  #meBtn{margin-left:auto;padding:0 11px}
+  #meBtn span{display:none}
+  #infoBtn{font-size:0;gap:0;padding:0 10px}  /* icon only on phones; the word stays for screen readers */
   .search{order:6;flex:1 1 100%;min-width:0}
   .search input{width:100%}
   .area{order:7}
@@ -298,6 +304,7 @@ body.replaying #card,body.replaying #tip{display:none!important}
     <span class="ph" aria-hidden="true"><b>Try:</b><span class="ph-v" id="phv">longest flight</span></span>
     <div class="results glass" id="results" hidden></div>
   </div>
+  <button class="about-btn glass" id="meBtn" type="button" title="Show the planes over where you are"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="7.5"/></svg><span>Over me</span></button>
   <button class="about-btn glass" id="infoBtn" aria-expanded="false" aria-controls="info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/></svg>About</button>
 </header>
 
@@ -684,6 +691,8 @@ function drawArea(){
     for(let i=0;i<=180;i++){const t=i/180*Math.PI*2;pts.push(c.clone().multiplyScalar(Math.cos(a)).addScaledVector(f.north.clone().multiplyScalar(Math.cos(t)).addScaledVector(f.east,Math.sin(t)),Math.sin(a)).multiplyScalar(1.0025));}
     loops.push(pts);}
   else for(const r of area.rings)loops.push(r.pts.map(q=>vec(q[1],q[0]).multiplyScalar(1.0025)));
+  if(area.kind==='Near you'){const g=new THREE.BufferGeometry().setFromPoints([area.circle.v.clone().multiplyScalar(1.003)]);
+    const dot=new THREE.Points(g,new THREE.PointsMaterial({color:0x7cc4ff,size:11,sizeAttenuation:false,depthWrite:false}));dot.renderOrder=5;area.lines.add(dot);}
   for(const pts of loops)for(const s of [1,1.0012]){const l=new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts.map(v=>v.clone().multiplyScalar(s))),mat);l.renderOrder=4;area.lines.add(l);}
 }
 function setArea(id){
@@ -847,8 +856,9 @@ function fuelAtArrival(p){ // what should be left in the tanks on landing (reser
   if(p.fm&&p.fm[0])return Math.max(0,p.fm[0]-Math.min(p.fm[0],usedAt(p,p.Dk)));
   return Math.max(0,p.planned-p.burnEff*(p.Dk/p.ck+OVH_TO));}
 function renderBoard(){
-  const el=$('board'),show=area.on&&area.kind==='Airport'&&!state.sel&&!(typeof RP!=='undefined'&&RP.on);
+  const el=$('board'),show=area.on&&(area.kind==='Airport'||area.kind==='Near you')&&!state.sel&&!(typeof RP!=='undefined'&&RP.on);
   if(!show){el.hidden=true;document.body.classList.toggle('card-open',!!state.sel);return;}
+  if(area.kind==='Near you'){renderNear(el);return;}
   const code=area.id.split(':')[1],now=simNow();
   const arr=planes.filter(p=>!p.landed&&p.B&&AP[p.d][0]===code).map(p=>({p,eta:p.rem/(Math.max(p.gs,150)*1.852)})).sort((a,b)=>a.eta-b.eta);
   const dep=planes.filter(p=>!p.landed&&p.B&&AP[p.o][0]===code).map(p=>({p,ago:Math.max(0,p.Dk-p.rem)/(Math.max(p.gs,150)*1.852)})).sort((a,b)=>a.ago-b.ago);
@@ -1051,6 +1061,7 @@ function askMatches(A){ // planes that pass every filter (and the area, if one w
   if(A.record){list=list.map(p=>[p,A.record[2](p)]).filter(x=>x[1]!=null&&isFinite(x[1])).sort((a,b)=>b[1]-a[1]).slice(0,10).map(x=>x[0]);}
   return list;}
 function runAsk(text){
+  if(/\b(over|near|above|around|by)\s+me\b|\boverhead\b|\bmy (location|area|city)\b|\bnear(by| here)\b/i.test(text)){locateMe();return;}
   const A=parseAsk(text);if(!A){toast('Not sure how to answer that. Try “longest flight”, “A380s” or “flights to London”.');return;}
   if(typeof RP!=='undefined'&&RP.on)closeReplay();
   if(state.q){state.q=null;$('askChip').hidden=true;} // each question starts from the whole sky
@@ -1070,11 +1081,11 @@ function runAsk(text){
 function clearAsk(){if(!state.q)return;state.q=null;$('askChip').hidden=true;recolor();summary();
   if(/^#ask\//.test(location.hash))setHash(area.on&&area.id?'area/'+area.id:'');}
 $('askClear').addEventListener('click',clearAsk);
-const PH_EXAMPLES=['longest flight','A380s in the air','flights to London','lowest on fuel','United 787s','fastest plane','about to land','planes over Texas','search UA123'];
+const PH_EXAMPLES=['planes over me','longest flight','A380s in the air','flights to London','lowest on fuel','United 787s','fastest plane','about to land','planes over Texas','search UA123'];
 {let i=0;const v=$('phv');
   if(!reduce)setInterval(()=>{if(document.hidden||document.activeElement===q&&q.value)return;i=(i+1)%PH_EXAMPLES.length;
     v.classList.add('out');setTimeout(()=>{v.textContent=PH_EXAMPLES[i];v.classList.remove('out');v.classList.add('in');void v.offsetWidth;v.classList.remove('in');},450);},3200);}
-const ASK_EXAMPLES=['longest flight right now','A380s in the air','planes over Texas','flights to London','lowest on fuel','United 787s','fastest plane','private jets over California','about to land','oldest plane flying'];
+const ASK_EXAMPLES=['planes over me','longest flight right now','A380s in the air','planes over Texas','flights to London','lowest on fuel','United 787s','fastest plane','private jets over California','about to land','oldest plane flying'];
 const q=$('q'),res=$('results');
 // while the search suggestions are open, the key slides down below them instead of being covered
 {const keyEl=$('key');
@@ -1201,6 +1212,45 @@ function replayTick(now){
   replayDraw();
 }
 
+// ---------- what's over me: your location (asked for, never stored or sent anywhere) becomes a 100 km circle ----------
+function locateMe(){
+  const b=$('meBtn');
+  if(!navigator.geolocation){toast('This browser can’t share its location.');return;}
+  b.classList.add('busy');toast('Finding where you are…');
+  navigator.geolocation.getCurrentPosition(pos=>{b.classList.remove('busy');$('toast').hidden=true;setNear(pos.coords.latitude,pos.coords.longitude);},
+    err=>{b.classList.remove('busy');toast(err.code===1?'Location is turned off for this site. Allow it in your browser to see the planes over you.':'Couldn’t find your location. Try again in a moment.');},
+    {enableHighAccuracy:false,timeout:12000,maximumAge:600000});
+}
+function setNear(lat,lon){
+  if(typeof RP!=='undefined'&&RP.on)closeReplay();
+  if(state.q)clearAsk();
+  area.on=true;area.id='near';area.kind='Near you';area.full='Over you';area.name='you';
+  area.circle={v:vec(lat,lon),km:100};area.rings=[];
+  $('areaName').textContent='Over you';$('areaKind').textContent='';$('areaRadiusWrap').hidden=false;$('areaRadius').value='100';
+  $('areaChip').hidden=false;refreshArea();drawArea();
+  if(/^#area\//.test(location.hash))setHash('');  // your location never goes into the address bar
+  if(state.sel)select(null);else{recolor();summary();renderBoard();}
+  flyTo(area.circle.v.clone(),1+clamp(area.circle.km*2.6*fitScale()/R_E,.05,2.5));
+}
+function renderNear(el){
+  const c=area.circle,km=c.km;
+  const rows=planes.filter(p=>!p.landed&&p.inA).map(p=>({p,d:ang(p.pos,c.v)*R_E})).sort((a,b)=>a.d-b.d);
+  const row=x=>{const p=x.p,f=p.B?fuelState(p):null;
+    const where=p.B?'to '+esc(AP[p.d][0])+' · '+esc(AP[p.d][1]):esc(p.type||CLS[p.cls]);
+    const fuel=f?Math.round(clamp(f.tank,0,1)*100)+'% of a full tank · '+fmt(f.rem/1000,1)+' t':'Fuel not estimated (no route on file)';
+    return '<button class="brow" data-hex="'+p.hex+'"><span class="b1"><b>'+esc(p.cs||p.hex.toUpperCase())+'</b><small>'+where+'</small></span>'+
+      '<span class="b2"><b class="num">'+fmt(x.d)+' km</b><small>'+fmt(p.alt)+' ft</small></span><span class="b3">'+esc((p.B&&p.type?p.type+' · ':'')+fuel)+'</span></button>';};
+  const st=el.querySelector('.blist')?el.querySelector('.blist').scrollTop:0;
+  const html='<div class="card-head"><div><div class="cs">Over you</div><div class="sub">'+rows.length+' plane'+(rows.length===1?'':'s')+' within '+km+' km · nearest first</div></div>'+
+    '<button class="icon-btn" id="boardClose" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>'+
+    '<div class="blist">'+(rows.length?rows.slice(0,60).map(row).join(''):'<p class="note">No planes on file within '+km+' km right now. Try a bigger circle with the “within” menu at the top.</p>')+'</div>'+
+    '<div class="foot">Distances are along the ground from where your browser says you are. Positions are from the latest hourly snapshot, moved along at each plane’s speed.</div>';
+  if(html===el._html&&!el.hidden)return;el._html=html;el.innerHTML=html;
+  el.hidden=false;document.body.classList.add('card-open');el.querySelector('.blist').scrollTop=st;
+  $('boardClose').addEventListener('click',clearArea);
+  el.querySelectorAll('.brow').forEach(b=>b.addEventListener('click',()=>{const p=byHex.get(b.dataset.hex);if(p)select(p,true);}));
+}
+$('meBtn').addEventListener('click',locateMe);
 // ---------- credits: one small button by the maker's name opens the full list ----------
 {const btn=$('credBtn'),pop=$('credPop');
   const setCred=open=>{pop.hidden=!open;btn.setAttribute('aria-expanded',String(open));};
@@ -1233,7 +1283,7 @@ function frame(t){
   if(t-lastCity>200){lastCity=t;updateCities();}
   updateTiles(t);
   placeLabels();
-  if(t-lastSlow>1000){lastSlow=t;if(area.on)refreshArea();recolor();summary();if(state.sel){renderCard();if(state.sel.B)buildRoute();}else if(area.on&&area.kind==='Airport')renderBoard();}
+  if(t-lastSlow>1000){lastSlow=t;if(area.on)refreshArea();recolor();summary();if(state.sel){renderCard();if(state.sel.B)buildRoute();}else if(area.on&&(area.kind==='Airport'||area.kind==='Near you'))renderBoard();}
   renderer.render(scene,camera);
   requestAnimationFrame(frame);
 }
@@ -1248,7 +1298,7 @@ const start=(cand[0]&&cand[0].p)||planes.find(p=>p.B);
 if(start){camera.position.copy(start.pos.clone().normalize().multiplyScalar(1+2*Math.min(fitScale(),1.6)));select(start,false);}
 booting=false;if(location.hash)applyHash();
 // a small handle for the guided tour (assets/tour.js) to drive the globe
-window.FH={ask:runAsk,clearAsk,openReplay,closeReplay,clearArea,
+window.FH={ask:runAsk,clearAsk,openReplay,closeReplay,clearArea,near:setNear,
   fly:(lat,lon,dist)=>flyTo(vec(lat,lon),dist),
   mode:m=>$({fuel:'mFuel',elec:'mElec',alt:'mAlt'}[m]).click(),
   deselect:()=>select(null),ready:()=>!document.getElementById('loading')};
