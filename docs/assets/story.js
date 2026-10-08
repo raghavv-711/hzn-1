@@ -394,6 +394,33 @@ function target() {
   return t;
 }
 
+// ------------------------------------------------------------ signals
+// faint streaks of light falling from the sky into the chip, like the broadcasts it listens to (opening view only)
+const SIG_N = coarse ? 16 : 28, sigPos = new Float32Array(SIG_N * 6), sigCol = new Float32Array(SIG_N * 6);
+const sigGeo = new THREE.BufferGeometry();
+sigGeo.setAttribute('position', new THREE.BufferAttribute(sigPos, 3)); sigGeo.setAttribute('color', new THREE.BufferAttribute(sigCol, 3));
+const signals = new THREE.LineSegments(sigGeo, new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
+signals.frustumCulled = false; scene.add(signals);
+const SIG_TGT = new THREE.Vector3(0, 1.5, 0), sA = new THREE.Vector3(), sB = new THREE.Vector3();
+function newSig(s, initial) {
+  const a = Math.random() * Math.PI * 2, r = 4 + Math.random() * 9;
+  s.from = new THREE.Vector3(Math.cos(a) * r, 13 + Math.random() * 8, Math.sin(a) * r);
+  s.t = initial ? Math.random() : 0; s.speed = .2 + Math.random() * .22; s.len = .06 + Math.random() * .06; s.b = .35 + Math.random() * .65; return s;
+}
+const sig = Array.from({ length: SIG_N }, () => newSig({}, true));
+function updateSignals(dt, w) {
+  signals.visible = w > .01; if (!signals.visible) return;
+  sig.forEach((s, i) => {
+    s.t += dt * s.speed; if (s.t >= 1) newSig(s);
+    const t0 = Math.max(0, s.t - s.len), ease = x => x * x;  // speeding up as it nears the chip
+    sA.lerpVectors(s.from, SIG_TGT, ease(t0)); sB.lerpVectors(s.from, SIG_TGT, ease(s.t));
+    const f = Math.sin(Math.PI * s.t) * s.b * w;  // fades in high up and out as it reaches the chip
+    sigPos.set([sA.x, sA.y, sA.z, sB.x, sB.y, sB.z], i * 6);
+    sigCol.set([0, 0, 0, .49 * f, .77 * f, f], i * 6);  // dark tail, bright head
+  });
+  sigGeo.attributes.position.needsUpdate = true; sigGeo.attributes.color.needsUpdate = true;
+}
+
 // ------------------------------------------------------------ frame loop
 const cur = target();
 const camPos = new THREE.Vector3(), camTgt = new THREE.Vector3(), tmp = new THREE.Vector3(), p2 = [0, 0];
@@ -458,6 +485,7 @@ function tick(now) {
   const ys = LAYERS.map((L, i) => L.base + i * GAP * cur.ex + (i > FE ? cur.top * (6 + (i - FE) * 1.6) : 0) + (i === LID ? cur.lid * 5 : 0)
     + (ip < 1 ? (1 - smooth(clamp(ip * 1.6 - i * .055, 0, 1))) * (2.5 + i * .9) : 0));
   layerObjs.forEach((o, i) => { o.g.position.y = ys[i]; });
+  updateSignals(dt, reduce ? 0 : clamp(cur.sway, 0, 1) * (1 - cur.lid) * (1 - cur.ex) * cur.chip);
   const lidA = 1 - smooth(clamp(cur.lid * 1.4, 0, 1));
   LAYERS[LID].mats.forEach(m => { m.opacity = lidA; m.depthWrite = lidA > .98; });
   layerObjs[LID].g.visible = lidA > .01;

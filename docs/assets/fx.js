@@ -35,6 +35,20 @@
     targets.forEach(el => io.observe(el));
   }
 
+  // ---------- 3. a faint circuit-board pattern behind the report pages' headers ----------
+  if (document.querySelector('.sitebar') && document.querySelector('main.wrap > header')) {
+    const tile = encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" fill="none" stroke="#7cc4ff" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M0 40h60l20 20h70M150 60v50l20 20h70M30 240v-60l25-25h45M100 155v-45M180 0v20l-20 20M0 200h20l20-20h40l20 20h40M200 240v-40l20-20h20M120 0v30"/>
+      <g fill="#7cc4ff" stroke="none"><circle cx="150" cy="60" r="3"/><circle cx="100" cy="110" r="3"/><circle cx="55" cy="155" r="3"/><circle cx="160" cy="40" r="3"/><circle cx="140" cy="200" r="3"/><circle cx="220" cy="180" r="3"/><circle cx="120" cy="30" r="3"/><circle cx="240" cy="130" r="2.5"/><circle cx="0" cy="40" r="2.5"/></g>
+      <rect x="196" y="76" width="22" height="22" rx="4"/></svg>`);
+    const css = document.createElement('style');
+    css.textContent = `main.wrap{overflow-x:clip}main.wrap>header{position:relative}
+main.wrap>header::before{content:"";position:absolute;z-index:-1;pointer-events:none;top:-48px;right:-60px;left:-60px;height:calc(100% + 90px);
+  background:url("data:image/svg+xml,${tile}") 0 0/240px 240px;opacity:.09;
+  -webkit-mask-image:radial-gradient(60% 75% at 72% 30%,#000 0%,transparent 72%);mask-image:radial-gradient(60% 75% at 72% 30%,#000 0%,transparent 72%)}`;
+    document.head.appendChild(css);
+  }
+
   // ---------- 2. spotlight on cards ----------
   if (on3d || reduce || !matchMedia('(hover: hover) and (pointer: fine)').matches) return;
   const css = document.createElement('style');

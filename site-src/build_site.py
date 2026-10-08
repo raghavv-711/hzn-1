@@ -143,14 +143,26 @@ def version(path):
 # loading indicator: covers the page while the flight data downloads, then shrinks to a pill until the imagery arrives
 LOADING = """<style>
 #loading{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:radial-gradient(120% 90% at 50% 45%,#0c1420 0%,#060a10 62%);transition:opacity .45s,background .45s}
-#loading .pill{display:flex;align-items:center;gap:12px;padding:12px 18px;border-radius:999px;background:rgba(13,19,27,.82);border:1px solid rgba(255,255,255,.08);font:500 14px/1.2 Geist,system-ui,sans-serif;color:#e6edf5;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
-#loading i{width:16px;height:16px;border-radius:50%;border:2px solid rgba(124,196,255,.25);border-top-color:#7cc4ff;animation:spin .8s linear infinite}
-#loading.imagery{inset:auto 0 auto 0;top:calc(76px + env(safe-area-inset-top,0px));background:none;pointer-events:none}
+#loading .ld{display:flex;flex-direction:column;align-items:center;gap:16px}
+#loading .mark{width:68px;height:68px;color:#7cc4ff;filter:drop-shadow(0 0 14px rgba(124,196,255,.45))}
+#loading .mark .a1,#loading .mark .a2{animation:sig 1.6s ease-in-out infinite}
+#loading .mark .a2{animation-delay:.22s}
+#loading .mark .dot{animation:sig 1.6s ease-in-out infinite;animation-delay:-.2s}
+@keyframes sig{0%,100%{opacity:.18}45%{opacity:1}}
+#loading .pill{display:flex;align-items:center;gap:10px;font:500 12px/1.2 "Geist Mono",ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:#8c9bad}
+#loading i{width:13px;height:13px;border-radius:50%;border:2px solid rgba(124,196,255,.25);border-top-color:#7cc4ff;animation:spin .8s linear infinite;display:none}
+#loading.imagery{inset:auto 0 auto 0;top:calc(112px + env(safe-area-inset-top,0px));background:none;pointer-events:none}
+#loading.imagery .mark{display:none}
+#loading.imagery i{display:block}
+#loading.imagery .pill{padding:10px 16px;border-radius:999px;background:rgba(13,19,27,.82);border:1px solid rgba(255,255,255,.08);font:500 13.5px/1.2 Geist,system-ui,sans-serif;letter-spacing:0;text-transform:none;color:#e6edf5;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+@media (max-width:760px){#loading.imagery{top:calc(152px + env(safe-area-inset-top,0px))}}
 #loading.done{opacity:0}
 @keyframes spin{to{transform:rotate(360deg)}}
-@media (prefers-reduced-motion:reduce){#loading i{animation-duration:3s}}
+@media (prefers-reduced-motion:reduce){#loading i{animation-duration:3s}#loading .mark *{animation:none!important}}
 </style>
-<div id="loading" role="status" aria-live="polite"><div class="pill"><i aria-hidden="true"></i><span>Loading flights…</span></div></div>
+<div id="loading" role="status" aria-live="polite"><div class="ld">
+<svg class="mark" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="7" y="7" width="18" height="18" rx="4"/><path d="M12 7V4M16 7V4M20 7V4M12 28v-3M16 28v-3M20 28v-3M7 12H4M7 16H4M7 20H4M28 12h-3M28 16h-3M28 20h-3"/><path d="M9.5 20.5h13" stroke-linecap="round"/><path class="a1" d="M13 20.5a3 3 0 0 1 6 0" stroke-linecap="round"/><path class="a2" d="M10.5 20.5a5.5 5.5 0 0 1 11 0" stroke-linecap="round"/><circle class="dot" cx="16" cy="20.5" r="1.7" fill="currentColor" stroke="none"/></svg>
+<div class="pill"><i aria-hidden="true"></i><span>Listening for flights…</span></div></div></div>
 <script>
 function setLoading(t){const e=document.getElementById('loading');if(e){e.classList.add('imagery');e.querySelector('span').textContent=t;}}
 function hideLoading(){const e=document.getElementById('loading');if(e&&!e.classList.contains('done')){e.classList.add('done');setTimeout(()=>e.remove(),500);}}

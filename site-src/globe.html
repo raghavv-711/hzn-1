@@ -656,7 +656,8 @@ trails.frustumCulled=false;trails.renderOrder=2;scene.add(trails);
 function updateTrailHeads(){for(const p of trailInfo){const i=p.tHead*6+3;tPos[i]=aPos[p.idx*3];tPos[i+1]=aPos[p.idx*3+1];tPos[i+2]=aPos[p.idx*3+2];}gT.attributes.position.needsUpdate=true;}
 function recolorTrails(){
   for(const p of trailInfo){const n=p.hist.length,show=!p.landed&&(((!area.on||p.inA)&&(!state.q||state.q.set.has(p)))||p===state.sel);const c=p.col||C_DIM;
-    for(let i=0;i<n;i++){const f0=show?(i/n)*.8:0,f1=show?((i+1)/n)*.8:0,j=(p.tStart+i)*6;
+    // comet-like: bright at the plane, falling away quickly behind it
+    for(let i=0;i<n;i++){const f0=show?Math.pow(i/n,1.8)*1.05:0,f1=show?Math.pow((i+1)/n,1.8)*1.05:0,j=(p.tStart+i)*6;
       tCol[j]=c[0]*f0;tCol[j+1]=c[1]*f0;tCol[j+2]=c[2]*f0;tCol[j+3]=c[0]*f1;tCol[j+4]=c[1]*f1;tCol[j+5]=c[2]*f1;}}
   gT.attributes.color.needsUpdate=true;
 }

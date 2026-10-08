@@ -30,10 +30,14 @@
 .sn{--sn-text:var(--text,var(--ink,#e8eef5));--sn-muted:var(--muted,#8a98aa);--sn-line:var(--line,rgba(160,190,225,.14));--sn-accent:var(--accent,#7cc4ff);
   position:relative;display:flex;align-items:center;font:500 13.5px/1 Geist,ui-sans-serif,system-ui,-apple-system,sans-serif;pointer-events:auto}
 .sn-dock{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));right:calc(16px + env(safe-area-inset-right,0px));z-index:900}
-.sn-tabs{display:flex;gap:2px;padding:4px;border-radius:999px;background:rgba(10,16,24,.66);border:1px solid var(--sn-line);backdrop-filter:blur(14px) saturate(1.2);-webkit-backdrop-filter:blur(14px) saturate(1.2)}
-.sn-tab{display:flex;align-items:center;gap:7px;padding:8px 13px;border-radius:999px;color:var(--sn-muted);text-decoration:none;white-space:nowrap;transition:color .15s,background .15s}
+.sn-tabs{position:relative;display:flex;gap:2px;padding:4px;border-radius:999px;background:rgba(10,16,24,.66);border:1px solid var(--sn-line);backdrop-filter:blur(14px) saturate(1.2);-webkit-backdrop-filter:blur(14px) saturate(1.2)}
+.sn-tab{position:relative;z-index:1;display:flex;align-items:center;gap:7px;padding:8px 13px;border-radius:999px;color:var(--sn-muted);text-decoration:none;white-space:nowrap;transition:color .15s,background .15s}
 .sn-tab svg{width:15px;height:15px;flex-shrink:0}
 .sn-tab:hover{color:var(--sn-text);background:rgba(255,255,255,.06)}
+/* a soft highlight that glides to whichever tab the pointer is over */
+.sn-glide{position:absolute;top:4px;bottom:4px;left:0;width:0;border-radius:999px;background:rgba(255,255,255,.07);opacity:0;pointer-events:none;transition:transform .32s cubic-bezier(.3,.7,.2,1),width .32s cubic-bezier(.3,.7,.2,1),opacity .2s}
+.sn-tabs.gliding .sn-tab:hover{background:none}
+@media (prefers-reduced-motion:reduce){.sn-glide{transition:opacity .2s}}
 .sn-tab[aria-current="page"]{color:#06121c;background:var(--sn-text)}
 .sn-btn{all:unset;cursor:pointer;display:none;align-items:center;gap:8px;padding:9px 14px;border-radius:999px;color:var(--sn-text);background:rgba(10,16,24,.66);border:1px solid var(--sn-line);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);white-space:nowrap}
 .sn-btn svg{width:15px;height:15px}
@@ -74,6 +78,18 @@
     btn.addEventListener('click', e => { e.stopPropagation(); setOpen(pop.hidden); });
     document.addEventListener('click', e => { if (!nav.contains(e.target)) setOpen(false); });
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && !pop.hidden) { setOpen(false); btn.focus(); } });
+    // the gliding highlight (mouse and trackpad only)
+    const tabs = nav.querySelector('.sn-tabs');
+    if (matchMedia('(hover: hover)').matches) {
+      const glide = document.createElement('span'); glide.className = 'sn-glide'; tabs.prepend(glide); tabs.classList.add('gliding');
+      tabs.addEventListener('pointerover', e => { const t = e.target.closest('.sn-tab'); if (!t || t.getAttribute('aria-current')) { glide.style.opacity = 0; return; }
+        const jump = glide.style.opacity !== '1';  // appearing: start under the tab instead of sliding in from the edge
+        if (jump) glide.style.transition = 'opacity .2s';
+        glide.style.width = t.offsetWidth + 'px'; glide.style.transform = 'translateX(' + t.offsetLeft + 'px)';
+        if (jump) { void glide.offsetWidth; glide.style.transition = ''; }
+        glide.style.opacity = 1; });
+      tabs.addEventListener('pointerleave', () => { glide.style.opacity = 0; });
+    }
     const fit = () => { const compact = innerWidth < COLLAPSE; nav.classList.toggle('compact', compact); if (!compact) setOpen(false); };
     addEventListener('resize', fit); fit();
   });
