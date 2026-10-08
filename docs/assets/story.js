@@ -403,8 +403,9 @@ const signals = new THREE.LineSegments(sigGeo, new THREE.LineBasicMaterial({ ver
 signals.frustumCulled = false; scene.add(signals);
 const SIG_TGT = new THREE.Vector3(0, 1.5, 0), sA = new THREE.Vector3(), sB = new THREE.Vector3();
 function newSig(s, initial) {
-  const a = Math.random() * Math.PI * 2, r = 4 + Math.random() * 9;
-  s.from = new THREE.Vector3(Math.cos(a) * r, 13 + Math.random() * 8, Math.sin(a) * r);
+  // they come in low, from all around the horizon, so they stay below the opening text instead of crossing it
+  const a = Math.random() * Math.PI * 2, r = 10 + Math.random() * 9;
+  s.from = new THREE.Vector3(Math.cos(a) * r, 2.2 + Math.random() * 4.5, Math.sin(a) * r);
   s.t = initial ? Math.random() : 0; s.speed = .2 + Math.random() * .22; s.len = .06 + Math.random() * .06; s.b = .35 + Math.random() * .65; return s;
 }
 const sig = Array.from({ length: SIG_N }, () => newSig({}, true));

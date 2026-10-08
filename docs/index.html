@@ -200,6 +200,51 @@ footer a{color:var(--muted)}
 .card .live{display:inline-flex;align-items:center;gap:7px}.card .live::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--c);box-shadow:0 0 10px var(--c)}
 @media (max-width:860px){.cards{grid-template-columns:minmax(0,1fr)}.card{min-height:0}.card.wide{flex-direction:column}.card.wide img{width:100%;aspect-ratio:2.4/1;order:-1}.card.wide .thumb{width:100%;aspect-ratio:2.4/1;order:-1}}
 
+/* the opening view's side panels: live numbers (left) and the decoder feed (right), on wide screens only */
+.side{position:absolute;top:50%;z-index:2;width:clamp(226px,16vw,256px);display:none;flex-direction:column;gap:2px;padding:14px 14px 12px;border-radius:16px;
+  background:rgba(9,14,21,.5);border:1px solid var(--line);backdrop-filter:blur(14px) saturate(1.2);-webkit-backdrop-filter:blur(14px) saturate(1.2);
+  opacity:0;transform:translateY(-50%) translateY(10px);transition:opacity 1s ease,transform 1s cubic-bezier(.2,.7,.2,1)}
+.side.ready{opacity:1;transform:translateY(-50%)}
+.side-l{left:clamp(20px,3vw,56px)}
+.side-r{right:clamp(54px,4.6vw,92px)}
+@media (min-width:1200px) and (min-aspect-ratio:21/20){.side{display:flex}}
+.side-h{display:flex;align-items:center;gap:8px;font:500 11px/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent);padding-bottom:8px}
+.side-h .age{margin-left:auto;color:var(--faint);letter-spacing:.04em;text-transform:none}
+.pulse{width:7px;height:7px;border-radius:50%;background:var(--teal);box-shadow:0 0 0 0 rgba(79,209,197,.6);animation:lvPulse 2s ease-out infinite}
+.pulse.amber{background:var(--amber);animation-name:lvPulseA}
+@keyframes lvPulse{0%{box-shadow:0 0 0 0 rgba(79,209,197,.55)}100%{box-shadow:0 0 0 9px rgba(79,209,197,0)}}
+@keyframes lvPulseA{0%{box-shadow:0 0 0 0 rgba(245,176,65,.55)}100%{box-shadow:0 0 0 9px rgba(245,176,65,0)}}
+.lv{display:grid;grid-template-columns:1fr auto;align-items:end;gap:3px 10px;padding:11px 2px;border-top:1px solid var(--line);text-decoration:none;color:inherit;border-radius:8px;transition:background .2s}
+.lv:hover{background:rgba(255,255,255,.035)}
+.lv-v{grid-column:1;font:600 24px/1 var(--f-mono);letter-spacing:-.03em;font-variant-numeric:tabular-nums;color:var(--ink)}
+.lv-v small{font-size:13px;color:var(--muted);font-weight:500;letter-spacing:0}
+.lv-k{grid-column:1;font-size:12px;color:var(--muted);line-height:1.3}
+.spark{grid-column:2;grid-row:1/span 2;width:64px;height:26px;overflow:visible}
+.spark path{fill:none;stroke:var(--accent);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.spark .area{fill:url(#lvGrad);stroke:none}
+.spark circle{fill:var(--accent)}
+.dec{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;min-height:262px}
+.dec li{border-top:1px solid var(--line);animation:decIn .5s cubic-bezier(.2,.7,.2,1)}
+.dec li:first-child{border-top:0}
+.dec li.old{opacity:.45;transition:opacity .6s}
+.dec li.older{opacity:.22}
+@keyframes decIn{from{opacity:0;transform:translateY(-8px)}}
+.dec a{display:flex;flex-direction:column;gap:5px;padding:9px 2px;text-decoration:none;color:inherit;border-radius:8px}
+.dec a:hover{background:rgba(255,255,255,.035)}
+.dec .hex{font:500 clamp(9.5px,.74vw,10.5px)/1 var(--f-mono);letter-spacing:0;color:var(--faint);white-space:nowrap;overflow:hidden}
+.dec .hex b{color:var(--muted);font-weight:500}
+.dec .hex u{text-decoration:none;color:var(--amber)}
+.dec .out{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ink);opacity:0;transition:opacity .35s}
+.dec .ok .out{opacity:1}
+.dec .tick{font:600 10px/1 var(--f-mono);color:var(--teal);border:1px solid rgba(79,209,197,.4);border-radius:5px;padding:2px 4px}
+.dec .out b{font-weight:600;font-family:var(--f-mono);font-size:12.5px}
+.dec .out span{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dec .sub{font-size:11.5px;color:var(--muted);opacity:0;transition:opacity .35s .1s}
+.dec .ok .sub{opacity:1}
+.side-f{margin:6px 0 0;font-size:11px;line-height:1.4;color:var(--faint)}
+.side-f a{color:var(--muted)}
+@media (prefers-reduced-motion:reduce){.side,.dec li,.pulse{animation:none;transition:none}}
+
 /* the opening view: everything centred; on wide screens the chip rises from below the text */
 .ch.hero .copy{align-items:center;text-align:center}
 .hero .specs,.hero .hint{justify-content:center}
@@ -284,6 +329,17 @@ footer a{color:var(--muted)}
       </div>
       <div class="hint"><i></i><span class="mouse">Scroll to open it up · drag or swipe sideways to spin it</span><span class="touch">Swipe up to open it up · drag sideways to spin</span></div>
     </div>
+    <aside class="side side-l" aria-label="Live right now">
+      <div class="side-h"><i class="pulse" aria-hidden="true"></i><span>Live</span><span class="age" id="lvAge"></span></div>
+      <a class="lv" href="stats/"><span class="lv-v" id="lvN">0</span><span class="lv-k">planes in the air</span><svg class="spark" id="spN" viewBox="0 0 64 26" aria-hidden="true"></svg></a>
+      <a class="lv" href="stats/"><span class="lv-v"><span id="lvB">0</span><small> t</small></span><span class="lv-k">of jet fuel burning per hour</span><svg class="spark" id="spB" viewBox="0 0 64 26" aria-hidden="true"></svg></a>
+      <a class="lv" href="stats/"><span class="lv-v"><span id="lvC">0</span><small> t</small></span><span class="lv-k">of CO₂ per hour</span><svg class="spark" id="spC" viewBox="0 0 64 26" aria-hidden="true"></svg></a>
+    </aside>
+    <aside class="side side-r" aria-label="HZN-1 decoding live flights">
+      <div class="side-h"><i class="pulse amber" aria-hidden="true"></i><span>HZN-1 decoder</span><span class="age">1090 MHz</span></div>
+      <ol class="dec" id="dec" data-src="assets/live.json?v=c8ce13a834"></ol>
+      <p class="side-f">Real messages for this hour’s flights, checked with the same 24-bit code as the <a href="silicon/">real silicon</a>.</p>
+    </aside>
   </section>
 
   <section class="ch" id="package" data-key="lid" data-name="Package" data-len="1.4">
@@ -373,7 +429,61 @@ footer a{color:var(--muted)}
 </main>
 <noscript><div class="noscript">The 3D chip needs JavaScript. You can still open the <a href="globe/">globe</a>, <a href="chip/">chip explorer</a> or <a href="model/">model check</a>.</div></noscript>
 
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="lvGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7cc4ff" stop-opacity=".28"/><stop offset="1" stop-color="#7cc4ff" stop-opacity="0"/></linearGradient></defs></svg>
+<script>
+// the opening view's side panels: this hour's numbers with 24-hour sparklines, and a feed of real ADS-B messages
+// for this hour's flights being checked and decoded, the way HZN-1 would. Wide screens only.
+(() => {
+  const wide = matchMedia('(min-width:1200px) and (min-aspect-ratio:21/20)'), reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const list = document.getElementById('dec'); if (!list) return;
+  let started = false;
+  const fmt = v => Math.round(v).toLocaleString('en-US');
+  function spark(id, vals) {
+    const el = document.getElementById(id); if (!el || vals.length < 2) { if (el) el.style.display = 'none'; return; }
+    const lo = Math.min(...vals), hi = Math.max(...vals), W = 64, H = 26, x = i => i / (vals.length - 1) * W, y = v => H - 3 - (hi > lo ? (v - lo) / (hi - lo) : .5) * (H - 6);
+    const d = vals.map((v, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ',' + y(v).toFixed(1)).join('');
+    el.innerHTML = '<path class="area" d="' + d + 'L' + W + ',' + H + 'L0,' + H + 'Z"/><path d="' + d + '"/><circle r="2.2" cx="' + W + '" cy="' + y(vals[vals.length - 1]).toFixed(1) + '"/>';
+  }
+  function countUp(id, to) {
+    const el = document.getElementById(id); if (reduce) { el.textContent = fmt(to); return; }
+    const t0 = performance.now(), go = now => { const k = Math.min(1, (now - t0) / 1300), e = 1 - Math.pow(1 - k, 3); el.textContent = fmt(to * e); if (k < 1) requestAnimationFrame(go); }; requestAnimationFrame(go);
+  }
+  function start() {
+    if (started || !wide.matches) return; started = true;
+    fetch(list.dataset.src).then(r => r.json()).then(L => {
+      const hist = L.hist && L.hist.length ? L.hist : [[L.t, L.n, L.burn]];
+      countUp('lvN', L.n); countUp('lvB', L.burn / 1000); countUp('lvC', L.burn * 3.16 / 1000);
+      spark('spN', hist.map(h => h[1])); spark('spB', hist.map(h => h[2])); spark('spC', hist.map(h => h[2]));
+      const mins = Math.max(0, Math.round((Date.now() / 1000 - L.t) / 60));
+      document.getElementById('lvAge').textContent = mins < 90 ? (mins < 2 ? 'just updated' : mins + ' min ago') : Math.round(mins / 60) + ' h ago';
+      document.querySelectorAll('.side').forEach(s => s.classList.add('ready'));
+      feed(L.msgs || []);
+    }).catch(() => {});
+  }
+  // the decoder: type out a message, check it, then show who it is
+  let paused = false;
+  function feed(msgs) {
+    if (!msgs.length) return; let i = 0;
+    const one = () => {
+      const m = msgs[i++ % msgs.length], li = document.createElement('li');
+      li.innerHTML = '<a href="globe/#flight/' + encodeURIComponent(m.cs) + '"><span class="hex"></span><span class="out"><span class="tick">CRC \u2713</span><b>' + m.cs + '</b><span>' + m.o + ' \u2192 ' + m.d + '</span></span><span class="sub">' + fmt(m.alt) + ' ft \u00b7 ' + m.f + '% fuel left</span></a>';
+      list.prepend(li);
+      [...list.children].forEach((x, k) => { x.classList.toggle('old', k === 2); x.classList.toggle('older', k >= 3); if (k > 3) x.remove(); });
+      const hex = li.querySelector('.hex'), body = m.m.slice(0, 22), code = m.m.slice(22);
+      const show = n => { const a = m.m.slice(0, n); hex.innerHTML = '<b>' + a.slice(0, Math.min(n, 22)) + '</b>' + (n > 22 ? '<u>' + a.slice(22) + '</u>' : '') + '\u00b7'.repeat(28 - n).replace(/./g, '\u00b7'); };
+      if (reduce) { show(28); li.classList.add('ok'); return; }
+      let n = 0; const typeIt = () => { n = Math.min(28, n + 2); show(n); if (n < 28) setTimeout(typeIt, 28); else setTimeout(() => li.classList.add('ok'), 180); }; typeIt();
+    };
+    one(); setTimeout(one, 700); setTimeout(one, 1400);
+    setInterval(() => { if (!paused && !document.hidden) one(); }, 2600);
+  }
+  const hero = document.querySelector('section[data-key="hero"]');
+  if ('IntersectionObserver' in window && hero) new IntersectionObserver(es => { paused = !es[0].isIntersecting; }, { threshold: .2 }).observe(hero);
+  wide.addEventListener ? wide.addEventListener('change', start) : 0;
+  addEventListener('load', () => setTimeout(start, 900));
+})();
+</script>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
-<script type="module" src="assets/story.js?v=15"></script>
+<script type="module" src="assets/story.js?v=16"></script>
 </body>
 </html>

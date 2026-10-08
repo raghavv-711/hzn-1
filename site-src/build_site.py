@@ -73,6 +73,7 @@ def versioned(text):
 
 def stamp_landing():
     p = DOCS / "index.html"; s = p.read_text()
+    s = re.sub(r'assets/live\.json(\?v=[0-9a-f]+)?', 'assets/live.json?v=' + version(DOCS / "assets" / "live.json"), s)
     for n in SHARED:
         s = re.sub(rf'src="assets/{n}\.js(\?v=[0-9a-f]+)?"', f'src="assets/{n}.js?v={version(DOCS / "assets" / f"{n}.js")}"', s)
     s = re.sub(r'(<meta property="og:image" content="[^"]*/assets/og\.jpg)(\?v=[0-9a-f]+)?"', lambda m: m.group(1) + "?v=" + version(DOCS / "assets" / "og.jpg") + '"', s)
@@ -93,6 +94,48 @@ def write(name, html):
         page += f'<meta property="og:title" content="{t.group(1)}">\n'
     out.write_text(versioned(HEAD) + page + localize(html))
     print(f"{out.relative_to(DOCS.parent)}  {out.stat().st_size / 1e3:.0f} kB")
+
+
+# ---------- assets/live.json: the home page's live numbers and its decoder feed ----------
+ADSB_CHARS = "#ABCDEFGHIJKLMNOPQRSTUVWXYZ##### ###############0123456789######"
+
+
+def adsb_ident(icao, callsign):
+    """A Mode S extended squitter (DF17) identification message for this aircraft, with its real 24-bit check code.
+    Same encoding the plane broadcasts, so it passes the same check as the HZN-1 silicon block."""
+    cs = (callsign.upper() + " " * 8)[:8]
+    if any(c not in ADSB_CHARS or c == "#" for c in cs):
+        return None
+    me = 4 << 51  # type code 4: aircraft identification
+    for i, c in enumerate(cs):
+        me |= ADSB_CHARS.index(c) << (42 - 6 * i)
+    data = (((17 << 3) | 5) << 24 | int(icao, 16)) << 56 | me
+    rem = 0
+    for i in range(88):
+        b = (data >> (87 - i)) & 1
+        fb = ((rem >> 23) & 1) ^ b
+        rem = ((rem << 1) & 0xFFFFFF) ^ (0xFFF409 if fb else 0)
+    return f"{data:022X}{rem:06X}"
+
+
+def write_live():
+    st = json.loads((DOCS / "stats" / "stats.json").read_text())
+    src = (DOCS / "globe" / "data.js").read_text()
+    d = json.loads(src[src.index("=") + 1:src.rstrip().rindex("}") + 1])
+    ap, msgs = d["ap"], []
+    rows = [r for r in d["p"] if re.fullmatch(r"[A-Z]{3}\d{1,4}[A-Z]?", r[1] or "") and r[5] and r[5] > 15000 and r[11] in ap and r[12] in ap]
+    rows.sort(key=lambda r: hashlib.md5((r[0] + str(st["t"])).encode()).hexdigest())  # a different mix each hour
+    for r in rows:
+        f = fuel_frac(r, ap)
+        m = adsb_ident(r[0], r[1])
+        if f < 0 or not m:
+            continue
+        msgs.append({"m": m, "cs": r[1], "o": ap[r[11]][0], "d": ap[r[12]][0], "alt": int(round(r[5], -2)), "f": int(round(f * 100))})
+        if len(msgs) >= 48:
+            break
+    hist = [h[:3] for h in st.get("history", [])][-24:]
+    out = {"t": st["t"], "n": st["n"], "burn": st["burn"], "hist": hist, "msgs": msgs}
+    (DOCS / "assets" / "live.json").write_text(json.dumps(out, separators=(",", ":")))
 
 
 def hav(a, b, c, d):
@@ -214,6 +257,7 @@ def build(data_json=None):
 
     write("silicon", (SRC / "silicon.html").read_text())
     write("drivers", (SRC / "drivers.html").read_text())
+    write_live()
     stamp_landing()
 
 
