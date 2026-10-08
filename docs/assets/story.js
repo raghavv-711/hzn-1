@@ -55,7 +55,7 @@ const HEX = '8D4840D6202CC371C32CE0576098';
 // cam/tgt: camera position and look-at point. lid: lid lifted away. ex: layers pulled apart. top: layers above the
 // transistors fly off. blk: floorplan rooms. route: signal path. chip/globe: which object is on stage. sway: idle motion.
 // bl / ll: room labels and layer labels.
-const BASE = { cam: [17, 11.5, 19], tgt: [0, 1.1, 0], fov: 34, lid: 0, ex: 0, top: 0, blk: 0, route: 0, chip: 1, globe: 0, sway: 1, bl: 0, ll: 0, gspin: 0, shift: .2 };
+const BASE = { cam: [17, 11.5, 19], tgt: [0, 1.1, 0], fov: 34, lid: 0, ex: 0, top: 0, blk: 0, route: 0, chip: 1, globe: 0, sway: 1, bl: 0, ll: 0, gspin: 0, shift: .2, vshift: 0, zoom: 1 };
 const KEYS = {
   hero: {},
   lid: { cam: [11, 14, 13.5], tgt: [0, .9, 0], lid: 1, sway: .3 },
@@ -434,20 +434,29 @@ function layout() {
   const w = innerWidth, h = innerHeight;
   renderer.setSize(w, h, false); camera.aspect = w / h;
   if (composer) composer.setSize(w, h);
-  applyShift(true); sizePoints();
+  heroFit(); applyShift(true); sizePoints();
 }
 // move the subject out from under the copy: right of it on wide screens, above it on phones
 // On stacked layouts the chip fits into the space between the top bar and where the chapter's text begins.
-let shiftNow = -1, availTop = innerHeight * .6;
+let shiftNow = -1, vshiftNow = 0, availTop = innerHeight * .6;
+// wide screens: the opening text is centred, so the chip sits centred below it, a little cropped by the bottom edge
+function heroFit() {
+  const copyEl = document.querySelector('section[data-key="hero"] .copy'), H = KEYS.hero;
+  if (isNarrow() || !copyEl) { H.shift = BASE.shift; H.vshift = 0; H.zoom = 1; return; }
+  const h = innerHeight, bottom = Math.min(h * .78, copyEl.getBoundingClientRect().bottom + scrollY);
+  const floor = h - 64;  // leave room for the scroll hint along the bottom
+  H.shift = 0; H.vshift = ((bottom + floor) / 2 + h * .02 - h / 2) / h; H.zoom = clamp(.6 * h / Math.max(floor - bottom, 120), 1, 2.4);
+}
 const isNarrow = () => innerWidth <= 760 || innerWidth / innerHeight < 1.05;
 function applyShift(force) {
   const w = innerWidth, h = innerHeight, narrow = isNarrow();
-  const s = narrow ? (h / 2 - (64 + (availTop - 64) / 2)) / h : (cur?.shift ?? .2);
-  if (!force && Math.abs(s - shiftNow) < .002) return; shiftNow = s;
-  if (narrow) camera.setViewOffset(w, h, 0, h * s, w, h); else camera.setViewOffset(w, h, -w * s, 0, w, h);
+  const s = narrow ? (h / 2 - (64 + (availTop - 64) / 2)) / h : (cur?.shift ?? .2), vs = narrow ? 0 : (cur?.vshift ?? 0);
+  if (!force && Math.abs(s - shiftNow) < .002 && Math.abs(vs - vshiftNow) < .002) return; shiftNow = s; vshiftNow = vs;
+  if (narrow) camera.setViewOffset(w, h, 0, h * s, w, h); else camera.setViewOffset(w, h, -w * s, -h * vs, w, h);
   camera.updateProjectionMatrix();
 }
 layout(); addEventListener('resize', layout);
+document.fonts?.ready.then(() => { heroFit(); applyShift(true); });  // the text's final height decides where the chip goes
 const fitScale = () => { const a = innerWidth / innerHeight;
   if (isNarrow()) return Math.min(3.2, Math.max(1, 1.05 / Math.min(a, 1)) * clamp(innerHeight * .62 / Math.max(availTop - 64, 120), 1, 2.4));
   return a < 1.45 ? 1.3 : 1; };
@@ -466,7 +475,7 @@ function frame(now) {
   tick(now);
 }
 function tick(now) {
-  const dt = Math.min(.05, (now - last) / 1000); last = now; time += dt;
+  const dt = Math.max(0, Math.min(.05, (now - last) / 1000)); last = now;  // never backwards, or the easing overshoots time += dt;
   const t = target(), k = reduce ? 1 : 1 - Math.exp(-dt * 5.5);
   for (const n of NUM) cur[n] = Array.isArray(t[n]) ? cur[n].map((v, j) => lerp(v, t[n][j], k)) : lerp(cur[n], t[n], k);
   msgEased = lerp(msgEased, t.msg, reduce ? 1 : 1 - Math.exp(-dt * 7));
@@ -533,7 +542,7 @@ function tick(now) {
     const top = c ? c.getBoundingClientRect().top : innerHeight * .6; availTop = lerp(availTop, clamp(top, innerHeight * .3, innerHeight * .9), k); }
   applyShift();
   const fs = fitScale();
-  camTgt.fromArray(cur.tgt); camPos.fromArray(cur.cam).sub(camTgt).multiplyScalar(fs).add(camTgt);
+  camTgt.fromArray(cur.tgt); camPos.fromArray(cur.cam).sub(camTgt).multiplyScalar(fs * cur.zoom).add(camTgt);
   camera.position.copy(camPos); camera.lookAt(camTgt);
   if (Math.abs(camera.fov - cur.fov) > .01) { camera.fov = cur.fov; camera.updateProjectionMatrix(); }
   camera.updateMatrixWorld();

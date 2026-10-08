@@ -200,6 +200,25 @@ footer a{color:var(--muted)}
 .card .live{display:inline-flex;align-items:center;gap:7px}.card .live::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--c);box-shadow:0 0 10px var(--c)}
 @media (max-width:860px){.cards{grid-template-columns:minmax(0,1fr)}.card{min-height:0}.card.wide{flex-direction:column}.card.wide img{width:100%;aspect-ratio:2.4/1;order:-1}.card.wide .thumb{width:100%;aspect-ratio:2.4/1;order:-1}}
 
+/* the opening view: everything centred; on wide screens the chip rises from below the text */
+.ch.hero .copy{align-items:center;text-align:center}
+.hero .specs,.hero .hint{justify-content:center}
+.hero .tour-btn{align-self:center}
+.hero .quick a{text-align:left}
+@media (min-width:761px) and (min-aspect-ratio:21/20){
+  .ch.hero{align-items:flex-start;justify-content:center;padding-top:calc(var(--nav-h) + 14px)}
+  .ch.hero .copy{position:static;width:min(920px,100%);gap:13px}
+  .hero .emblem{width:clamp(54px,8vh,84px);margin-bottom:0}
+  .hero h1{font-size:clamp(44px,min(6.3vw,9vh),100px)}
+  .hero h1 em{display:block}
+  .hero .copy p{max-width:620px}
+  .hero .quick{display:flex;justify-content:center;flex-wrap:wrap;width:auto;gap:8px;margin-top:0}
+  .hero .quick a{padding:8px 14px 8px 11px;border-radius:999px;gap:8px}
+  .hero .quick small{display:none}
+  .hero .quick svg{width:17px;height:17px}
+  .hero .hint{position:absolute;left:0;right:0;bottom:24px;margin:0}
+}
+
 /* phone: the chip sits in the top part of the screen and the copy rides in a glass card at the bottom */
 @media (max-width:760px), (max-aspect-ratio:21/20){
   .ch{align-items:flex-end;padding:calc(var(--nav-h) + 12px) 16px calc(28px + env(safe-area-inset-bottom,0px))}
@@ -355,6 +374,6 @@ footer a{color:var(--muted)}
 <noscript><div class="noscript">The 3D chip needs JavaScript. You can still open the <a href="globe/">globe</a>, <a href="chip/">chip explorer</a> or <a href="model/">model check</a>.</div></noscript>
 
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
-<script type="module" src="assets/story.js?v=11"></script>
+<script type="module" src="assets/story.js?v=15"></script>
 </body>
 </html>
