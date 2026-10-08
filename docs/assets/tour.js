@@ -5,8 +5,8 @@
 (() => {
   const root = new URL('../', document.currentScript.src);   // the site's home, wherever it's hosted
   const path = location.pathname;
-  const page = /\/globe\/?$/.test(path) ? 'globe' : /\/stats\/?$/.test(path) ? 'stats' : /\/(chip|model|silicon|drivers)\/?$/.test(path) ? 'other' : 'home';
-  const PAGE_URL = { home: '', globe: 'globe/', stats: 'stats/' };
+  const page = /\/globe\/?$/.test(path) ? 'globe' : /\/stats\/?$/.test(path) ? 'stats' : /\/silicon\/?$/.test(path) ? 'silicon' : /\/drivers\/?$/.test(path) ? 'drivers' : /\/(chip|model)\/?$/.test(path) ? 'other' : 'home';
+  const PAGE_URL = { home: '', silicon: 'silicon/', globe: 'globe/', stats: 'stats/', drivers: 'drivers/' };
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const $ = s => document.querySelector(s);
   const store = {
@@ -163,7 +163,17 @@
       run: my => scrollTo(sec('fe', .4), 1600, my) },
     { page: 'home', target: copy('globe'), say: 'All of it feeds Fuel Horizon: every plane in the sky, colored by how much fuel it has left.',
       run: my => scrollTo(sec('globe', .4), 1800, my) },
-    { page: 'home', say: 'Let’s open the live globe.', after: 200 },
+    { page: 'home', say: 'Most of this is a concept. But one piece is already real. Let’s look.', after: 200 },
+
+    { page: 'silicon', target: () => $('.stats'), say: 'This is the part of the chip that checks every aircraft message for damage, built as a real chip design that’s ready to be manufactured.',
+      run: my => scrollTo(0, 500, my) },
+    { page: 'silicon', target: () => $('#layout'), say: 'Here’s the actual layout. The whole thing is about as wide as two human hairs, and each colored block is one tiny logic cell.',
+      run: my => { const h = $('#h-layout'); return scrollTo(h ? h.getBoundingClientRect().top + scrollY - 90 : 0, 1400, my); } },
+    { page: 'silicon', target: () => $('.panel.sim'), say: 'You can run it yourself. Here it checks a real message from a KLM flight, one bit at a time. It arrives intact.',
+      run: async my => { const h = $('#h-try'); await scrollTo(h ? h.getBoundingClientRect().top + scrollY - 80 : 0, 1400, my); await wait(600, my); const b = $('#run'); if (b) b.click(); await wait(3600, my); } },
+    { page: 'silicon', target: () => $('.panel.sim'), say: 'Now flip a single bit, as radio static might, and the chip catches the damage instantly.',
+      run: async my => { const f = $('#flip'); if (f) f.click(); await wait(900, my); const b = $('#run'); if (b) b.click(); await wait(3600, my); } },
+    { page: 'silicon', say: 'Next, the live globe it was designed to feed.', after: 200 },
 
     { page: 'globe', say: 'Loading every flight in the air.', run: async my => { await globeReady(my); const F = FH(); if (F) { F.deselect(); F.clearAsk(); F.clearArea(); F.mode('fuel'); } }, after: 100 },
     { page: 'globe', target: () => $('#key'), say: 'These are real flights, refreshed every hour. Red planes are close to their fuel reserve; teal ones still have plenty.',
@@ -190,7 +200,15 @@
       say: 'For example, a fifty percent sustainable fuel blend would cut lifecycle carbon emissions by about forty-two percent.',
       run: async my => { const r = $('#safBlend'); if (!r) return; r.scrollIntoView({ block: 'center', behavior: reduce ? 'auto' : 'smooth' }); await wait(700, my);
         for (let v = +r.value; v <= 50; v += 2) { r.value = v; r.dispatchEvent(new Event('input')); await wait(70, my); } } },
-    { page: 'stats', say: 'That’s HZN-1 and Fuel Horizon. Explore it yourself.', end: true },
+    { page: 'stats', say: 'Finally, a new idea for the same fuel model.', after: 200 },
+
+    { page: 'drivers', target: () => $('.three'), say: 'Ride-hail apps already know every driver’s car and every mile it drives. That’s enough to predict when a driver will need fuel.',
+      run: my => scrollTo(0, 500, my) },
+    { page: 'drivers', target: () => { const c = $('#city'); return c && c.closest('.panel'); }, say: 'Here’s a simulated shift. Fuel Horizon spots the coming fill-up and times it for a partner station near the next drop-off, which pays for the visit.',
+      run: async my => { const h = $('#h-shift'); await scrollTo(h ? h.getBoundingClientRect().top + scrollY - 80 : 0, 1400, my); const fast = $('#speed [data-s="4"]'); if (fast) fast.click(); await wait(4000, my); } },
+    { page: 'drivers', target: () => { const c = $('#cmp'); return c && c.classList.contains('on') ? c : null; }, say: 'Over many shifts, drivers pay about twenty cents less per gallon, and their tank never runs as low.',
+      run: async my => { const b = $('#compare'); if (b) b.click(); await wait(400, my); const c = $('#cmp'); if (c) c.scrollIntoView({ block: 'center', behavior: reduce ? 'auto' : 'smooth' }); await wait(1500, my); } },
+    { page: 'drivers', say: 'That’s HZN-1 and Fuel Horizon. Explore it yourself.', end: true },
   ];
 
   // ---------- the bar ----------
@@ -328,7 +346,7 @@
   async function finale(st, my) {
     target = null;
     const e = document.createElement('div'); e.className = 'tr-end';
-    e.innerHTML = '<a href="' + new URL('globe/', root).href + '" target="_top">Open the globe</a><a class="ghost" href="' + new URL('silicon/', root).href + '" target="_top">See the real silicon</a>' +
+    e.innerHTML = '<a href="' + new URL('globe/', root).href + '" target="_top">Open the globe</a><a class="ghost" href="' + new URL('chip/', root).href + '" target="_top">Explore the chip</a>' +
       '<a class="ghost" href="' + new URL('?tour', root).href + '" target="_top">Watch again</a>';
     hud.insertBefore(e, hud.querySelector('.tr-prog'));
     hud.querySelectorAll('[data-a="pause"],[data-a="next"]').forEach(b => { b.style.display = 'none'; });
